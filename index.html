@@ -1,0 +1,4386 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>TechCampus_Hub - College Learning Portal</title>
+
+
+
+
+    <!-- =====================================================
+         TAILWIND CSS
+    ====================================================== -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+
+
+
+    <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+
+
+
+
+    <!-- =====================================================
+         TAILWIND CONFIG
+    ====================================================== -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: "#102a56",
+                        bluehub: "#2563eb",
+                        softbg: "#f5f8fc"
+                    },
+
+                    boxShadow: {
+                        soft: "0 8px 28px rgba(15,39,74,.08)"
+                    }
+                }
+            }
+        };
+    </script>
+
+
+
+    <!-- =====================================================
+         CUSTOM CSS
+    ====================================================== -->
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+
+            font-family:
+                Inter,
+                ui-sans-serif,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: #f5f8fc;
+            color: #102a56;
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .glass {
+            background: rgba(102, 97, 199, 0.94);
+            backdrop-filter: blur(12px);
+        }
+
+        .sidebar {
+            background:
+                linear-gradient(
+                    180deg,
+                    #2e61b3 0%,
+                    #2f5fb1 100%
+                );
+        }
+
+        .nav-item {
+            transition:
+                background .2s ease,
+                color .2s ease,
+                transform .2s ease;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: #2563eb;
+            color: white;
+            transform: translateX(2px);
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e4ebf4;
+            border-radius: 18px;
+
+            box-shadow:
+                0 8px 28px rgba(15, 39, 74, .06);
+        }
+
+        .resource-card {
+            transition:
+                transform .2s ease,
+                box-shadow .2s ease;
+        }
+
+        .resource-card:hover {
+            transform: translateY(-3px);
+
+            box-shadow:
+                0 14px 34px rgba(15, 39, 74, .10);
+        }
+
+        .input {
+            width: 100%;
+
+            border: 1px solid #dbe4ef;
+            border-radius: 12px;
+
+            padding: 12px 14px;
+
+            outline: none;
+
+            background: white;
+            color: #18345f;
+        }
+
+        .input:focus {
+            border-color: #2563eb;
+
+            box-shadow:
+                0 0 0 3px rgba(37, 99, 235, .10);
+        }
+
+        .input:disabled {
+            background: #f1f5f9;
+            color: #64748b;
+            cursor: not-allowed;
+        }
+
+        .auth-bg {
+            background:
+                radial-gradient(
+                    circle at 10% 10%,
+                    rgba(37, 99, 235, .18),
+                    transparent 34%
+                ),
+                radial-gradient(
+                    circle at 90% 85%,
+                    rgba(220, 38, 38, .10),
+                    transparent 30%
+                ),
+                #f4f7fb;
+        }
+
+        .auth-card {
+            box-shadow:
+                0 24px 70px rgba(15, 39, 74, .14);
+        }
+
+        /* TechCampus_Hub text logo */
+        .text-logo-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .text-logo-icon-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .hide-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .mobile-nav {
+            display: none;
+        }
+
+        .mobile-open {
+            display: flex !important;
+        }
+
+        #sidebarOverlay {
+            display: none;
+        }
+
+        /*
+         * Edit modal field wrapper.
+         * admin.js uses this class to hide/show
+         * complete fields according to category.
+         */
+        .edit-field-group {
+            min-width: 0;
+        }
+
+        @media (max-width: 900px) {
+
+            .sidebar {
+                width: 76px;
+            }
+
+            .nav-label,
+            .brand-text {
+                display: none;
+            }
+
+            .main-area {
+                margin-left: 76px !important;
+            }
+        }
+
+        @media (max-width: 700px) {
+
+            .sidebar {
+                display: none;
+                width: 270px;
+                z-index: 80;
+            }
+
+            .sidebar.mobile-open {
+                display: flex !important;
+            }
+
+            .main-area {
+                margin-left: 0 !important;
+            }
+
+            .mobile-nav {
+                display: flex !important;
+            }
+
+            #sidebarOverlay {
+                display: block;
+            }
+        }
+
+        /* =====================================================
+   ADMIN LOGIN ICON
+===================================================== */
+
+.admin-login-icon {
+    width: 42px;
+    height: 42px;
+
+    border-radius: 12px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+
+    color: white;
+
+    transition:
+        background .2s ease,
+        transform .2s ease;
+}
+
+.admin-login-icon:hover {
+    background: rgba(255, 255, 255, 0.22);
+    transform: translateY(-1px);
+}
+
+
+/* =====================================================
+   ADMIN LOGIN MODAL
+===================================================== */
+
+.admin-modal {
+    backdrop-filter: blur(5px);
+}
+
+.admin-step {
+    animation: adminStepIn .2s ease;
+}
+
+@keyframes adminStepIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+    </style>
+</head>
+
+
+<body>
+
+<!-- =========================================================
+     AUTH SECTION
+========================================================= -->
+
+<section
+    id="authSection"
+    class="auth-bg min-h-screen flex items-center justify-center p-4 md:p-8"
+>
+
+    <div
+        class="w-full max-w-5xl
+               grid lg:grid-cols-2
+               gap-8 items-stretch"
+    >
+
+<!-- =================================================
+     LEFT BRANDING
+================================================== -->
+
+<div
+    class="hidden lg:flex
+           relative
+           rounded-3xl
+           overflow-hidden
+           bg-gradient-to-br
+           from-[#102a56]
+           via-[#173d78]
+           to-[#2563eb]
+           text-white
+           p-10
+           flex-col
+           justify-between
+           auth-card"
+>
+
+    <!-- =================================================
+         ADMIN LOGIN ICON
+    ================================================== -->
+
+    <button
+        id="adminLoginIcon"
+        type="button"
+        class="admin-login-icon
+               absolute
+               top-6
+               right-6"
+        title="Administrator Login"
+        aria-label="Administrator Login"
+    >
+
+        <i class="fa-solid fa-user-shield"></i>
+
+    </button>
+
+
+    <!-- =================================================
+         BRAND CONTENT
+    ================================================== -->
+
+    <div>
+
+        <div
+            class="flex items-center gap-4"
+        >
+
+            <div
+                class="w-16 h-16
+                       bg-white
+                       rounded-2xl
+                       p-2
+                       flex
+                       items-center
+                       justify-center"
+            >
+
+                <div class="text-logo-icon">
+                    🎓
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <h1
+                    class="text-2xl
+                           font-extrabold"
+                >
+                    TechCampus_Hub
+                </h1>
+
+                <p
+                    class="text-blue-100
+                           text-sm"
+                >
+                    College Learning Portal
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="mt-16">
+
+            <p
+                class="uppercase
+                       tracking-[.25em]
+                       text-blue-200
+                       text-xs
+                       font-bold"
+            >
+                Learn • Practice • Achieve
+            </p>
+
+
+            <h2
+                class="text-4xl
+                       font-extrabold
+                       leading-tight
+                       mt-4"
+            >
+                Everything you need for your
+                college journey.
+            </h2>
+
+
+            <p
+                class="text-blue-100
+                       mt-5
+                       leading-7"
+            >
+                Access notes, training &
+                placement resources, previous
+                year papers and exam timetables
+                from one organized portal.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         FEATURES
+    ================================================== -->
+
+    <div
+        class="grid grid-cols-2 gap-3"
+    >
+
+        <!-- Notes -->
+
+        <div
+            class="bg-white/10
+                   rounded-2xl
+                   p-4
+                   border border-white/10"
+        >
+
+            <i
+                class="fa-solid
+                       fa-book-open
+                       text-xl"
+            ></i>
+
+            <p
+                class="font-semibold
+                       mt-2"
+            >
+                Study Notes
+            </p>
+
+        </div>
+
+
+        <!-- TNP -->
+
+        <div
+            class="bg-white/10
+                   rounded-2xl
+                   p-4
+                   border border-white/10"
+        >
+
+            <i
+                class="fa-solid
+                       fa-briefcase
+                       text-xl"
+            ></i>
+
+            <p
+                class="font-semibold
+                       mt-2"
+            >
+                TNP Resources
+            </p>
+
+        </div>
+
+
+        <!-- PYQ -->
+
+        <div
+            class="bg-white/10
+                   rounded-2xl
+                   p-4
+                   border border-white/10"
+        >
+
+            <i
+                class="fa-solid
+                       fa-file-circle-question
+                       text-xl"
+            ></i>
+
+            <p
+                class="font-semibold
+                       mt-2"
+            >
+                PYQ Papers
+            </p>
+
+        </div>
+
+
+        <!-- Timetable -->
+
+        <div
+            class="bg-white/10
+                   rounded-2xl
+                   p-4
+                   border border-white/10"
+        >
+
+            <i
+                class="fa-solid
+                       fa-calendar-days
+                       text-xl"
+            ></i>
+
+            <p
+                class="font-semibold
+                       mt-2"
+            >
+                Exam Timetable
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+        <!-- =================================================
+             LOGIN / SIGNUP CARD
+        ================================================== -->
+
+        <div
+            class="bg-white
+                   rounded-3xl
+                   p-7 sm:p-10
+                   auth-card
+                   flex flex-col
+                   justify-center"
+        >
+
+            <!-- Mobile Logo -->
+
+            <div
+                class="flex items-center gap-4
+                       mb-8 lg:hidden"
+            >
+
+                <div
+                    class="w-14 h-14
+                           rounded-2xl
+                           bg-white
+                           border
+                           p-1
+                           flex
+                           items-center
+                           justify-center"
+                >
+
+                    <div class="text-logo-icon">
+                        🎓
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <h1
+                        class="text-xl
+                               font-extrabold"
+                    >
+                        TechCampus_Hub
+                    </h1>
+
+                    <p
+                        class="text-sm
+                               text-slate-500"
+                    >
+                        College Learning Portal
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- Auth Heading -->
+
+            <div class="mb-7">
+
+                <p
+                    class="text-sm
+                           font-semibold
+                           text-blue-600"
+                >
+                    Welcome to TechCampus_Hub
+                </p>
+
+                <h2
+                    id="authHeading"
+                    class="text-3xl
+                           font-extrabold
+                           text-slate-900
+                           mt-2"
+                >
+                    Welcome Back
+                </h2>
+
+                <p
+                    class="text-slate-500
+                           mt-2"
+                >
+                    Sign in to access your
+                    personalized learning resources.
+                </p>
+
+            </div>
+
+
+            <!-- =================================================
+                 AUTH FORM
+            ================================================== -->
+
+            <form
+                id="authForm"
+                class="space-y-4"
+            >
+
+
+
+<!-- SIGNUP FIELDS -->
+
+                <div
+                    id="signupFields"
+                    class="hidden space-y-4"
+                >
+
+                    <!-- Name -->
+
+                    <div>
+
+                        <label
+                            class="block
+                                   text-sm
+                                   font-semibold
+                                   mb-2"
+                        >
+                            Full Name
+                        </label>
+
+                        <input
+                            id="regName"
+                            class="input"
+                            type="text"
+                            placeholder="Enter your full name"
+                        >
+
+                    </div>
+
+
+                    <!-- Course / Branch -->
+
+                    <div
+                        class="grid
+                               sm:grid-cols-2
+                               gap-4"
+                    >
+
+                        <div>
+
+                            <label
+                                class="block
+                                       text-sm
+                                       font-semibold
+                                       mb-2"
+                            >
+                                Course
+                            </label>
+
+                            <select
+                                id="regCourse"
+                                class="input"
+                            >
+
+                                <option value="">
+                                    Select Course
+                                </option>
+
+                                <option value="MCA">
+                                    MCA
+                                </option>
+
+                                <option value="B.Tech">
+                                    B.Tech
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div>
+
+                            <label
+                                class="block
+                                       text-sm
+                                       font-semibold
+                                       mb-2"
+                            >
+                                Branch
+                            </label>
+
+                            <select
+                                id="regBranch"
+                                class="input"
+                            >
+
+                                <option value="">
+                                    Select Branch
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+<!-- Year / Semester -->
+
+                    <div
+                        class="grid
+                               sm:grid-cols-2
+                               gap-4"
+                    >
+
+                        <div>
+
+                            <label
+                                class="block
+                                       text-sm
+                                       font-semibold
+                                       mb-2"
+                            >
+                                Year
+                            </label>
+
+                            <select
+                                id="regYear"
+                                class="input"
+                            >
+
+                                <option value="">
+                                    Select Year
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div>
+
+                            <label
+                                class="block
+                                       text-sm
+                                       font-semibold
+                                       mb-2"
+                            >
+                                Semester
+                            </label>
+
+                            <select
+                                id="regSemester"
+                                class="input"
+                            >
+
+                                <option value="">
+                                    Select Semester
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- EMAIL -->
+
+                <div>
+
+                    <label
+                        class="block
+                               text-sm
+                               font-semibold
+                               mb-2"
+                    >
+                        Email Address
+                    </label>
+
+                    <div class="relative">
+
+                        <i
+                            class="fa-regular
+                                   fa-envelope
+                                   absolute
+                                   left-4
+                                   top-1/2
+                                   -translate-y-1/2
+                                   text-slate-400"
+                        ></i>
+
+                        <input
+                            id="authEmail"
+                            class="input pl-11"
+                            type="email"
+                            placeholder="you@example.com"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- PASSWORD -->
+
+                <div>
+
+                    <label
+                        class="block
+                               text-sm
+                               font-semibold
+                               mb-2"
+                    >
+                        Password
+                    </label>
+
+                    <div class="relative">
+
+                        <i
+                            class="fa-solid
+                                   fa-lock
+                                   absolute
+                                   left-4
+                                   top-1/2
+                                   -translate-y-1/2
+                                   text-slate-400"
+                        ></i>
+
+                        <input
+                            id="authPassword"
+                            class="input pl-11 pr-12"
+                            type="password"
+                            placeholder="Enter your password"
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            id="togglePasswordBtn"
+                            class="absolute
+                                   right-4
+                                   top-1/2
+                                   -translate-y-1/2
+                                   text-slate-400"
+                            aria-label="Show password"
+                        >
+
+                            <i
+                                class="fa-regular
+                                       fa-eye"
+                            ></i>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- FORGOT PASSWORD -->
+
+                <div
+                    id="forgotPasswordContainer"
+                    class="flex justify-end"
+                >
+
+                    <button
+                        type="button"
+                        id="forgotPasswordBtn"
+                        class="text-sm
+                               font-semibold
+                               text-blue-600
+                               hover:text-blue-800"
+                    >
+                        Forgot password?
+                    </button>
+
+                </div>
+
+
+                <!-- SUBMIT -->
+
+                <button
+                    id="authSubmitBtn"
+                    type="submit"
+                    class="w-full
+                           bg-blue-600
+                           hover:bg-blue-700
+                           text-white
+                           font-bold
+                           py-3.5
+                           rounded-xl
+                           shadow-lg
+                           shadow-blue-600/20
+                           transition"
+                >
+                    Login
+                </button>
+
+
+                <!-- MESSAGE -->
+
+                <p
+                    id="authMessage"
+                    class="text-sm
+                           text-center
+                           min-h-5"
+                ></p>
+
+            </form>
+
+
+            <!-- TOGGLE -->
+
+<div
+    id="toggleAuthMode"
+    class="text-center
+           mt-6
+           pt-6
+           border-t
+           border-slate-100
+           cursor-pointer
+           text-sm
+           font-bold
+           text-blue-600
+           hover:text-blue-800
+           transition"
+>
+    Don't have an account?
+</div>
+
+        </div>
+
+    </div>
+
+</section>
+
+<!-- =========================================================
+     ADMIN LOGIN MODAL
+========================================================= -->
+
+<div
+    id="adminLoginModal"
+    class="hidden
+           fixed
+           inset-0
+           z-[200]
+           bg-slate-950/60
+           admin-modal
+           items-center
+           justify-center
+           p-4"
+>
+
+    <div
+        class="bg-white
+               rounded-3xl
+               w-full
+               max-w-md
+               p-7
+               shadow-2xl
+               relative"
+    >
+
+        <!-- CLOSE BUTTON -->
+
+        <button
+            id="closeAdminLoginBtn"
+            type="button"
+            class="absolute
+                   top-5
+                   right-5
+                   w-9
+                   h-9
+                   rounded-xl
+                   bg-slate-100
+                   hover:bg-slate-200
+                   flex
+                   items-center
+                   justify-center
+                   text-slate-600"
+        >
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+
+        <!-- HEADER -->
+
+        <div class="text-center mb-7">
+
+            <div
+                class="w-14
+                       h-14
+                       mx-auto
+                       rounded-2xl
+                       bg-blue-50
+                       text-blue-600
+                       flex
+                       items-center
+                       justify-center
+                       text-xl"
+            >
+
+                <i class="fa-solid fa-user-shield"></i>
+
+            </div>
+
+
+            <h2
+                class="text-2xl
+                       font-extrabold
+                       text-slate-900
+                       mt-4"
+            >
+                Administrator Login
+            </h2>
+
+
+            <p
+                id="adminLoginStepText"
+                class="text-sm
+                       text-slate-500
+                       mt-2"
+            >
+                Enter your administrator ID
+            </p>
+
+        </div>
+
+
+        <!-- =================================================
+             STEP 1 : ADMIN ID
+        ================================================== -->
+
+        <div
+            id="adminStep1"
+            class="admin-step"
+        >
+
+            <label
+                class="block
+                       text-sm
+                       font-semibold
+                       mb-2"
+            >
+                Administrator ID
+            </label>
+
+
+            <div class="relative">
+
+                <i
+                    class="fa-solid
+                           fa-user-shield
+                           absolute
+                           left-4
+                           top-1/2
+                           -translate-y-1/2
+                           text-slate-400"
+                ></i>
+
+
+                <input
+                    id="adminLoginId"
+                    class="input pl-11"
+                    type="text"
+                    placeholder="Enter administrator ID"
+                    autocomplete="username"
+                >
+
+            </div>
+
+
+            <button
+                id="adminContinueBtn"
+                type="button"
+                class="w-full
+                       mt-5
+                       bg-blue-600
+                       hover:bg-blue-700
+                       text-white
+                       font-bold
+                       py-3.5
+                       rounded-xl
+                       transition"
+            >
+                Continue
+                <i
+                    class="fa-solid
+                           fa-arrow-right
+                           ml-2"
+                ></i>
+            </button>
+
+        </div>
+
+
+        <!-- =================================================
+             STEP 2 : PASSWORD
+        ================================================== -->
+
+        <div
+            id="adminStep2"
+            class="admin-step hidden"
+        >
+
+            <div
+                class="mb-4
+                       px-3
+                       py-2
+                       bg-slate-50
+                       rounded-xl
+                       text-sm"
+            >
+
+                <span class="text-slate-500">
+                    Administrator ID:
+                </span>
+
+                <span
+                    id="adminLoginIdDisplay"
+                    class="font-bold
+                           text-slate-800
+                           ml-1"
+                >
+                    -
+                </span>
+
+            </div>
+
+
+            <label
+                class="block
+                       text-sm
+                       font-semibold
+                       mb-2"
+            >
+                Password
+            </label>
+
+
+            <div class="relative">
+
+                <i
+                    class="fa-solid
+                           fa-lock
+                           absolute
+                           left-4
+                           top-1/2
+                           -translate-y-1/2
+                           text-slate-400"
+                ></i>
+
+
+                <input
+                    id="adminLoginPassword"
+                    class="input
+                           pl-11
+                           pr-12"
+                    type="password"
+                    placeholder="Enter administrator password"
+                    autocomplete="current-password"
+                >
+
+
+                <button
+                    id="toggleAdminPasswordBtn"
+                    type="button"
+                    class="absolute
+                           right-4
+                           top-1/2
+                           -translate-y-1/2
+                           text-slate-400"
+                    aria-label="Show password"
+                >
+
+                    <i
+                        class="fa-regular
+                               fa-eye"
+                    ></i>
+
+                </button>
+
+            </div>
+
+
+            <div
+                class="grid
+                       grid-cols-2
+                       gap-3
+                       mt-5"
+            >
+
+                <button
+                    id="adminBackBtn"
+                    type="button"
+                    class="border
+                           border-slate-200
+                           hover:bg-slate-50
+                           text-slate-700
+                           font-bold
+                           py-3
+                           rounded-xl
+                           transition"
+                >
+
+                    <i
+                        class="fa-solid
+                               fa-arrow-left
+                               mr-2"
+                    ></i>
+
+                    Back
+
+                </button>
+
+
+                <button
+                    id="adminLoginSubmitBtn"
+                    type="button"
+                    class="bg-blue-600
+                           hover:bg-blue-700
+                           text-white
+                           font-bold
+                           py-3
+                           rounded-xl
+                           transition"
+                >
+
+                    Login
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- MESSAGE -->
+
+        <p
+            id="adminLoginMessage"
+            class="text-sm
+                   text-center
+                   min-h-5
+                   mt-4"
+        ></p>
+
+    </div>
+
+</div>
+
+<!-- =========================================================
+     DASHBOARD
+========================================================= -->
+
+<div
+    id="dashboardSection"
+    class="hidden min-h-screen"
+>
+
+    <!-- =====================================================
+         MOBILE SIDEBAR OVERLAY
+    ====================================================== -->
+
+    <div
+        id="sidebarOverlay"
+        class="fixed
+               inset-0
+               bg-slate-950/50
+               z-[60]
+               hidden"
+    ></div>
+
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside
+        id="sidebar"
+        class="sidebar
+               fixed
+               left-0
+               top-0
+               bottom-0
+               w-64
+               text-white
+               z-[70]
+               hidden
+               md:flex
+               flex-col"
+    >
+
+        <!-- BRAND -->
+
+        <div
+            class="h-24
+                   px-5
+                   flex
+                   items-center
+                   gap-3
+                   border-b
+                   border-white/10"
+        >
+
+            <div
+                class="w-12
+                       h-12
+                       bg-white
+                       rounded-xl
+                       p-1
+                       flex
+                       items-center
+                       justify-center
+                       shrink-0"
+            >
+
+                <div class="text-logo-icon">
+                    🎓
+                </div>
+
+            </div>
+
+
+            <div class="brand-text">
+
+                <div
+                    class="font-extrabold
+                           text-lg"
+                >
+                    TechCampus_Hub
+                </div>
+
+                <div
+                    class="text-xs
+                           text-blue-200"
+                >
+                    College Learning Portal
+                </div>
+
+            </div>
+
+
+            <button
+                id="closeSidebarBtn"
+                class="ml-auto
+                       md:hidden
+                       text-white/70
+                       hover:text-white"
+                type="button"
+            >
+
+                <i
+                    class="fa-solid
+                           fa-xmark"
+                ></i>
+
+            </button>
+
+        </div>
+
+
+        <!-- NAVIGATION -->
+
+        <nav
+            class="p-4
+                   space-y-2
+                   flex-1"
+        >
+
+            <!-- Notes -->
+
+            <button
+                data-dashboard-category="notes"
+                data-category="notes"
+                class="nav-item
+                       active
+                       w-full
+                       flex
+                       items-center
+                       gap-4
+                       px-4
+                       py-3
+                       rounded-xl
+                       text-left"
+                type="button"
+            >
+
+                <i
+                    class="fa-regular
+                           fa-file-lines
+                           w-5"
+                ></i>
+
+                <span
+                    class="nav-label
+                           font-semibold"
+                >
+                    Notes
+                </span>
+
+            </button>
+
+
+            <!-- TNP -->
+
+            <button
+                data-dashboard-category="tnp"
+                data-category="tnp"
+                class="nav-item
+                       w-full
+                       flex
+                       items-center
+                       gap-4
+                       px-4
+                       py-3
+                       rounded-xl
+                       text-left"
+                type="button"
+            >
+
+                <i
+                    class="fa-solid
+                           fa-briefcase
+                           w-5"
+                ></i>
+
+                <span
+                    class="nav-label
+                           font-semibold"
+                >
+                    TNP
+                </span>
+
+            </button>
+
+
+            <!-- PYQ -->
+
+            <button
+                data-dashboard-category="pyq"
+                data-category="pyq"
+                class="nav-item
+                       w-full
+                       flex
+                       items-center
+                       gap-4
+                       px-4
+                       py-3
+                       rounded-xl
+                       text-left"
+                type="button"
+            >
+
+                <i
+                    class="fa-solid
+                           fa-book-open
+                           w-5"
+                ></i>
+
+                <span
+                    class="nav-label
+                           font-semibold"
+                >
+                    Previous Year Papers
+                </span>
+
+            </button>
+
+
+            <!-- Timetable -->
+
+            <button
+                data-dashboard-category="timetable"
+                data-category="timetable"
+                class="nav-item
+                       w-full
+                       flex
+                       items-center
+                       gap-4
+                       px-4
+                       py-3
+                       rounded-xl
+                       text-left"
+                type="button"
+            >
+
+                <i
+                    class="fa-regular
+                           fa-calendar-days
+                           w-5"
+                ></i>
+
+                <span
+                    class="nav-label
+                           font-semibold"
+                >
+                    Exam Timetable
+                </span>
+
+            </button>
+
+
+            <!-- Telegram -->
+
+<a
+    id="telegramJoinLink"
+    href="https://t.me/TechCampus_Hub"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="nav-item
+           w-full
+           flex
+           items-center
+           gap-4
+           px-4
+           py-3
+           rounded-xl
+           text-left"
+>
+
+    <i
+        class="fa-brands
+               fa-telegram
+               w-5"
+    ></i>
+
+    <span
+        class="nav-label
+               font-semibold"
+    >
+        Join Telegram
+    </span>
+
+</a>
+
+        </nav>
+
+
+        <!-- LOGOUT -->
+
+        <div
+            class="p-4
+                   border-t
+                   border-white/10"
+        >
+
+            <button
+                id="logoutBtn"
+                class="nav-item
+                       w-full
+                       flex
+                       items-center
+                       gap-4
+                       px-4
+                       py-3
+                       rounded-xl
+                       text-left"
+                type="button"
+            >
+
+                <i
+                    class="fa-solid
+                           fa-right-from-bracket
+                           w-5"
+                ></i>
+
+                <span
+                    class="nav-label
+                           font-semibold"
+                >
+                    Logout
+                </span>
+
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         MAIN AREA
+    ====================================================== -->
+
+    <main
+        class="main-area
+               md:ml-64
+               min-h-screen"
+    >
+
+        <!-- =================================================
+             HEADER
+        ================================================== -->
+
+        <header
+            class="h-24
+                   bg-white
+                   border-b
+                   border-slate-200
+                   flex
+                   items-center
+                   justify-between
+                   px-5
+                   md:px-8
+                   sticky
+                   top-0
+                   z-20"
+        >
+
+            <!-- LEFT HEADER -->
+
+            <div
+                class="flex
+                       items-center
+                       gap-3"
+            >
+
+                <!-- Mobile menu -->
+
+                <button
+                    id="mobileMenuBtn"
+                    class="mobile-nav
+                           w-10
+                           h-10
+                           rounded-xl
+                           bg-slate-100
+                           items-center
+                           justify-center"
+                    type="button"
+                >
+
+                    <i
+                        class="fa-solid
+                               fa-bars"
+                    ></i>
+
+                </button>
+
+
+                <div
+                    class="flex
+                           items-center
+                           gap-3"
+                >
+
+                    <div class="text-logo-icon-small">
+                        🎓
+                    </div>
+
+                    <div
+                        class="hidden
+                               sm:block"
+                    >
+
+                        <h1
+                            class="text-xl
+                                   font-extrabold"
+                        >
+                            TechCampus_Hub
+                        </h1>
+
+                        <p
+                            class="text-sm
+                                   text-slate-500"
+                        >
+                            College Learning Portal
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 PROFILE
+            ================================================== -->
+
+            <div class="relative">
+
+                <button
+                    id="profileButton"
+                    class="flex
+                           items-center
+                           gap-3
+                           px-3
+                           sm:px-4
+                           py-2.5
+                           rounded-xl
+                           border
+                           border-slate-200
+                           bg-white
+                           hover:bg-slate-50
+                           font-semibold
+                           text-slate-700"
+                    type="button"
+                >
+
+                    <span
+                        class="w-9
+                               h-9
+                               rounded-full
+                               bg-blue-600
+                               text-white
+                               flex
+                               items-center
+                               justify-center"
+                    >
+
+                        <i
+                            class="fa-solid
+                                   fa-user"
+                        ></i>
+
+                    </span>
+
+
+                    <span
+                        id="userNameBadge"
+                        class="hidden
+                               sm:inline"
+                    >
+                        Student
+                    </span>
+
+
+                    <i
+                        class="fa-solid
+                               fa-chevron-down
+                               text-xs"
+                    ></i>
+
+                </button>
+
+
+                <!-- PROFILE DROPDOWN -->
+
+                <div
+                    id="adminProfileDropdown"
+                    class="hidden
+                           absolute
+                           right-0
+                           mt-2
+                           w-80
+                           max-w-[calc(100vw-2rem)]
+                           bg-white
+                           rounded-2xl
+                           border
+                           border-slate-200
+                           shadow-xl
+                           p-4
+                           z-50"
+                >
+
+                    <!-- Profile top -->
+
+                    <div
+                        class="flex
+                               items-center
+                               gap-3
+                               pb-3
+                               border-b"
+                    >
+
+                        <div
+                            class="w-11
+                                   h-11
+                                   rounded-full
+                                   bg-blue-100
+                                   text-blue-700
+                                   flex
+                                   items-center
+                                   justify-center"
+                        >
+
+                            <i
+                                class="fa-solid
+                                       fa-user"
+                            ></i>
+
+                        </div>
+
+
+                        <div class="min-w-0">
+
+                            <p
+                                id="adminProfileName"
+                                class="font-bold
+                                       truncate"
+                            >
+                                Student
+                            </p>
+
+                            <p
+                                id="adminProfileEmail"
+                                class="text-xs
+                                       text-slate-500
+                                       truncate"
+                            >
+                                -
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Profile details -->
+
+<div
+    id="studentProfileDetails"
+    class="pt-3
+           space-y-2
+           text-sm"
+>
+
+    <!-- Name -->
+
+    <p>
+
+        <span class="text-slate-500">
+            Name:
+        </span>
+
+        <span
+            id="adminProfileNameDetail"
+            class="font-semibold"
+        >
+            -
+        </span>
+
+    </p>
+
+
+    <!-- Course -->
+
+    <p>
+
+        <span class="text-slate-500">
+            Course:
+        </span>
+
+        <span
+            id="profileCourse"
+            class="font-semibold"
+        >
+            -
+        </span>
+
+    </p>
+
+
+    <!-- Branch -->
+
+    <p>
+
+        <span class="text-slate-500">
+            Branch:
+        </span>
+
+        <span
+            id="profileBranch"
+            class="font-semibold"
+        >
+            -
+        </span>
+
+    </p>
+
+<!-- Year -->
+
+<p>
+    <span class="text-slate-500">
+        Year:
+    </span>
+
+    <span
+        id="profileYear"
+        class="font-semibold"
+    >
+        -
+    </span>
+</p>
+
+
+
+    <!-- Semester -->
+
+    <p>
+
+        <span class="text-slate-500">
+            Semester:
+        </span>
+
+        <span
+            id="profileSemester"
+            class="font-semibold"
+        >
+            -
+        </span>
+
+    </p>
+
+
+    <!-- Administrator Role -->
+
+    <p
+        id="adminRoleDetail"
+        class="hidden"
+    >
+
+        <span class="text-slate-500">
+            Role:
+        </span>
+
+        <span
+            class="font-semibold"
+        >
+            Administrator
+        </span>
+
+    </p>
+
+</div>
+
+                    <!-- Profile actions -->
+
+                    <div
+                        class="pt-3
+                               mt-3
+                               border-t"
+                    >
+
+                        <!-- Student only -->
+
+                        <button
+                            id="deleteProfileBtn"
+                            class="hidden
+                                   w-full
+                                   text-left
+                                   px-3
+                                   py-2
+                                   rounded-lg
+                                   text-red-600
+                                   hover:bg-red-50"
+                            type="button"
+                        >
+
+                            <i
+                                class="fa-regular
+                                       fa-trash-can
+                                       mr-2"
+                            ></i>
+
+                            Delete Profile
+
+                        </button>
+
+
+                        <!-- Logout -->
+
+                        <button
+                            id="profileLogoutBtn"
+                            class="w-full
+                                   text-left
+                                   px-3
+                                   py-2
+                                   mt-1
+                                   rounded-lg
+                                   text-slate-600
+                                   hover:bg-slate-50"
+                            type="button"
+                        >
+
+                            <i
+                                class="fa-solid
+                                       fa-right-from-bracket
+                                       mr-2"
+                            ></i>
+
+                            Logout
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- =================================================
+             PAGE CONTENT
+        ================================================== -->
+
+        <div
+            class="p-5
+                   md:p-8
+                   max-w-[1500px]
+                   mx-auto"
+        >
+
+            <!-- =================================================
+                 WELCOME
+            ================================================== -->
+
+            <section
+                class="card
+                       p-5
+                       md:p-6
+                       mb-5
+                       flex
+                       flex-col
+                       lg:flex-row
+                       lg:items-center
+                       lg:justify-between
+                       gap-5"
+            >
+
+                <div
+                    class="flex
+                           items-center
+                           gap-4"
+                >
+
+                    <div
+                        class="w-14
+                               h-14
+                               rounded-2xl
+                               bg-blue-50
+                               flex
+                               items-center
+                               justify-center
+                               text-blue-700
+                               text-2xl"
+                    >
+
+                        <i
+                            class="fa-solid
+                                   fa-graduation-cap"
+                        ></i>
+
+                    </div>
+
+
+                    <div>
+
+                        <p
+                            class="text-slate-500
+                                   text-sm"
+                        >
+                            Welcome back
+                        </p>
+
+                        <h2
+                            id="profileNameWelcome"
+                            class="text-2xl
+                                   md:text-3xl
+                                   font-extrabold"
+                        >
+                            Student!
+                        </h2>
+
+                        <p
+                            class="text-slate-500
+                                   mt-1"
+                        >
+                            Keep learning,
+                            keep growing.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="flex
+                           items-center
+                           gap-3
+                           bg-slate-50
+                           rounded-2xl
+                           px-4
+                           py-3"
+                >
+
+                    <div class="text-logo-icon">
+                        🎓
+                    </div>
+
+                    <div>
+
+                        <p
+                            class="font-extrabold"
+                        >
+                            Technocrats Institute of
+                            Technology, Bhopal
+                        </p>
+
+                        <p
+                            class="text-sm
+                                   text-slate-500"
+                        >
+
+                            <span
+                                id="welcomeCourse"
+                            >
+                                MCA
+                            </span>
+
+                            <span class="mx-1">
+                                |
+                            </span>
+
+                            Computer Applications
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+
+            <!-- =================================================
+                 QUICK ACCESS
+            ================================================== -->
+
+            <section
+                class="grid
+                       xl:grid-cols-4
+                       md:grid-cols-2
+                       gap-4
+                       mb-5"
+            >
+
+                <!-- Notes -->
+
+                <button
+                    data-dashboard-category="notes"
+                    data-category="notes"
+                    class="resource-card
+                           card
+                           p-5
+                           text-left"
+                    type="button"
+                >
+
+                    <div
+                        class="w-12
+                               h-12
+                               rounded-xl
+                               bg-blue-50
+                               text-blue-600
+                               flex
+                               items-center
+                               justify-center
+                               text-xl"
+                    >
+
+                        <i
+                            class="fa-regular
+                                   fa-file-lines"
+                        ></i>
+
+                    </div>
+
+                    <h3
+                        class="font-extrabold
+                               text-lg
+                               mt-4"
+                    >
+                        Notes
+                    </h3>
+
+                    <p
+                        class="text-sm
+                               text-slate-500
+                               mt-1"
+                    >
+                        Access your study materials
+                    </p>
+
+                    <div
+                        class="text-blue-600
+                               mt-4"
+                    >
+
+                        <i
+                            class="fa-solid
+                                   fa-arrow-right"
+                        ></i>
+
+                    </div>
+
+                </button>
+
+
+                <!-- TNP -->
+
+                <button
+                    data-dashboard-category="tnp"
+                    data-category="tnp"
+                    class="resource-card
+                           card
+                           p-5
+                           text-left"
+                    type="button"
+                >
+
+                    <div
+                        class="w-12
+                               h-12
+                               rounded-xl
+                               bg-emerald-50
+                               text-emerald-600
+                               flex
+                               items-center
+                               justify-center
+                               text-xl"
+                    >
+
+                        <i
+                            class="fa-solid
+                                   fa-briefcase"
+                        ></i>
+
+                    </div>
+
+                    <h3
+                        class="font-extrabold
+                               text-lg
+                               mt-4"
+                    >
+                        TNP
+                    </h3>
+
+                    <p
+                        class="text-sm
+                               text-slate-500
+                               mt-1"
+                    >
+                        Training & placement resources
+                    </p>
+
+                    <div
+                        class="text-emerald-600
+                               mt-4"
+                    >
+
+                        <i
+                            class="fa-solid
+                                   fa-arrow-right"
+                        ></i>
+
+                    </div>
+
+                </button>
+
+
+                <!-- PYQ -->
+
+                <button
+                    data-dashboard-category="pyq"
+                    data-category="pyq"
+                    class="resource-card
+                           card
+                           p-5
+                           text-left"
+                    type="button"
+                >
+
+                    <div
+                        class="w-12
+                               h-12
+                               rounded-xl
+                               bg-violet-50
+                               text-violet-600
+                               flex
+                               items-center
+                               justify-center
+                               text-xl"
+                    >
+
+                        <i
+                            class="fa-solid
+                                   fa-book-open"
+                        ></i>
+
+                    </div>
+
+                    <h3
+                        class="font-extrabold
+                               text-lg
+                               mt-4"
+                    >
+                        PYQ
+                    </h3>
+
+                    <p
+                        class="text-sm
+                               text-slate-500
+                               mt-1"
+                    >
+                        Previous year questions
+                    </p>
+
+                    <div
+                        class="text-violet-600
+                               mt-4"
+                    >
+
+                        <i
+                            class="fa-solid
+                                   fa-arrow-right"
+                        ></i>
+
+                    </div>
+
+                </button>
+
+
+                <!-- Timetable -->
+
+                <button
+                    data-dashboard-category="timetable"
+                    data-category="timetable"
+                    class="resource-card
+                           card
+                           p-5
+                           text-left"
+                    type="button"
+                >
+
+                    <div
+                        class="w-12
+                               h-12
+                               rounded-xl
+                               bg-amber-50
+                               text-amber-600
+                               flex
+                               items-center
+                               justify-center
+                               text-xl"
+                    >
+
+                        <i
+                            class="fa-regular
+                                   fa-calendar-days"
+                        ></i>
+
+                    </div>
+
+                    <h3
+                        class="font-extrabold
+                               text-lg
+                               mt-4"
+                    >
+                        Exam Timetable
+                    </h3>
+
+                    <p
+                        class="text-sm
+                               text-slate-500
+                               mt-1"
+                    >
+                        View your exam schedule
+                    </p>
+
+                    <div
+                        class="text-amber-600
+                               mt-4"
+                    >
+
+                        <i
+                            class="fa-solid
+                                   fa-arrow-right"
+                        ></i>
+
+                    </div>
+
+                </button>
+
+            </section>
+
+
+            <!-- =================================================
+                 RESOURCE SUMMARY
+            ================================================== -->
+
+            <section
+                class="grid
+                       lg:grid-cols-3
+                       gap-5
+                       mb-5"
+            >
+
+                <div
+                    class="card
+                           p-5
+                           lg:col-span-2"
+                >
+
+                    <div
+                        class="flex
+                               items-center
+                               justify-between"
+                    >
+
+                        <div>
+
+                            <p
+                                class="text-sm
+                                       text-slate-500"
+                            >
+                                Resources Found
+                            </p>
+
+                            <p
+                                id="totalNotesCount"
+                                class="text-3xl
+                                       font-extrabold
+                                       mt-1"
+                            >
+                                0
+                            </p>
+
+                        </div>
+
+
+                        <div
+                            class="w-12
+                                   h-12
+                                   rounded-xl
+                                   bg-blue-50
+                                   text-blue-600
+                                   flex
+                                   items-center
+                                   justify-center
+                                   text-xl"
+                        >
+
+                            <i
+                                class="fa-solid
+                                       fa-layer-group"
+                            ></i>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="card p-5">
+
+                    <p
+                        class="text-sm
+                               text-slate-500"
+                    >
+                        Current Category
+                    </p>
+
+                    <p
+                        id="categoryDisplay"
+                        class="text-xl
+                               font-extrabold
+                               mt-1"
+                    >
+                        Notes
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            
+            <!-- =================================================
+                 SEARCH / FILTERS
+            ================================================== -->
+
+            <section id="searchFiltersSection" class="card p-5 md:p-6 mb-5">
+
+                <div
+                    class="flex
+                           items-center
+                           justify-between
+                           mb-5"
+                >
+
+                    <div>
+
+                        <h2
+                            class="text-lg
+                                   font-extrabold"
+                        >
+                            Learning Resources
+                        </h2>
+
+                        <p
+                            class="text-sm
+                                   text-slate-500"
+                        >
+                            Search and filter your
+                            college resources
+                        </p>
+
+                    </div>
+
+
+                    <span
+                        id="currentCategoryLabel"
+                        class="text-sm
+                               font-bold
+                               text-blue-600"
+                    >
+                        Notes
+                    </span>
+
+                </div>
+
+
+                <!-- CATEGORY SELECT -->
+
+                <select
+                    id="searchCategory"
+                    class="hidden"
+                >
+
+                    <option value="notes">
+                        Notes
+                    </option>
+
+                    <option value="tnp">
+                        TNP
+                    </option>
+
+                    <option value="pyq">
+                        Previous Year Papers
+                    </option>
+
+                    <option value="timetable">
+                        Exam Timetable
+                    </option>
+
+                </select>
+
+
+                <!-- =================================================
+                     NOTES FILTERS
+                ================================================== -->
+
+                <div
+                    id="notesSearchFilters"
+                    class="grid
+                           grid-cols-1
+                           md:grid-cols-2
+                           lg:grid-cols-5
+                           gap-4"
+                >
+
+                    <!-- Course -->
+
+                    <div class="filter-group">
+
+                        <label
+                            class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block"
+                        >
+                            Course
+                        </label>
+
+                        <select
+                            id="searchCourse"
+                            class="input"
+                        ></select>
+
+                    </div>
+
+
+                    <!-- Branch -->
+
+                    <div class="filter-group">
+
+                        <label
+                            class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block"
+                        >
+                            Branch
+                        </label>
+
+                        <select
+                            id="searchBranch"
+                            class="input"
+                        ></select>
+
+                    </div>
+
+
+                    <!-- Year -->
+
+                    <div
+                        id="notesYearFilter"
+                        class="filter-group"
+                    >
+
+                        <label
+                            class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block"
+                        >
+                            Year
+                        </label>
+
+                        <select
+                            id="searchYear"
+                            class="input"
+                        ></select>
+
+                    </div>
+
+
+                    <!-- Semester -->
+
+                    <div class="filter-group">
+
+                        <label
+                            class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block"
+                        >
+                            Semester
+                        </label>
+
+                        <select
+                            id="filterSemester"
+                            class="input"
+                        ></select>
+
+                    </div>
+
+
+                    <!-- Subject -->
+
+                    <div class="filter-group">
+
+                        <label
+                            class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block"
+                        >
+                            Subject
+                        </label>
+
+                        <select
+                            id="searchSubject"
+                            class="input"
+                        >
+
+                            <option value="ALL">
+                                All Subjects
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     TNP FILTERS
+                ================================================== -->
+
+                <div
+                    id="tnpSearchFilters"
+                    class="hidden
+                           grid
+                           grid-cols-1
+                           md:grid-cols-2
+                           gap-4"
+                >
+
+                    <!-- Compatibility -->
+
+                    <input
+                        id="tnpSearchCourse"
+                        type="hidden"
+                    >
+
+
+                    <!-- Subject -->
+
+                    <div class="filter-group">
+
+                        <label
+                            class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block"
+                        >
+                            Subject
+                        </label>
+
+                        <select
+                            id="tnpSearchSubject"
+                            class="input"
+                        >
+
+                            <option value="ALL">
+                                All Subjects
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     PYQ FILTERS
+                ================================================== -->
+
+                <div
+                    id="pyqSearchFilters"
+                    class="hidden
+                           grid
+                           grid-cols-1
+                           md:grid-cols-2
+                           lg:grid-cols-4
+                           gap-4"
+                >
+
+                    <!-- Course -->
+
+                    <div class="filter-group">
+
+                        <label
+                            class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block"
+                        >
+                            Course
+                        </label>
+
+                        <select
+                            id="pyqSearchCourse"
+                            class="input"
+                        ></select>
+
+                    </div>
+
+
+                    <!-- Previous Year -->
+
+                    <div class="filter-group">
+
+                        <label
+                            class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block"
+                        >
+                            Previous Year
+                        </label>
+
+                        <select
+                            id="pyqSearchYear"
+                            class="input"
+                        ></select>
+
+                    </div>
+
+
+                    <!-- Semester -->
+
+                    <div class="filter-group">
+
+                        <label
+                            class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block"
+                        >
+                            Semester
+                        </label>
+
+                        <select
+                            id="pyqSearchSemester"
+                            class="input"
+                        ></select>
+
+                    </div>
+
+
+                    <!-- Subject -->
+
+                    <div class="filter-group">
+
+                        <label
+                            class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block"
+                        >
+                            Subject
+                        </label>
+
+                        <select
+                            id="pyqSearchSubject"
+                            class="input"
+                        >
+
+                            <option value="ALL">
+                                All Subjects
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     TIMETABLE FILTERS
+                ================================================== -->
+
+                <div
+                    id="timetableSearchFilters"
+                    class="hidden
+                           grid
+                           grid-cols-1
+                           md:grid-cols-2
+                           lg:grid-cols-4
+                           gap-4"
+                >
+
+                    <!-- Course -->
+
+                    <div class="filter-group">
+
+                        <label
+                            class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block"
+                        >
+                            Course
+                        </label>
+
+                        <select
+                            id="timetableSearchCourse"
+                            class="input"
+                        ></select>
+
+                    </div>
+
+
+                    <!-- Semester -->
+
+                    <div class="filter-group">
+
+                        <label
+                            class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block"
+                        >
+                            Semester
+                        </label>
+
+                        <select
+                            id="timetableSearchSemester"
+                            class="input"
+                        ></select>
+
+                    </div>
+
+
+                    <!-- Exam Year -->
+
+                    <div class="filter-group">
+
+                        <label
+                            class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block"
+                        >
+                            Exam Year
+                        </label>
+
+                        <select
+                            id="timetableSearchYear"
+                            class="input"
+                        ></select>
+
+                    </div>
+
+
+                    <!-- Subject -->
+
+                    <div class="filter-group">
+
+                        <label
+                            class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block"
+                        >
+                            Subject
+                        </label>
+
+                        <select
+                            id="timetableSearchSubject"
+                            class="input"
+                        >
+
+                            <option value="ALL">
+                                All Subjects
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     GLOBAL SEARCH
+                ================================================== -->
+
+                <div
+                    class="mt-5
+                           relative"
+                >
+
+                    <i
+                        class="fa-solid
+                               fa-magnifying-glass
+                               absolute
+                               left-4
+                               top-1/2
+                               -translate-y-1/2
+                               text-slate-400"
+                    ></i>
+
+                    <input
+                        id="searchNotes"
+                        class="input pl-11"
+                        type="search"
+                        placeholder="Search by subject, topic, or keyword..."
+                    >
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 ADMIN PANEL
+            ================================================== -->
+
+            <section
+                id="adminPanel"
+                class="hidden
+                       card
+                       p-6
+                       mb-5"
+            >
+
+                <div
+                    class="flex
+                           flex-col
+                           md:flex-row
+                           md:items-center
+                           md:justify-between
+                           gap-4
+                           mb-5"
+                >
+
+                    <div>
+
+                        <h2
+                            class="text-xl
+                                   font-extrabold"
+                        >
+                            Administrator Panel
+                        </h2>
+
+                        <p
+                            class="text-sm
+                                   text-slate-500"
+                        >
+                            Upload and manage
+                            college resources
+                        </p>
+
+                    </div>
+
+
+                    <select
+                        id="adminUploadType"
+                        class="input
+                               max-w-xs"
+                    >
+
+                        <option value="notes">
+                            Notes
+                        </option>
+
+                        <option value="tnp">
+                            TNP
+                        </option>
+
+                        <option value="pyq">
+                            PYQ
+                        </option>
+
+                        <option value="timetable">
+                            Exam Timetable
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- =================================================
+                     NOTES UPLOAD
+                ================================================== -->
+
+                <form
+                    id="uploadNotesForm"
+                    class="grid
+                           md:grid-cols-2
+                           lg:grid-cols-4
+                           gap-4"
+                >
+
+                    <input
+                        id="noteSubject"
+                        class="input"
+                        placeholder="Subject"
+                        required
+                    >
+
+                    <input
+                        id="noteTitle"
+                        class="input"
+                        placeholder="Title / Topic"
+                    >
+
+                    <select
+                        id="noteCourse"
+                        class="input"
+                        required
+                    ></select>
+
+                    <select
+                        id="noteBranch"
+                        class="input"
+                        required
+                    ></select>
+
+                    <select
+                        id="noteYear"
+                        class="input"
+                        required
+                    ></select>
+
+                    <select
+                        id="noteSemester"
+                        class="input"
+                        required
+                    ></select>
+
+                    <input
+                        id="noteFile"
+                        class="input
+                               lg:col-span-2"
+                        type="file"
+                        accept="application/pdf"
+                        required
+                    >
+
+                    <button
+                        type="submit"
+                        class="bg-blue-600
+                               hover:bg-blue-700
+                               text-white
+                               rounded-xl
+                               font-bold
+                               py-3
+                               transition"
+                    >
+                        Upload Notes
+                    </button>
+
+                </form>
+
+
+                <!-- =================================================
+                     TNP UPLOAD
+                ================================================== -->
+
+                <form
+                    id="uploadTnpForm"
+                    class="hidden
+                           grid
+                           md:grid-cols-3
+                           gap-4"
+                >
+
+                    <input
+                        id="tnpSubject"
+                        class="input"
+                        placeholder="Subject"
+                        required
+                    >
+
+                    <input
+                        id="tnpTitle"
+                        class="input"
+                        placeholder="Title / Topic"
+                    >
+
+                    <input
+                        id="tnpFile"
+                        class="input"
+                        type="file"
+                        accept="application/pdf"
+                        required
+                    >
+
+                    <button
+                        type="submit"
+                        class="bg-blue-600
+                               hover:bg-blue-700
+                               text-white
+                               rounded-xl
+                               font-bold
+                               py-3
+                               md:col-span-3"
+                    >
+                        Upload TNP
+                    </button>
+
+                </form>
+
+
+                <!-- =================================================
+                     PYQ UPLOAD
+                ================================================== -->
+
+                <form
+                    id="uploadPyqForm"
+                    class="hidden
+                           grid
+                           md:grid-cols-2
+                           lg:grid-cols-4
+                           gap-4"
+                >
+
+                    <select
+                        id="pyqCourse"
+                        class="input"
+                        required
+                    ></select>
+
+                    <select
+                        id="pyqYear"
+                        class="input"
+                        required
+                    ></select>
+
+                    <select
+                        id="pyqSemester"
+                        class="input"
+                        required
+                    ></select>
+
+                    <input
+                        id="pyqSubject"
+                        class="input"
+                        placeholder="Subject"
+                        required
+                    >
+
+                    <input
+                        id="pyqTitle"
+                        class="input"
+                        placeholder="Title"
+                    >
+
+                    <input
+                        id="pyqFile"
+                        class="input
+                               lg:col-span-2"
+                        type="file"
+                        accept="application/pdf"
+                        required
+                    >
+
+                    <button
+                        type="submit"
+                        class="bg-blue-600
+                               hover:bg-blue-700
+                               text-white
+                               rounded-xl
+                               font-bold
+                               py-3"
+                    >
+                        Upload PYQ
+                    </button>
+
+                </form>
+
+
+                <!-- =================================================
+                     TIMETABLE UPLOAD
+                ================================================== -->
+
+                <form
+                    id="uploadTimetableForm"
+                    class="hidden
+                           grid
+                           md:grid-cols-2
+                           lg:grid-cols-4
+                           gap-4"
+                >
+
+                    <select
+                        id="timetableCourse"
+                        class="input"
+                        required
+                    ></select>
+
+                    <select
+                        id="timetableSemester"
+                        class="input"
+                        required
+                    ></select>
+
+                    <select
+                        id="timetableExamYear"
+                        class="input"
+                        required
+                    ></select>
+
+                    <input
+                        id="timetableDate"
+                        class="input"
+                        type="date"
+                        required
+                    >
+
+                    <input
+                        id="timetableSubject"
+                        class="input"
+                        placeholder="Subject"
+                        required
+                    >
+
+                    <input
+                        id="timetableStartTime"
+                        class="input"
+                        type="time"
+                    >
+
+                    <input
+                        id="timetableEndTime"
+                        class="input"
+                        type="time"
+                    >
+
+                    <select
+                        id="timetableExamType"
+                        class="input"
+                    >
+
+                        <option value="Regular">
+                            Regular
+                        </option>
+
+                        <option value="Practical">
+                            Practical
+                        </option>
+
+                        <option value="Supplementary">
+                            Supplementary
+                        </option>
+
+                    </select>
+
+                    <input
+                        id="timetableFile"
+                        class="input
+                               lg:col-span-2"
+                        type="file"
+                        accept="application/pdf"
+                    >
+
+                    <button
+                        type="submit"
+                        class="bg-blue-600
+                               hover:bg-blue-700
+                               text-white
+                               rounded-xl
+                               font-bold
+                               py-3"
+                    >
+                        Upload Timetable
+                    </button>
+
+                </form>
+
+                <!-- =================================================
+     COMMUNITY SETTINGS
+================================================== -->
+
+<div
+    class="mt-8
+           pt-6
+           border-t
+           border-slate-200"
+>
+
+    <div class="mb-4">
+
+        <h3
+            class="text-lg
+                   font-extrabold
+                   text-slate-900"
+        >
+            Community Settings
+        </h3>
+
+        <p
+            class="text-sm
+                   text-slate-500
+                   mt-1"
+        >
+            Update the Telegram link for students.
+        </p>
+
+    </div>
+
+
+    <div
+        class="grid
+               md:grid-cols-[1fr_auto]
+               gap-3
+               items-end"
+    >
+
+        <!-- Telegram Link -->
+
+        <div>
+
+            <label
+                for="telegramLinkInput"
+                class="block
+                       text-sm
+                       font-semibold
+                       mb-2"
+            >
+                Telegram Link
+            </label>
+
+            <input
+                id="telegramLinkInput"
+                class="input"
+                type="url"
+                value="https://t.me/TechCampus_Hub"
+                placeholder="https://t.me/TechCampus_Hub"
+                autocomplete="off"
+            >
+
+        </div>
+
+
+        <!-- Update Button -->
+
+        <button
+            id="updateTelegramLinkBtn"
+            type="button"
+            class="bg-blue-600
+                   hover:bg-blue-700
+                   text-white
+                   font-bold
+                   px-6
+                   py-3
+                   rounded-xl
+                   transition"
+        >
+
+            <i
+                class="fa-solid
+                       fa-rotate
+                       mr-2"
+            ></i>
+
+            Update Link
+
+        </button>
+
+    </div>
+
+
+    <!-- Message -->
+
+    <p
+        id="telegramSettingsMessage"
+        class="text-sm
+               mt-3
+               min-h-5"
+    ></p>
+
+</div>
+
+            </section>
+
+
+            <!-- =================================================
+                 RESOURCE LIST
+            ================================================== -->
+
+            <section
+                class="card
+                       p-5
+                       md:p-6
+                       mb-5"
+            >
+
+                <div
+                    class="flex
+                           items-center
+                           justify-between
+                           mb-4"
+                >
+
+                    <div>
+
+                        <h2
+                            class="text-xl
+                                   font-extrabold"
+                            id="resourceListTitle"
+                        >
+                            Notes
+                        </h2>
+
+                        <p
+                            class="text-sm
+                                   text-slate-500
+                                   mt-1"
+                        >
+                            Available college resources
+                        </p>
+
+                    </div>
+
+
+                    <i
+                        class="fa-solid
+                               fa-folder-open
+                               text-emerald-600
+                               text-xl"
+                    ></i>
+
+                </div>
+
+
+                <div
+                    id="notesContainer"
+                    class="grid
+                           md:grid-cols-2
+                           xl:grid-cols-3
+                           gap-4"
+                ></div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<!-- =========================================================
+     DELETE PROFILE MODAL
+========================================================= -->
+
+<div
+    id="deleteProfileModal"
+    class="hidden
+           fixed
+           inset-0
+           z-[100]
+           bg-slate-950/50
+           items-center
+           justify-center
+           p-4"
+>
+
+    <div
+        class="bg-white
+               rounded-2xl
+               w-full
+               max-w-md
+               p-6
+               shadow-2xl"
+    >
+
+        <div
+            class="w-12
+                   h-12
+                   rounded-xl
+                   bg-red-50
+                   text-red-600
+                   flex
+                   items-center
+                   justify-center
+                   text-xl"
+        >
+
+            <i
+                class="fa-regular
+                       fa-trash-can"
+            ></i>
+
+        </div>
+
+
+        <h3
+            class="text-xl
+                   font-extrabold
+                   mt-4"
+        >
+            Delete Profile
+        </h3>
+
+
+        <p
+            id="deleteProfileMessage"
+            class="text-slate-500
+                   mt-2"
+        >
+            Are you sure you want to delete your profile?
+        </p>
+
+
+        <div
+            class="flex
+                   justify-end
+                   gap-3
+                   mt-6"
+        >
+
+            <button
+                id="cancelDeleteProfileBtn"
+                type="button"
+                class="px-5
+                       py-2.5
+                       rounded-xl
+                       border
+                       font-semibold
+                       hover:bg-slate-50"
+            >
+                Cancel
+            </button>
+
+
+            <button
+                id="confirmDeleteProfileBtn"
+                type="button"
+                class="px-5
+                       py-2.5
+                       rounded-xl
+                       bg-red-600
+                       hover:bg-red-700
+                       text-white
+                       font-semibold"
+            >
+                Delete
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     EDIT RESOURCE MODAL
+========================================================= -->
+<!-- =========================================================
+     EDIT RESOURCE MODAL
+========================================================= -->
+
+<div
+    id="editResourceModal"
+    class="hidden fixed inset-0 z-[110]
+           bg-slate-950/50
+           items-center justify-center p-4"
+>
+
+    <div
+        class="bg-white rounded-2xl
+               w-full max-w-2xl
+               p-6 shadow-2xl
+               max-h-[90vh]
+               overflow-y-auto"
+    >
+
+        <!-- HEADER -->
+        <div
+            class="flex items-center
+                   justify-between mb-5"
+        >
+
+            <div>
+
+                <p
+                    class="text-sm
+                           text-blue-600
+                           font-semibold"
+                >
+                    Administrator
+                </p>
+
+                <h3
+                    class="text-2xl
+                           font-extrabold"
+                >
+                    Edit Resource
+                </h3>
+
+            </div>
+
+            <button
+                id="closeEditResourceBtn"
+                type="button"
+                class="w-10 h-10
+                       rounded-xl
+                       bg-slate-100
+                       hover:bg-slate-200
+                       flex items-center
+                       justify-center"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <!-- FORM -->
+        <form
+            id="editResourceForm"
+            class="space-y-4"
+        >
+
+            <input
+                id="editResourceId"
+                type="hidden"
+            >
+
+            <input
+                id="editResourceCategory"
+                type="hidden"
+            >
+
+
+            <!-- SUBJECT + TITLE -->
+            <div
+                class="grid md:grid-cols-2
+                       gap-4"
+            >
+
+                <!-- SUBJECT -->
+                <div class="edit-field-group">
+
+                    <label
+                        class="block text-sm
+                               font-semibold mb-2"
+                    >
+                        Subject
+                    </label>
+
+                    <input
+                        id="editResourceSubject"
+                        class="input"
+                        type="text"
+                    >
+
+                </div>
+
+
+                <!-- TITLE -->
+                <div class="edit-field-group">
+
+                    <label
+                        class="block text-sm
+                               font-semibold mb-2"
+                    >
+                        Title / Topic
+                    </label>
+
+                    <input
+                        id="editResourceTitle"
+                        class="input"
+                        type="text"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- COURSE + BRANCH -->
+            <div
+                class="grid md:grid-cols-2
+                       gap-4"
+            >
+
+                <!-- COURSE -->
+                <div class="edit-field-group">
+
+                    <label
+                        class="block text-sm
+                               font-semibold mb-2"
+                    >
+                        Course
+                    </label>
+
+                    <select
+                        id="editResourceCourse"
+                        class="input"
+                    >
+
+                        <option value="">
+                            Select Course
+                        </option>
+
+                        <option value="MCA">
+                            MCA
+                        </option>
+
+                        <option value="B.Tech">
+                            B.Tech
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- BRANCH -->
+                <div class="edit-field-group">
+
+                    <label
+                        class="block text-sm
+                               font-semibold mb-2"
+                    >
+                        Branch
+                    </label>
+
+                    <select
+                        id="editResourceBranch"
+                        class="input"
+                    >
+
+                        <option value="">
+                            Select Branch
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <!-- YEAR + SEMESTER + EXAM YEAR -->
+            <div
+                class="grid md:grid-cols-3
+                       gap-4"
+            >
+
+                <!-- YEAR -->
+                <div
+                    id="editResourceYearGroup"
+                    class="edit-field-group"
+                >
+
+                    <label
+                        class="block text-sm
+                               font-semibold mb-2"
+                    >
+                        Year
+                    </label>
+
+                    <select
+                        id="editResourceYear"
+                        class="input"
+                    >
+
+                        <option value="">
+                            Select Year
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- SEMESTER -->
+                <div class="edit-field-group">
+
+                    <label
+                        class="block text-sm
+                               font-semibold mb-2"
+                    >
+                        Semester
+                    </label>
+
+                    <select
+                        id="editResourceSemester"
+                        class="input"
+                    >
+
+                        <option value="">
+                            Select Semester
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- EXAM YEAR -->
+                <div
+                    id="editResourceExamYearGroup"
+                    class="edit-field-group"
+                >
+
+                    <label
+                        class="block text-sm
+                               font-semibold mb-2"
+                    >
+                        Exam Year
+                    </label>
+
+                    <select
+                        id="editResourceExamYear"
+                        class="input"
+                    >
+
+                        <option value="">
+                            Select Exam Year
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 TIMETABLE ONLY FIELDS
+            ================================================== -->
+
+            <!-- EXAM DATE -->
+            <div
+                id="editResourceDateGroup"
+                class="edit-field-group hidden"
+            >
+
+                <label
+                    class="block text-sm
+                           font-semibold mb-2"
+                >
+                    Exam Date
+                </label>
+
+                <input
+                    id="editResourceDate"
+                    class="input"
+                    type="date"
+                >
+
+            </div>
+
+
+            <!-- START TIME + END TIME -->
+            <div
+                id="editResourceTimeGroup"
+                class="hidden grid md:grid-cols-2
+                       gap-4"
+            >
+
+                <div class="edit-field-group">
+
+                    <label
+                        class="block text-sm
+                               font-semibold mb-2"
+                    >
+                        Start Time
+                    </label>
+
+                    <input
+                        id="editResourceStartTime"
+                        class="input"
+                        type="time"
+                    >
+
+                </div>
+
+
+                <div class="edit-field-group">
+
+                    <label
+                        class="block text-sm
+                               font-semibold mb-2"
+                    >
+                        End Time
+                    </label>
+
+                    <input
+                        id="editResourceEndTime"
+                        class="input"
+                        type="time"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- EXAM TYPE -->
+            <div
+                id="editResourceExamTypeGroup"
+                class="edit-field-group hidden"
+            >
+
+                <label
+                    class="block text-sm
+                           font-semibold mb-2"
+                >
+                    Exam Type
+                </label>
+
+                <select
+                    id="editResourceExamType"
+                    class="input"
+                >
+
+                    <option value="Regular">
+                        Regular
+                    </option>
+
+                    <option value="Practical">
+                        Practical
+                    </option>
+
+                    <option value="Supplementary">
+                        Supplementary
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- REPLACE PDF -->
+            <div class="edit-field-group">
+
+                <label
+                    class="block text-sm
+                           font-semibold mb-2"
+                >
+                    Replace PDF
+
+                    <span
+                        class="font-normal
+                               text-slate-400"
+                    >
+                        (optional)
+                    </span>
+
+                </label>
+
+                <input
+                    id="editResourceFile"
+                    class="input"
+                    type="file"
+                    accept="application/pdf"
+                >
+
+                <p
+                    class="text-xs
+                           text-slate-500 mt-2"
+                >
+                    Leave empty if you only want
+                    to update the information.
+                </p>
+
+            </div>
+
+
+            <!-- BUTTONS -->
+            <div
+                class="flex justify-end
+                       gap-3 pt-4
+                       border-t"
+            >
+
+                <button
+                    id="cancelEditResourceBtn"
+                    type="button"
+                    class="px-5 py-2.5
+                           rounded-xl
+                           border
+                           font-semibold
+                           hover:bg-slate-50"
+                >
+                    Cancel
+                </button>
+
+
+                <button
+                    id="saveEditResourceBtn"
+                    type="submit"
+                    class="px-5 py-2.5
+                           rounded-xl
+                           bg-blue-600
+                           hover:bg-blue-700
+                           text-white
+                           font-semibold"
+                >
+                    Save Changes
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     MAIN APPLICATION MODULE
+========================================================= -->
+
+<script
+    type="module"
+    src="./js/app.js"
+></script>
+
+
+<!-- =========================================================
+     SMALL NON-MODULE UI HELPERS
+========================================================= -->
+
+<script>
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+
+            /* =================================================
+               PROFILE DROPDOWN
+            ================================================= */
+
+            const profileButton =
+                document.getElementById(
+                    "profileButton"
+                );
+
+            const profileDropdown =
+                document.getElementById(
+                    "adminProfileDropdown"
+                );
+
+            if (
+                profileButton &&
+                profileDropdown
+            ) {
+
+                profileButton.addEventListener(
+                    "click",
+                    (event) => {
+
+                        event.stopPropagation();
+
+                        profileDropdown.classList.toggle(
+                            "hidden"
+                        );
+
+                    }
+                );
+
+
+                document.addEventListener(
+                    "click",
+                    (event) => {
+
+                        if (
+                            !profileDropdown.contains(
+                                event.target
+                            ) &&
+                            !profileButton.contains(
+                                event.target
+                            )
+                        ) {
+
+                            profileDropdown.classList.add(
+                                "hidden"
+                            );
+
+                        }
+
+                    }
+                );
+
+            }
+
+
+            /* =================================================
+               PROFILE LOGOUT
+            ================================================= */
+
+            const profileLogout =
+                document.getElementById(
+                    "profileLogoutBtn"
+                );
+
+            const mainLogout =
+                document.getElementById(
+                    "logoutBtn"
+                );
+
+            if (
+                profileLogout &&
+                mainLogout
+            ) {
+
+                profileLogout.addEventListener(
+                    "click",
+                    () => {
+
+                        mainLogout.click();
+
+                    }
+                );
+
+            }
+
+
+            /* =================================================
+               EDIT MODAL CLOSE
+            ================================================= */
+
+            const editModal =
+                document.getElementById(
+                    "editResourceModal"
+                );
+
+            const closeEdit =
+                document.getElementById(
+                    "closeEditResourceBtn"
+                );
+
+            const cancelEdit =
+                document.getElementById(
+                    "cancelEditResourceBtn"
+                );
+
+
+            function closeEditModal() {
+
+                if (!editModal) {
+                    return;
+                }
+
+                editModal.classList.add(
+                    "hidden"
+                );
+
+                editModal.classList.remove(
+                    "flex"
+                );
+
+            }
+
+
+            closeEdit?.addEventListener(
+                "click",
+                closeEditModal
+            );
+
+
+            cancelEdit?.addEventListener(
+                "click",
+                closeEditModal
+            );
+
+
+            /* =================================================
+               CLOSE EDIT MODAL ON BACKDROP
+            ================================================= */
+
+            editModal?.addEventListener(
+                "click",
+                (event) => {
+
+                    if (
+                        event.target ===
+                        editModal
+                    ) {
+
+                        closeEditModal();
+
+                    }
+
+                }
+            );
+
+
+            /* =================================================
+               DELETE MODAL BACKDROP
+            ================================================= */
+
+            const deleteModal =
+                document.getElementById(
+                    "deleteProfileModal"
+                );
+
+
+            deleteModal?.addEventListener(
+                "click",
+                (event) => {
+
+                    if (
+                        event.target ===
+                        deleteModal
+                    ) {
+
+                        document
+                            .getElementById(
+                                "cancelDeleteProfileBtn"
+                            )
+                            ?.click();
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+</script>
+
+</body>
+</html>
