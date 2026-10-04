@@ -1295,60 +1295,29 @@ export function updateStudentRoleUI() {
 
 }
 
-
-
-
-
 // =====================================================
-
 // Update Upload Panel
-
 // =====================================================
-
-
 
 export function updateUploadPanel() {
-
     if (isAdminRole()) {
-
         updateAdminUploadUI();
-
     } else {
-
         hideAdminPanel();
-
     }
-
 }
 
-
-
-
-
 // =====================================================
-
 // Profile Dropdown
-
 // =====================================================
-
-
 
 export function updateProfileDropdown() {
-
     const dropdown =
-
         $("adminProfileDropdown");
-
-
-
     if (!dropdown) {
-
         return;
 
     }
-
-
-
     const profileButton =
 
         $("profileButton");
@@ -2812,17 +2781,9 @@ export async function handleCategoryChange(
 
 }
 
-
-
-
-
 // =====================================================
-
 // Initialize Profile UI
-
 // =====================================================
-
-
 
 export function initializeProfileUI() {
 
@@ -2832,17 +2793,9 @@ export function initializeProfileUI() {
 
 }
 
-
-
-
-
 // =====================================================
-
 // Compatibility Export
-
 // =====================================================
-
-
 
 export function updateDeleteProfileButton() {
 

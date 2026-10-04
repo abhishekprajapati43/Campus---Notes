@@ -3331,106 +3331,97 @@
 
                 </form>
 
+<!-- =================================================
+     TIMETABLE UPLOAD
+================================================== -->
+<form
+    id="uploadTimetableForm"
+    class="hidden grid md:grid-cols-2 lg:grid-cols-4 gap-4"
+>
+    <!-- Course -->
+    <select
+        id="timetableCourse"
+        class="input"
+        required
+    >
+        <option value="" disabled selected>
+            Select Course
+        </option>
+    </select>
 
-                <!-- =================================================
-                     TIMETABLE UPLOAD
-                ================================================== -->
+    <!-- Semester -->
+    <select
+        id="timetableSemester"
+        class="input"
+        required
+    >
+        <option value="" disabled selected>
+            Select Semester
+        </option>
+    </select>
 
-                <form
-                    id="uploadTimetableForm"
-                    class="hidden
-                           grid
-                           md:grid-cols-2
-                           lg:grid-cols-4
-                           gap-4"
-                >
+    <!-- Exam Year -->
+    <input
+        id="timetableExamYear"
+        class="input"
+        type="number"
+        placeholder="Exam Year"
+        min="2000"
+        max="2100"
+        required
+    >
 
-                    <select
-                        id="timetableCourse"
-                        class="input"
-                        required
-                    ></select>
+    <!-- Exam Type -->
+    <select
+        id="timetableExamType"
+        class="input"
+        required
+    >
+        <option value="" disabled selected>
+            Select Exam Type
+        </option>
 
-                    <select
-                        id="timetableSemester"
-                        class="input"
-                        required
-                    ></select>
+        <option value="Semester Exam">
+            Semester Exam
+        </option>
 
-                    <select
-                        id="timetableExamYear"
-                        class="input"
-                        required
-                    ></select>
+        <option value="Practical">
+            Practical
+        </option>
 
-                    <input
-                        id="timetableDate"
-                        class="input"
-                        type="date"
-                        required
-                    >
+        <option value="Placement Exam">
+            Placement Exam
+        </option>
+    </select>
 
-                    <input
-                        id="timetableSubject"
-                        class="input"
-                        placeholder="Subject"
-                        required
-                    >
+    <!-- Timetable File -->
+    <div class="md:col-span-2 lg:col-span-4">
+        <label
+            for="timetableFile"
+            class="block text-sm font-semibold mb-2"
+        >
+            Upload Timetable File
+        </label>
 
-                    <input
-                        id="timetableStartTime"
-                        class="input"
-                        type="time"
-                    >
+        <input
+            id="timetableFile"
+            type="file"
+            class="input w-full"
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            required
+        >
+    </div>
 
-                    <input
-                        id="timetableEndTime"
-                        class="input"
-                        type="time"
-                    >
+    <!-- Upload Button -->
+    <button
+        type="submit"
+        class="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold py-3 lg:col-span-4"
+    >
+        Upload Timetable
+    </button>
+</form>
 
-                    <select
-                        id="timetableExamType"
-                        class="input"
-                    >
-
-                        <option value="Regular">
-                            Regular
-                        </option>
-
-                        <option value="Practical">
-                            Practical
-                        </option>
-
-                        <option value="Supplementary">
-                            Supplementary
-                        </option>
-
-                    </select>
-
-                    <input
-                        id="timetableFile"
-                        class="input
-                               lg:col-span-2"
-                        type="file"
-                        accept="application/pdf"
-                    >
-
-                    <button
-                        type="submit"
-                        class="bg-blue-600
-                               hover:bg-blue-700
-                               text-white
-                               rounded-xl
-                               font-bold
-                               py-3"
-                    >
-                        Upload Timetable
-                    </button>
-
-                </form>
-
-                <!-- =================================================
+<!-- =================================================
      COMMUNITY SETTINGS
 ================================================== -->
 
@@ -3945,15 +3936,11 @@
                         id="editResourceSemester"
                         class="input"
                     >
-
                         <option value="">
                             Select Semester
                         </option>
-
                     </select>
-
                 </div>
-
 
                 <!-- EXAM YEAR -->
                 <div
@@ -3968,16 +3955,14 @@
                         Exam Year
                     </label>
 
-                    <select
-                        id="editResourceExamYear"
-                        class="input"
-                    >
-
-                        <option value="">
-                            Select Exam Year
-                        </option>
-
-                    </select>
+                   <input
+    id="editResourceExamYear"
+    class="input"
+    type="number"
+    placeholder="Exam Year"
+    min="2000"
+    max="2100"
+>
 
                 </div>
 
@@ -4073,17 +4058,21 @@
                     class="input"
                 >
 
-                    <option value="Regular">
-                        Regular
-                    </option>
+                    <option value="">
+    Select Exam Type
+</option>
 
-                    <option value="Practical">
-                        Practical
-                    </option>
+<option value="Semester Exam">
+    Semester Exam
+</option>
 
-                    <option value="Supplementary">
-                        Supplementary
-                    </option>
+<option value="Practical">
+    Practical
+</option>
+
+<option value="Placement Exam">
+    Placement Exam
+</option>
 
                 </select>
 

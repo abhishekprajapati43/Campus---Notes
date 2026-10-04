@@ -224,80 +224,35 @@ export async function loadPyq() {
     return pyqItems;
 
 }
-
-
-
-
-
 // =====================================================
-
-// Load Exam Timetable
-
+// Load Timetable
 // =====================================================
-
-
 
 export async function loadTimetable() {
 
-    const {
-
-        data,
-
-        error
-
-    } = await supabase
-
+    const { data, error } = await supabase
         .from("timetable")
-
         .select("*")
-
-        .order("exam_date", {
-
-            ascending: true
-
-        })
-
-        .order("start_time", {
-
-            ascending: true
-
+        .order("created_at", {
+            ascending: false
         });
-
-
 
     if (error) {
 
         console.error(
-
             "Timetable loading error:",
-
             error
-
         );
-
-
 
         timetableItems = [];
 
-
-
         return timetableItems;
-
     }
-
-
 
     timetableItems = data || [];
 
-
-
     return timetableItems;
-
 }
-
-
-
-
 
 // =====================================================
 

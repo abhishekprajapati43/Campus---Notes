@@ -1770,18 +1770,9 @@ export function updateCategoryLabel(
         "Resources";
 
 }
-
-
-
-
-
 // =====================================================
-
 // Render Everything
-
 // =====================================================
-
-
 
 export async function renderAll(
 

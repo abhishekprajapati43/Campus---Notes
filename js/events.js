@@ -1269,11 +1269,18 @@ async function handleCategoryButtonClick(event) {
 // =====================================================
 // ADMIN UPLOAD TYPE
 // =====================================================
-
 function handleAdminUploadTypeChange() {
+
+    const type =
+        $("adminUploadType")?.value;
+
+    console.log(
+        "ADMIN UPLOAD TYPE:",
+        type
+    );
+
     updateUploadPanel();
 }
-
 // =====================================================
 // DATA REFRESH
 // =====================================================
