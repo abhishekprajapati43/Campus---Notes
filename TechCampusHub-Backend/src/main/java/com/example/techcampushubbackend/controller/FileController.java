@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -37,5 +38,17 @@ public class FileController {
         String safeFolder = folder.replaceAll("[^a-zA-Z0-9_\\-]", "");
         return ResponseEntity.ok(ApiResponse.ok(
                 cloudinaryService.upload(file, safeFolder.isBlank() ? "misc" : safeFolder)));
+    }
+
+    @Operation(summary = "Delete a Cloudinary asset by public id (admin)",
+            description = "Replaces the Supabase 'delete-cloudinary' edge function. "
+                    + "Deletion is best-effort: a missing asset is not an error.")
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping
+    public ResponseEntity<ApiResponse<Void>> delete(
+            @RequestParam("publicId") String publicId,
+            @RequestParam(value = "resourceType", required = false, defaultValue = "raw") String resourceType) {
+        cloudinaryService.delete(publicId.trim(), resourceType);
+        return ResponseEntity.ok(ApiResponse.ok("File deleted", null));
     }
 }

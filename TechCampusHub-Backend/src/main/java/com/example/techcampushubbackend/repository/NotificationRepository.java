@@ -17,4 +17,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findVisibleTo(@Param("userId") Long userId);
 
     List<Notification> findAllByOrderByCreatedAtDesc();
+
+    long deleteByTargetUserId(Long userId);
 }

@@ -51,6 +51,18 @@ public class Course extends Auditable {
     @Column(name = "validity_days", nullable = false)
     private int validityDays;
 
+    /** URL-friendly identifier used in shareable course links. */
+    @Column(length = 80)
+    private String slug;
+
+    /** Selling points shown on the course card, one per line. */
+    @Column(columnDefinition = "TEXT")
+    private String highlights;
+
+    /** Display order in the catalog. */
+    @Column(name = "sort_order")
+    private int sortOrder;
+
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 }

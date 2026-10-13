@@ -57,6 +57,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**", "/webjars/**").permitAll()
                         // Public catalog: browse courses without logging in
                         .requestMatchers(HttpMethod.GET, "/api/courses/**").permitAll()
+                        // Public site settings (UPI id, Telegram invite, chatbot link)
+                        .requestMatchers(HttpMethod.GET, "/api/settings").permitAll()
                         // Authentication endpoints
                         .requestMatchers("/api/auth/**").permitAll()
                         // Everything under /api/admin requires the ADMIN role

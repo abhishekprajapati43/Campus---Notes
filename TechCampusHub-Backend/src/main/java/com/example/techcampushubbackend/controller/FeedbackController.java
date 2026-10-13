@@ -11,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,5 +49,13 @@ public class FeedbackController {
     @GetMapping("/admin/feedback")
     public ResponseEntity<ApiResponse<List<FeedbackResponse>>> listAll() {
         return ResponseEntity.ok(ApiResponse.ok(feedbackService.listAll()));
+    }
+
+    @Operation(summary = "Delete a feedback entry (admin)")
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/admin/feedback/{id}")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+        feedbackService.delete(id);
+        return ResponseEntity.ok(ApiResponse.ok("Feedback deleted", null));
     }
 }

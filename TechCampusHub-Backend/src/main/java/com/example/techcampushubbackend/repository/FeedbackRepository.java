@@ -12,4 +12,6 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
     List<Feedback> findByUserIdOrderByCreatedAtDesc(Long userId);
 
     List<Feedback> findAllByOrderByCreatedAtDesc();
+
+    long deleteByUserId(Long userId);
 }

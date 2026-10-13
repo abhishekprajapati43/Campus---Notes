@@ -23,22 +23,32 @@ public final class ContentDtos {
 
     // ---------------------------------------------------------------- notes
 
+    /**
+     * Note/PYQ/TNP/timetable titles are optional in the admin upload form; the
+     * service falls back to the subject/topic/course when they are left blank.
+     */
     public record NoteRequest(
-            @NotBlank(message = "title is required")
             @Size(max = 200) String title,
 
             @Size(max = 120) String subject,
 
             @Size(max = 60) String course,
 
+            @Size(max = 40) String branch,
+
+            Integer year,
+
             Integer semester,
 
             @Size(max = 600) String description,
 
-            @NotBlank(message = "fileUrl is required")
+            /** Required on create; optional on update (partial PUT). */
             @Size(max = 600)
-            @Pattern(regexp = "^https?://.*", message = "fileUrl must be an http(s) URL")
+            @Pattern(regexp = "^$|^https?://.*", message = "fileUrl must be an http(s) URL")
             String fileUrl,
+
+            /** Cloudinary public id - kept so the asset can be deleted later. */
+            @Size(max = 300) String storagePath,
 
             Long courseId) {
     }
@@ -48,9 +58,12 @@ public final class ContentDtos {
             String title,
             String subject,
             String course,
+            String branch,
+            Integer year,
             int semester,
             String description,
             String fileUrl,
+            String storagePath,
             Long courseId,
             String courseTitle,
             LocalDateTime createdAt) {
@@ -58,13 +71,18 @@ public final class ContentDtos {
 
     // ------------------------------------------------------------------ PYQ
 
+    /**
+     * {@code examYear} is the paper's year; the static frontend reads it as
+     * {@code year}, which the API adapter adds client-side.
+     */
     public record PyqRequest(
-            @NotBlank(message = "title is required")
             @Size(max = 200) String title,
 
             @Size(max = 120) String subject,
 
             @Size(max = 60) String course,
+
+            @Size(max = 40) String branch,
 
             Integer semester,
 
@@ -72,10 +90,12 @@ public final class ContentDtos {
 
             @Size(max = 600) String description,
 
-            @NotBlank(message = "fileUrl is required")
+            /** Required on create; optional on update (partial PUT). */
             @Size(max = 600)
-            @Pattern(regexp = "^https?://.*", message = "fileUrl must be an http(s) URL")
+            @Pattern(regexp = "^$|^https?://.*", message = "fileUrl must be an http(s) URL")
             String fileUrl,
+
+            @Size(max = 300) String storagePath,
 
             Long courseId) {
     }
@@ -85,10 +105,12 @@ public final class ContentDtos {
             String title,
             String subject,
             String course,
+            String branch,
             int semester,
             Integer examYear,
             String description,
             String fileUrl,
+            String storagePath,
             Long courseId,
             String courseTitle,
             LocalDateTime createdAt) {
@@ -96,18 +118,23 @@ public final class ContentDtos {
 
     // ------------------------------------------------------------- TNP notes
 
+    /**
+     * {@code topic} is the subject-area label; the static admin form calls the
+     * same value {@code subject}.
+     */
     public record TnpNoteRequest(
-            @NotBlank(message = "title is required")
             @Size(max = 200) String title,
 
             @Size(max = 120) String topic,
 
             @Size(max = 600) String description,
 
-            @NotBlank(message = "fileUrl is required")
+            /** Required on create; optional on update (partial PUT). */
             @Size(max = 600)
-            @Pattern(regexp = "^https?://.*", message = "fileUrl must be an http(s) URL")
+            @Pattern(regexp = "^$|^https?://.*", message = "fileUrl must be an http(s) URL")
             String fileUrl,
+
+            @Size(max = 300) String storagePath,
 
             Long courseId) {
     }
@@ -118,6 +145,7 @@ public final class ContentDtos {
             String topic,
             String description,
             String fileUrl,
+            String storagePath,
             Long courseId,
             String courseTitle,
             LocalDateTime createdAt) {
@@ -126,21 +154,29 @@ public final class ContentDtos {
     // ------------------------------------------------------------- timetables
 
     public record TimetableRequest(
-            @NotBlank(message = "title is required")
             @Size(max = 200) String title,
 
             @Size(max = 60) String course,
 
             Integer semester,
 
+            /** Exam-session label, e.g. "Mid Sem", "End Sem". */
+            @Size(max = 60) String examType,
+
+            Integer examYear,
+
             @Size(max = 40) String dayOfWeek,
 
             LocalDate effectiveFrom,
 
-            @NotBlank(message = "fileUrl is required")
+            /** Required on create; optional on update (partial PUT). */
             @Size(max = 600)
-            @Pattern(regexp = "^https?://.*", message = "fileUrl must be an http(s) URL")
+            @Pattern(regexp = "^$|^https?://.*", message = "fileUrl must be an http(s) URL")
             String fileUrl,
+
+            @Size(max = 300) String storagePath,
+
+            @Size(max = 255) String fileName,
 
             Long courseId) {
     }
@@ -150,9 +186,13 @@ public final class ContentDtos {
             String title,
             String course,
             int semester,
+            String examType,
+            Integer examYear,
             String dayOfWeek,
             LocalDate effectiveFrom,
             String fileUrl,
+            String storagePath,
+            String fileName,
             Long courseId,
             String courseTitle,
             LocalDateTime createdAt) {
@@ -191,9 +231,34 @@ public final class ContentDtos {
             LocalDateTime createdAt) {
     }
 
-    // -------------------------------------------------------------- file upload
+    // --------------------------------------------------------- certificate links
 
-    /** Result of POST /api/admin/files - the URL that gets persisted. */
+    /** One admin-managed certificate published as an external link. */
+    public record CertificateLinkRequest(
+            @Size(max = 200) String title,
+
+            @Size(max = 600)
+            @Pattern(regexp = "^https?://.*", message = "url must be an http(s) URL")
+            String url,
+
+            @Size(max = 600) String description,
+
+            Integer sortOrder,
+
+            Boolean isActive) {
+    }
+
+    public record CertificateLinkResponse(
+            Long id,
+            String title,
+            String url,
+            String description,
+            int sortOrder,
+            boolean isActive,
+            LocalDateTime createdAt) {
+    }
+
+    // -------------------------------------------------------------- file upload    /** Result of POST /api/admin/files - the URL that gets persisted. */
     public record FileUploadResponse(
             String url,
             String publicId,

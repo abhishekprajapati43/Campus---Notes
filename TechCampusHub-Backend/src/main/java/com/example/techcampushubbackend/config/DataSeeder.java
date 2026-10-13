@@ -1,8 +1,11 @@
 package com.example.techcampushubbackend.config;
 
 import com.example.techcampushubbackend.entity.Role;
+import com.example.techcampushubbackend.entity.SiteSetting;
 import com.example.techcampushubbackend.entity.User;
+import com.example.techcampushubbackend.repository.SiteSettingRepository;
 import com.example.techcampushubbackend.repository.UserRepository;
+import com.example.techcampushubbackend.service.SiteSettingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -40,6 +43,27 @@ public class DataSeeder {
                     .build();
             users.save(admin);
             log.info("Seeded admin account '{}'", email);
+        };
+    }
+
+    /**
+     * Ensures the site_settings row exists so /api/settings never has to
+     * fall back to lazily creating it on first read.
+     */
+    @Bean
+    @Transactional
+    public CommandLineRunner seedSiteSettings(SiteSettingRepository siteSettings) {
+        return args -> {
+            if (siteSettings.findById(SiteSetting.SINGLETON_ID).isPresent()) {
+                return;
+            }
+            siteSettings.save(SiteSetting.builder()
+                    .id(SiteSetting.SINGLETON_ID)
+                    .upiId(SiteSettingService.DEFAULT_UPI_ID)
+                    .geminiUrl(SiteSettingService.DEFAULT_GEMINI_URL)
+                    .telegramLink(SiteSettingService.DEFAULT_TELEGRAM_LINK)
+                    .build());
+            log.info("Seeded default site settings");
         };
     }
 }

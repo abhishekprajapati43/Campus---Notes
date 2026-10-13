@@ -20,11 +20,18 @@ public final class EngagementDtos {
             @NotBlank(message = "title is required")
             @Size(max = 200) String title,
 
-            @NotBlank(message = "message is required")
+            /** Optional body; the frontend may send an empty string. */
+            @Size(max = 4000, message = "message must be at most 4000 characters")
             String message,
 
             /** INFO | UPDATE | OFFER | ALERT - defaults to INFO. */
             String kind,
+
+            /** Content category: general | timetable | course | notes | pyq | tnp. */
+            String category,
+
+            /** all | premium | free - defaults to all. */
+            String audience,
 
             /** Optional recipient; omit/null = broadcast to everyone. */
             Long userId) {
@@ -35,6 +42,9 @@ public final class EngagementDtos {
             String title,
             String message,
             String kind,
+            String category,
+            String audience,
+            String createdBy,
             Long userId,
             String targetUserName,
             boolean broadcast,
@@ -70,19 +80,27 @@ public final class EngagementDtos {
             @Max(value = 5, message = "rating must be 1-5")
             Integer rating,
 
-            @NotBlank(message = "message is required")
             @Size(max = 2000, message = "message must be at most 2000 characters")
-            String message) {
+            String message,
+
+            /** website | course | note - what the feedback is about. */
+            String targetType,
+
+            /** Human label, e.g. the course or note title ("Website" for the site). */
+            String targetLabel) {
     }
 
     public record FeedbackResponse(
             Long id,
             Long userId,
             String userName,
+            String userEmail,
             Long courseId,
             String courseTitle,
             int rating,
             String message,
+            String targetType,
+            String targetLabel,
             LocalDateTime createdAt) {
     }
 }

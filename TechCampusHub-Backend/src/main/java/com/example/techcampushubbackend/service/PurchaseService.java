@@ -138,6 +138,13 @@ public class PurchaseService {
         return toResponse(purchaseRepository.save(purchase));
     }
 
+    /** Removes a purchase record entirely (admin cleanup). */
+    @Transactional
+    public void delete(Long id) {
+        Purchase purchase = require(id);
+        purchaseRepository.delete(purchase);
+    }
+
     /** Access check used by content services for bundle-gated material. */
     public boolean hasActiveAccess(Long userId, Long courseId) {
         if (userId == null || courseId == null) {

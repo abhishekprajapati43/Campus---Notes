@@ -46,6 +46,21 @@ public class User extends Auditable {
     @Column(nullable = false, length = 20)
     private Role role;
 
+    /** Academic profile captured at sign-up, e.g. "MCA", "B.Tech". */
+    @Column(length = 60)
+    private String course;
+
+    /** Branch/specialisation, e.g. "CSE", "AI_ML". */
+    @Column(length = 60)
+    private String branch;
+
+    /** Quoted: YEAR is reserved in H2/PostgreSQL. */
+    @Column(name = "\"year\"")
+    private Integer year;
+
+    @Column
+    private Integer semester;
+
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified;
 

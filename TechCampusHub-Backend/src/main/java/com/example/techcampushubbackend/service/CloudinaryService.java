@@ -74,13 +74,20 @@ public class CloudinaryService {
         }
     }
 
-    /** Best-effort deletion of a previously uploaded asset by public id. */
-    public void delete(String publicId) {
+    /**
+     * Best-effort deletion of a previously uploaded asset by public id.
+     *
+     * @param publicId     Cloudinary public id returned at upload time
+     * @param resourceType {@code raw} for PDFs, {@code image} for pictures
+     */
+    public void delete(String publicId, String resourceType) {
         if (publicId == null || publicId.isBlank() || !properties.getCloudinary().isConfigured()) {
             return;
         }
+        String normalizedType = "image".equalsIgnoreCase(resourceType) ? "image" : "raw";
         try {
-            cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("invalidate", true));
+            cloudinary.uploader().destroy(publicId,
+                    ObjectUtils.asMap("resource_type", normalizedType, "invalidate", true));
         } catch (IOException ex) {
             log.warn("Could not delete Cloudinary asset {}: {}", publicId, ex.getMessage());
         }

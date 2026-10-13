@@ -34,7 +34,9 @@ public class FeedbackService {
                 .user(user)
                 .course(course)
                 .rating(request.rating())
-                .message(request.message().trim())
+                .message(request.message() == null ? "" : request.message().trim())
+                .targetType(normalizeTargetType(request.targetType()))
+                .targetLabel(normalizeTargetLabel(request.targetLabel(), request.targetType()))
                 .build();
         return toResponse(feedbackRepository.save(feedback));
     }
@@ -54,15 +56,44 @@ public class FeedbackService {
                 .toList();
     }
 
+    @Transactional
+    public void delete(Long id) {
+        Feedback feedback = feedbackRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Feedback", id));
+        feedbackRepository.delete(feedback);
+    }
+
+    private static String normalizeTargetType(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "website";
+        }
+        String trimmed = raw.trim().toLowerCase();
+        return switch (trimmed) {
+            case "website", "course", "note" -> trimmed;
+            default -> "website";
+        };
+    }
+
+    private static String normalizeTargetLabel(String label, String targetType) {
+        String trimmed = label == null ? "" : label.trim();
+        if (!trimmed.isEmpty()) {
+            return trimmed.length() > 300 ? trimmed.substring(0, 300) : trimmed;
+        }
+        return "website".equalsIgnoreCase(targetType) ? "Website" : "Untitled";
+    }
+
     public static FeedbackResponse toResponse(Feedback f) {
         return new FeedbackResponse(
                 f.getId(),
                 f.getUser().getId(),
                 f.getUser().getName(),
+                f.getUser().getEmail(),
                 f.getCourse() == null ? null : f.getCourse().getId(),
                 f.getCourse() == null ? null : f.getCourse().getTitle(),
                 f.getRating(),
                 f.getMessage(),
+                f.getTargetType() == null ? "website" : f.getTargetType(),
+                f.getTargetLabel() == null ? "Website" : f.getTargetLabel(),
                 f.getCreatedAt());
     }
 }

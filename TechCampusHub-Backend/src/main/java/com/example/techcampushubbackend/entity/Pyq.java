@@ -37,6 +37,10 @@ public class Pyq extends Auditable {
     @Column(length = 60)
     private String course;
 
+    /** Branch/specialisation, e.g. CSE. */
+    @Column(length = 40)
+    private String branch;
+
     @Column
     private int semester;
 
@@ -50,6 +54,10 @@ public class Pyq extends Auditable {
     /** Cloudinary PDF URL. */
     @Column(name = "file_url", nullable = false, length = 600)
     private String fileUrl;
+
+    /** Cloudinary public id of the same asset, kept so it can be deleted. */
+    @Column(name = "storage_path", length = 300)
+    private String storagePath;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id")

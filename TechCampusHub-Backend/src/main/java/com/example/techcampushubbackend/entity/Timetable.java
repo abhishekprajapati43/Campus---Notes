@@ -39,6 +39,14 @@ public class Timetable extends Auditable {
     @Column
     private int semester;
 
+    /** Exam-session label, e.g. "Mid Sem", "End Sem". */
+    @Column(name = "exam_type", length = 60)
+    private String examType;
+
+    /** Exam year the timetable applies to, e.g. 2026. */
+    @Column(name = "exam_year")
+    private Integer examYear;
+
     @Column(length = 40)
     private String dayOfWeek;
 
@@ -48,6 +56,14 @@ public class Timetable extends Auditable {
     /** Cloudinary PDF/image URL. */
     @Column(name = "file_url", nullable = false, length = 600)
     private String fileUrl;
+
+    /** Cloudinary public id of the same asset, kept so it can be deleted. */
+    @Column(name = "storage_path", length = 300)
+    private String storagePath;
+
+    /** Original upload file name, shown in the admin list. */
+    @Column(name = "file_name", length = 255)
+    private String fileName;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id")

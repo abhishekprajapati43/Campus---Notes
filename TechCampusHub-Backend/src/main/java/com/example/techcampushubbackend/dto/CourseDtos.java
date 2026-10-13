@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /** Request/response payloads for courses. */
 public final class CourseDtos {
@@ -37,6 +38,14 @@ public final class CourseDtos {
             @Min(value = 1, message = "validityDays must be >= 1")
             Integer validityDays,
 
+            @Size(max = 80, message = "slug must be at most 80 characters")
+            String slug,
+
+            /** Selling points shown on the course card. */
+            List<String> highlights,
+
+            Integer sortOrder,
+
             Boolean active) {
     }
 
@@ -49,6 +58,9 @@ public final class CourseDtos {
             BigDecimal priceInr,
             String thumbnailUrl,
             int validityDays,
+            String slug,
+            List<String> highlights,
+            int sortOrder,
             boolean active,
             LocalDateTime createdAt) {
     }

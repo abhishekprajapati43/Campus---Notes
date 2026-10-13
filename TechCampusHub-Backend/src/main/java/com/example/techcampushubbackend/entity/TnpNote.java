@@ -43,6 +43,10 @@ public class TnpNote extends Auditable {
     @Column(name = "file_url", nullable = false, length = 600)
     private String fileUrl;
 
+    /** Cloudinary public id of the same asset, kept so it can be deleted. */
+    @Column(name = "storage_path", length = 300)
+    private String storagePath;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id")
     private Course courseBundle;

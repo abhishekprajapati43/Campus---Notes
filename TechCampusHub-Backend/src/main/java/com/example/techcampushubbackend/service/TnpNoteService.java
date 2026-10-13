@@ -15,6 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static com.example.techcampushubbackend.utils.ContentUtils.requireFileUrl;
+import static com.example.techcampushubbackend.utils.ContentUtils.resolveTitle;
+
 /** Training &amp; placement notes: same visibility rules as notes. */
 @Service
 @RequiredArgsConstructor
@@ -54,10 +57,11 @@ public class TnpNoteService {
     @Transactional
     public TnpNoteResponse create(TnpNoteRequest request) {
         TnpNote note = TnpNote.builder()
-                .title(request.title().trim())
+                .title(resolveTitle(request.title(), request.topic()))
                 .topic(request.topic())
                 .description(request.description())
-                .fileUrl(request.fileUrl())
+                .fileUrl(requireFileUrl(request.fileUrl()))
+                .storagePath(request.storagePath())
                 .courseBundle(loadBundle(request.courseId()))
                 .build();
         return toResponse(tnpNoteRepository.save(note));
@@ -66,10 +70,13 @@ public class TnpNoteService {
     @Transactional
     public TnpNoteResponse update(Long id, TnpNoteRequest request) {
         TnpNote note = require(id);
-        note.setTitle(request.title().trim());
+        note.setTitle(request.title() == null || request.title().isBlank()
+                ? note.getTitle()
+                : request.title().trim());
         if (request.topic() != null) note.setTopic(request.topic());
         if (request.description() != null) note.setDescription(request.description());
         if (request.fileUrl() != null) note.setFileUrl(request.fileUrl());
+        if (request.storagePath() != null) note.setStoragePath(request.storagePath());
         if (request.courseId() != null) note.setCourseBundle(loadBundle(request.courseId()));
         return toResponse(tnpNoteRepository.save(note));
     }
@@ -99,7 +106,7 @@ public class TnpNoteService {
     public static TnpNoteResponse toResponse(TnpNote note) {
         return new TnpNoteResponse(
                 note.getId(), note.getTitle(), note.getTopic(), note.getDescription(),
-                note.getFileUrl(),
+                note.getFileUrl(), note.getStoragePath(),
                 note.getCourseBundle() == null ? null : note.getCourseBundle().getId(),
                 note.getCourseBundle() == null ? null : note.getCourseBundle().getTitle(),
                 note.getCreatedAt());

@@ -48,6 +48,18 @@ public class Notification extends Auditable {
     @Column(nullable = false, length = 20)
     private Kind kind;
 
+    /** Content category used by the frontend styles: general/timetable/course/notes/pyq/tnp. */
+    @Column(length = 40)
+    private String category;
+
+    /** all | premium | free - who should see a broadcast. */
+    @Column(length = 20)
+    private String audience;
+
+    /** Email of the admin who sent it (display only). */
+    @Column(name = "created_by", length = 200)
+    private String createdBy;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User targetUser;

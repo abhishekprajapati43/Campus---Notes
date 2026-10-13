@@ -15,6 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static com.example.techcampushubbackend.utils.ContentUtils.requireFileUrl;
+import static com.example.techcampushubbackend.utils.ContentUtils.resolveTitle;
+
 /** Timetables: same visibility rules as notes. */
 @Service
 @RequiredArgsConstructor
@@ -54,12 +57,16 @@ public class TimetableService {
     @Transactional
     public TimetableResponse create(TimetableRequest request) {
         Timetable timetable = Timetable.builder()
-                .title(request.title().trim())
+                .title(resolveTitle(request.title(), examLabel(request), request.course()))
                 .course(request.course())
                 .semester(request.semester() == null ? 0 : request.semester())
+                .examType(request.examType())
+                .examYear(request.examYear())
                 .dayOfWeek(request.dayOfWeek())
                 .effectiveFrom(request.effectiveFrom())
-                .fileUrl(request.fileUrl())
+                .fileUrl(requireFileUrl(request.fileUrl()))
+                .storagePath(request.storagePath())
+                .fileName(request.fileName())
                 .courseBundle(loadBundle(request.courseId()))
                 .build();
         return toResponse(timetableRepository.save(timetable));
@@ -68,12 +75,18 @@ public class TimetableService {
     @Transactional
     public TimetableResponse update(Long id, TimetableRequest request) {
         Timetable timetable = require(id);
-        timetable.setTitle(request.title().trim());
+        timetable.setTitle(request.title() == null || request.title().isBlank()
+                ? timetable.getTitle()
+                : request.title().trim());
         if (request.course() != null) timetable.setCourse(request.course());
         if (request.semester() != null) timetable.setSemester(request.semester());
+        if (request.examType() != null) timetable.setExamType(request.examType());
+        if (request.examYear() != null) timetable.setExamYear(request.examYear());
         if (request.dayOfWeek() != null) timetable.setDayOfWeek(request.dayOfWeek());
         if (request.effectiveFrom() != null) timetable.setEffectiveFrom(request.effectiveFrom());
         if (request.fileUrl() != null) timetable.setFileUrl(request.fileUrl());
+        if (request.storagePath() != null) timetable.setStoragePath(request.storagePath());
+        if (request.fileName() != null) timetable.setFileName(request.fileName());
         if (request.courseId() != null) timetable.setCourseBundle(loadBundle(request.courseId()));
         return toResponse(timetableRepository.save(timetable));
     }
@@ -102,10 +115,35 @@ public class TimetableService {
 
     public static TimetableResponse toResponse(Timetable t) {
         return new TimetableResponse(
-                t.getId(), t.getTitle(), t.getCourse(), t.getSemester(), t.getDayOfWeek(),
-                t.getEffectiveFrom(), t.getFileUrl(),
+                t.getId(), t.getTitle(), t.getCourse(), t.getSemester(),
+                t.getExamType(), t.getExamYear(), t.getDayOfWeek(), t.getEffectiveFrom(),
+                t.getFileUrl(), t.getStoragePath(), t.getFileName(),
                 t.getCourseBundle() == null ? null : t.getCourseBundle().getId(),
                 t.getCourseBundle() == null ? null : t.getCourseBundle().getTitle(),
                 t.getCreatedAt());
+    }
+
+    /**
+     * The timetable upload form has no title input, so one is composed from the
+     * session the admin picked, e.g. "B.Tech Mid Sem".
+     */
+    private static String examLabel(TimetableRequest request) {
+        StringBuilder label = new StringBuilder();
+        if (request.course() != null && !request.course().isBlank()) {
+            label.append(request.course().trim());
+        }
+        if (request.examType() != null && !request.examType().isBlank()) {
+            if (label.length() > 0) {
+                label.append(' ');
+            }
+            label.append(request.examType().trim());
+        }
+        if (request.examYear() != null) {
+            if (label.length() > 0) {
+                label.append(' ');
+            }
+            label.append(request.examYear());
+        }
+        return label.length() == 0 ? null : label.toString();
     }
 }

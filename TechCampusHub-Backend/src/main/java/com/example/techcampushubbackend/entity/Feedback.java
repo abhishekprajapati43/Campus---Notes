@@ -41,6 +41,14 @@ public class Feedback extends Auditable {
     @Column(nullable = false)
     private int rating;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String message;
+
+    /** website | course | note - what the feedback is about. */
+    @Column(name = "target_type", length = 20)
+    private String targetType;
+
+    /** Human label, e.g. the course or note title. */
+    @Column(name = "target_label", length = 300)
+    private String targetLabel;
 }

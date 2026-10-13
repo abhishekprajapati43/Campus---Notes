@@ -23,14 +23,14 @@ public class CourseService {
 
     @Transactional(readOnly = true)
     public List<CourseResponse> listPublic() {
-        return courseRepository.findAllByActiveTrueOrderByTitleAsc().stream()
+        return courseRepository.findAllByActiveTrueOrderBySortOrderAscTitleAsc().stream()
                 .map(CourseService::toResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<CourseResponse> listAll() {
-        return courseRepository.findAllByOrderByTitleAsc().stream()
+        return courseRepository.findAllByOrderBySortOrderAscTitleAsc().stream()
                 .map(CourseService::toResponse)
                 .toList();
     }
@@ -57,6 +57,9 @@ public class CourseService {
                 .priceInr(request.priceInr() == null ? BigDecimal.ZERO : request.priceInr())
                 .thumbnailUrl(trimToNull(request.thumbnailUrl()))
                 .validityDays(request.validityDays() == null ? 365 : request.validityDays())
+                .slug(uniqueSlug(request.slug(), request.title(), null))
+                .highlights(joinHighlights(request.highlights()))
+                .sortOrder(request.sortOrder() == null ? 0 : request.sortOrder())
                 .active(request.active() == null || request.active())
                 .build();
         return toResponse(courseRepository.save(course));
@@ -72,6 +75,9 @@ public class CourseService {
         if (request.priceInr() != null) course.setPriceInr(request.priceInr());
         if (request.thumbnailUrl() != null) course.setThumbnailUrl(trimToNull(request.thumbnailUrl()));
         if (request.validityDays() != null) course.setValidityDays(request.validityDays());
+        if (request.slug() != null) course.setSlug(uniqueSlug(request.slug(), course.getTitle(), course.getId()));
+        if (request.highlights() != null) course.setHighlights(joinHighlights(request.highlights()));
+        if (request.sortOrder() != null) course.setSortOrder(request.sortOrder());
         if (request.active() != null) course.setActive(request.active());
         return toResponse(courseRepository.save(course));
     }
@@ -88,10 +94,56 @@ public class CourseService {
         return new CourseResponse(
                 course.getId(), course.getTitle(), course.getCode(), course.getCategory(),
                 course.getDescription(), course.getPriceInr(), course.getThumbnailUrl(),
-                course.getValidityDays(), course.isActive(), course.getCreatedAt());
+                course.getValidityDays(), course.getSlug(), splitHighlights(course.getHighlights()),
+                course.getSortOrder(), course.isActive(), course.getCreatedAt());
+    }
+
+    /** Highlights round-trip as newline-separated text in the database. */
+    private static String joinHighlights(List<String> highlights) {
+        if (highlights == null) {
+            return null;
+        }
+        return highlights.stream()
+                .filter(item -> item != null && !item.isBlank())
+                .map(String::trim)
+                .distinct()
+                .collect(java.util.stream.Collectors.joining("\n"));
+    }
+
+    private static List<String> splitHighlights(String stored) {
+        if (stored == null || stored.isBlank()) {
+            return List.of();
+        }
+        return java.util.Arrays.stream(stored.split("\n"))
+                .map(String::trim)
+                .filter(item -> !item.isEmpty())
+                .toList();
     }
 
     private static String trimToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private static String slugify(String value) {
+        String slug = value == null ? "" : value.toLowerCase(java.util.Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-+|-+$)", "");
+        return slug.length() <= 80 ? slug : slug.substring(0, 80);
+    }
+
+    /** Generates a slug from the title when none is supplied and keeps it unique. */
+    private String uniqueSlug(String requested, String title, Long excludeId) {
+        String base = slugify(requested == null || requested.isBlank() ? title : requested);
+        if (base.isEmpty()) {
+            base = "course";
+        }
+        String candidate = base;
+        int counter = 2;
+        while (courseRepository.findBySlugIgnoreCase(candidate)
+                .filter(existing -> !existing.getId().equals(excludeId))
+                .isPresent()) {
+            candidate = base + "-" + counter++;
+        }
+        return candidate;
     }
 }

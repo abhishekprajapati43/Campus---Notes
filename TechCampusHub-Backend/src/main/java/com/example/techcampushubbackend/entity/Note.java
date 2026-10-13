@@ -38,6 +38,14 @@ public class Note extends Auditable {
     @Column(length = 60)
     private String course;
 
+    /** Branch/specialisation, e.g. CSE. */
+    @Column(length = 40)
+    private String branch;
+
+    /** Academic year the notes belong to, e.g. 2026. Quoted: YEAR is reserved in H2/PG. */
+    @Column(name = "\"year\"")
+    private Integer year;
+
     @Column
     private int semester;
 
@@ -47,6 +55,10 @@ public class Note extends Auditable {
     /** Cloudinary PDF URL - only the URL is persisted. */
     @Column(name = "file_url", nullable = false, length = 600)
     private String fileUrl;
+
+    /** Cloudinary public id of the same asset, kept so it can be deleted. */
+    @Column(name = "storage_path", length = 300)
+    private String storagePath;
 
     /** Optional link: notes belonging to a purchasable course bundle. */
     @ManyToOne(fetch = FetchType.LAZY)

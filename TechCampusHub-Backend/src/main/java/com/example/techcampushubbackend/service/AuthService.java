@@ -15,6 +15,11 @@ import com.example.techcampushubbackend.exception.ApiException;
 import com.example.techcampushubbackend.exception.BadRequestException;
 import com.example.techcampushubbackend.exception.ConflictException;
 import com.example.techcampushubbackend.exception.ResourceNotFoundException;
+import com.example.techcampushubbackend.repository.CertificateRepository;
+import com.example.techcampushubbackend.repository.FavoriteRepository;
+import com.example.techcampushubbackend.repository.FeedbackRepository;
+import com.example.techcampushubbackend.repository.NotificationRepository;
+import com.example.techcampushubbackend.repository.PurchaseRepository;
 import com.example.techcampushubbackend.repository.UserRepository;
 import com.example.techcampushubbackend.security.JwtService;
 import com.example.techcampushubbackend.utils.TokenUtils;
@@ -26,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * All authentication flows: register, login (JWT), e-mail verification,
@@ -43,6 +49,11 @@ public class AuthService {
     private final JwtService jwtService;
     private final EmailService emailService;
     private final AppProperties properties;
+    private final PurchaseRepository purchaseRepository;
+    private final FavoriteRepository favoriteRepository;
+    private final FeedbackRepository feedbackRepository;
+    private final CertificateRepository certificateRepository;
+    private final NotificationRepository notificationRepository;
 
     @Transactional
     public UserResponse register(RegisterRequest request) {
@@ -57,6 +68,10 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.password()))
                 .phone(blankToNull(request.phone()))
                 .role(Role.STUDENT)
+                .course(blankToNull(request.course()))
+                .branch(blankToNull(request.branch()))
+                .year(request.year())
+                .semester(request.semester())
                 .emailVerified(false)
                 .verificationToken(TokenUtils.randomToken())
                 .enabled(true)
@@ -166,6 +181,18 @@ public class AuthService {
         if (request.phone() != null) {
             user.setPhone(blankToNull(request.phone()));
         }
+        if (request.course() != null) {
+            user.setCourse(blankToNull(request.course()));
+        }
+        if (request.branch() != null) {
+            user.setBranch(blankToNull(request.branch()));
+        }
+        if (request.year() != null) {
+            user.setYear(request.year());
+        }
+        if (request.semester() != null) {
+            user.setSemester(request.semester());
+        }
         return toUserResponse(userRepository.save(user));
     }
 
@@ -175,10 +202,49 @@ public class AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId)));
     }
 
+    /** Every registered account, newest first - powers the admin Users panel. */
+    @Transactional(readOnly = true)
+    public List<UserResponse> listUsers() {
+        return userRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(AuthService::toUserResponse)
+                .toList();
+    }
+
+    /**
+     * Permanently removes an account and everything attached to it. Used both for
+     * "delete my account" (self service) and for the admin Users panel.
+     */
+    @Transactional
+    public void deleteAccount(Long userId, Long requestedByUserId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        if (user.getRole() == Role.ADMIN && !userId.equals(requestedByUserId)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Admin accounts cannot be deleted by another admin");
+        }
+        if (user.getRole() == Role.ADMIN && userRepository.countByRole(Role.ADMIN) <= 1) {
+            throw new BadRequestException("The last admin account cannot be deleted");
+        }
+
+        // Detach review credits left on other students' purchases before the user
+        // row disappears, so those rows keep a valid (null) reviewer.
+        purchaseRepository.clearReviewedBy(userId);
+        purchaseRepository.deleteByUserId(userId);
+        favoriteRepository.deleteByUserId(userId);
+        feedbackRepository.deleteByUserId(userId);
+        certificateRepository.deleteByUserId(userId);
+        notificationRepository.deleteByTargetUserId(userId);
+
+        userRepository.delete(user);
+        log.info("Deleted account {} (requested by {})", user.getEmail(), requestedByUserId);
+    }
+
     public static UserResponse toUserResponse(User user) {
         return new UserResponse(
                 user.getId(), user.getName(), user.getEmail(), user.getPhone(),
-                user.getRole(), user.isEmailVerified(), user.getCreatedAt());
+                user.getRole(), user.isEmailVerified(),
+                user.getCourse(), user.getBranch(), user.getYear(), user.getSemester(),
+                user.getCreatedAt());
     }
 
     private static String blankToNull(String value) {
