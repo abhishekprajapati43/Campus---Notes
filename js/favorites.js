@@ -6,28 +6,27 @@
 // resource cards, sidebar badge, and the dedicated
 // favourites page.
 //
-// Storage: Supabase `favorites` table created by
-// sql/setup.sql (Part 2). When the table is missing the
-// module falls back to this-browser-only storage so the
-// feature still works before the migration is run.
+// Storage: backend /api/favorites (itemType NOTE/TNP_NOTE).
 // =====================================================
 
-import { supabase } from "../supabase.js";
 import { $, escapeHtml, formatDate } from "./helpers.js";
 import { currentStudent } from "./state.js";
 
-// =====================================================
-// Constants
-// =====================================================
-
-const LOCAL_KEY = "campusnotes:favorites";
-
-// Categories a student may favourite.
-const FAV_CATEGORIES = ["notes", "tnp"];
+import {
+    apiGet,
+    apiPost,
+    apiDelete,
+    getStoredUser,
+    normalizeFavorite,
+    FAVORITE_CATEGORY_TO_TYPE
+} from "./api.js";
 
 // =====================================================
 // Module state
 // =====================================================
+
+// Categories a student may favourite.
+const FAV_CATEGORIES = ["notes", "tnp"];
 
 let favoritesCache = [];
 let favoritesLoaded = false;
@@ -37,57 +36,13 @@ let eventsWired = false;
 // Helpers
 // =====================================================
 
-function isMissingTable(error) {
-    if (!error) {
-        return false;
-    }
-
-    return (
-        error.code === "PGRST205" ||
-        error.code === "42P01" ||
-        /could not find the table|does not exist|schema cache/i.test(
-            String(error.message || "")
-        )
-    );
-}
-
-function localRead(key, fallback) {
-    try {
-        const raw = window.localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-    } catch (error) {
-        console.warn("Local storage read failed:", error);
-        return fallback;
-    }
-}
-
-function localWrite(key, value) {
-    try {
-        window.localStorage.setItem(key, JSON.stringify(value));
-        return true;
-    } catch (error) {
-        console.error("Local storage write failed:", error);
-        return false;
-    }
-}
-
 async function getIdentity() {
-    const { data } = await supabase.auth.getSession();
-
-    const user = data?.session?.user || null;
+    const user = getStoredUser() || null;
 
     return {
         id: user?.id || null,
         email: user?.email || currentStudent?.email || "",
-        name: currentStudent?.name || user?.user_metadata?.name || ""
-    };
-}
-
-function normalize(item) {
-    return {
-        category: String(item.category || "notes"),
-        item_id: String(item.item_id || item.id || ""),
-        item_title: String(item.item_title || item.title || "Untitled")
+        name: user?.name || currentStudent?.name || ""
     };
 }
 
@@ -109,28 +64,14 @@ export async function loadFavorites(force = false) {
         return favoritesCache;
     }
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("favorites")
-        .select("*")
-        .eq("user_id", identity.id)
-        .order("created_at", { ascending: false });
+    try {
+        const rows = await apiGet("/api/favorites");
 
-    if (error) {
-        if (!isMissingTable(error)) {
-            console.error("Favorites loading error:", error);
-        }
-
-        favoritesCache = localRead(LOCAL_KEY, []).filter(
-            row => String(row.user_id) === String(identity.id)
-        );
-
-        return favoritesCache;
+        favoritesCache = (Array.isArray(rows) ? rows : [])
+            .map(normalizeFavorite);
+    } catch (error) {
+        console.error("Favorites loading error:", error);
     }
-
-    favoritesCache = data || [];
 
     return favoritesCache;
 }
@@ -160,21 +101,14 @@ export async function toggleFavorite({ category, itemId, itemTitle }) {
         throw new Error("Please log in to save favourites.");
     }
 
+    const itemType = FAVORITE_CATEGORY_TO_TYPE[normalizedCategory] || "NOTE";
+
     const already = isFavorite(normalizedCategory, itemId);
 
     if (already) {
-        const {
-            error
-        } = await supabase
-            .from("favorites")
-            .delete()
-            .eq("user_id", identity.id)
-            .eq("category", normalizedCategory)
-            .eq("item_id", String(itemId));
-
-        if (error && !isMissingTable(error)) {
-            throw error;
-        }
+        await apiDelete(
+            `/api/favorites/${itemType}/${itemId}`
+        );
 
         favoritesCache = favoritesCache.filter(
             row =>
@@ -183,54 +117,28 @@ export async function toggleFavorite({ category, itemId, itemTitle }) {
                     String(row.item_id) === String(itemId)
                 )
         );
-
-        if (isMissingTable(error)) {
-            writeLocalFavorites(identity.id);
-        }
     } else {
-        const row = {
-            user_id: identity.id,
-            category: normalizedCategory,
-            item_id: String(itemId),
-            item_title: String(itemTitle || "Untitled"),
-            created_at: new Date().toISOString()
-        };
+        const data = await apiPost(
+            "/api/favorites",
+            {
+                itemType,
+                itemId: Number(itemId) || null
+            }
+        );
 
-        const {
-            error
-        } = await supabase.from("favorites").insert(row);
-
-        if (error && !isMissingTable(error)) {
-            throw error;
-        }
-
-        if (isMissingTable(error)) {
-            favoritesCache.unshift({ ...row, id: `local-${Date.now()}` });
-            writeLocalFavorites(identity.id);
-        } else {
-            favoritesCache.unshift(row);
-        }
+        favoritesCache.unshift(
+            normalizeFavorite(data) || {
+                category: normalizedCategory,
+                item_id: String(itemId),
+                item_title: String(itemTitle || "Untitled")
+            }
+        );
     }
 
     syncFavoriteButtons();
     updateFavoritesBadge();
 
     return !already;
-}
-
-function writeLocalFavorites(userId) {
-    const all = localRead(LOCAL_KEY, []);
-
-    const mine = favoritesCache.map(row => ({
-        ...row,
-        user_id: userId
-    }));
-
-    const others = all.filter(
-        row => String(row.user_id) !== String(userId)
-    );
-
-    localWrite(LOCAL_KEY, [...mine, ...others]);
 }
 
 // =====================================================

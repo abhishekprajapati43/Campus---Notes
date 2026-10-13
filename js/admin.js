@@ -7,7 +7,19 @@
 
 import { $ } from "./helpers.js";
 
-import { supabase } from "../supabase.js";
+import {
+    apiPost,
+    apiPut,
+    apiDelete,
+    noteToRequest,
+    pyqToRequest,
+    tnpToRequest,
+    timetableToRequest,
+    normalizeNote,
+    normalizePyq,
+    normalizeTnp,
+    normalizeTimetable
+} from "./api.js";
 
 import {
     STORAGE_BUCKET,
@@ -31,6 +43,10 @@ import {
 import {
     currentUserRole
 } from "./state.js";
+
+import {
+    getCurrentUser
+} from "./auth.js";
 
 import {
     notifyContentUpload
@@ -307,15 +323,11 @@ export async function uploadNotes(event) {
 
         try {
 
-            const {
-                data,
-                error
-            } = await supabase
-                .from("notes")
-                .insert({
+            const data = await apiPost(
+                "/api/admin/notes",
+                noteToRequest({
                     subject,
-                    title:
-                        title || null,
+                    title: title || null,
 
                     course,
                     branch,
@@ -323,28 +335,18 @@ export async function uploadNotes(event) {
                     semester,
 
                     // Paid bundle (only sent when a bundle is
-                    // selected, so uploads still work before
-                    // sql/setup.sql adds the column).
-                    ...(bundleId
-                        ? { course_id: bundleId }
-                        : {}),
+                    // selected).
+                    course_id: bundleId || null,
 
                     // Cloudinary URL
-                    file_url:
-                        fileUrl,
+                    file_url: fileUrl,
 
                     // Cloudinary public ID
-                    // kept in existing storage_path column
-                    storage_path:
-                        publicId
+                    storage_path: publicId
                 })
-                .select()
-                .single();
+            );
 
-
-            if (error) {
-                throw error;
-            }
+            const record = normalizeNote(data);
 
 
             showAdminMessage(
@@ -357,7 +359,7 @@ export async function uploadNotes(event) {
 
             dispatchRefresh();
 
-            return data;
+            return record;
 
         } catch (error) {
 
@@ -466,12 +468,9 @@ export async function uploadTnp(event) {
 
         try {
 
-            const {
-                data,
-                error
-            } = await supabase
-                .from("tnp")
-                .insert({
+            const data = await apiPost(
+                "/api/admin/tnp-notes",
+                tnpToRequest({
                     subject,
 
                     title:
@@ -479,20 +478,14 @@ export async function uploadTnp(event) {
 
                     // IMPORTANT:
                     // Save Cloudinary URL
-                    file_url:
-                        fileUrl,
+                    file_url: fileUrl,
 
                     // Save Cloudinary public ID
-                    storage_path:
-                        publicId
+                    storage_path: publicId
                 })
-                .select()
-                .single();
+            );
 
-
-            if (error) {
-                throw error;
-            }
+            const record = normalizeTnp(data);
 
 
             showAdminMessage(
@@ -505,7 +498,7 @@ export async function uploadTnp(event) {
 
             dispatchRefresh();
 
-            return data;
+            return record;
 
         } catch (error) {
 
@@ -638,12 +631,9 @@ export async function uploadPyq(event) {
 
         try {
 
-            const {
-                data,
-                error
-            } = await supabase
-                .from("previousYearPapers")
-                .insert({
+            const data = await apiPost(
+                "/api/admin/pyqs",
+                pyqToRequest({
                     course,
                     year,
                     semester,
@@ -654,20 +644,14 @@ export async function uploadPyq(event) {
                         title || null,
 
                     // Cloudinary URL
-                    file_url:
-                        fileUrl,
+                    file_url: fileUrl,
 
                     // Cloudinary public ID
-                    storage_path:
-                        publicId
+                    storage_path: publicId
                 })
-                .select()
-                .single();
+            );
 
-
-            if (error) {
-                throw error;
-            }
+            const record = normalizePyq(data);
 
 
             showAdminMessage(
@@ -680,7 +664,7 @@ export async function uploadPyq(event) {
 
             dispatchRefresh();
 
-            return data;
+            return record;
 
         } catch (error) {
 
@@ -806,17 +790,14 @@ export async function uploadTimetable(event) {
 
 
         // -------------------------------------------------
-        // Save Timetable Record in Supabase
+        // Save Timetable Record
         // -------------------------------------------------
 
         try {
 
-            const {
-                data,
-                error
-            } = await supabase
-                .from("timetable")
-                .insert({
+            const data = await apiPost(
+                "/api/admin/timetables",
+                timetableToRequest({
                     course:
                         course,
 
@@ -838,13 +819,9 @@ export async function uploadTimetable(event) {
                     file_name:
                         file.name
                 })
-                .select()
-                .single();
+            );
 
-
-            if (error) {
-                throw error;
-            }
+            const record = normalizeTimetable(data);
 
 
             // -------------------------------------------------
@@ -855,13 +832,16 @@ export async function uploadTimetable(event) {
                 "Exam timetable uploaded successfully."
             );
 
-            notifyContentUpload("timetable", getValue("timetableSubject"));
+            notifyContentUpload(
+                "timetable",
+                `${course} ${examType}`.trim()
+            );
 
             event?.target?.reset();
 
             dispatchRefresh();
 
-            return data;
+            return record;
 
         } catch (databaseError) {
 
@@ -991,21 +971,12 @@ async function editNotes(
             record.semester
     };
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("notes")
-        .update(payload)
-        .eq("id", id)
-        .select()
-        .single();
+    const data = await apiPut(
+        `/api/admin/notes/${id}`,
+        noteToRequest(payload)
+    );
 
-    if (error) {
-        throw error;
-    }
-
-    return data;
+    return normalizeNote(data);
 }
 
 
@@ -1041,21 +1012,12 @@ async function editTnp(
             record.title
     };
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("tnp")
-        .update(payload)
-        .eq("id", id)
-        .select()
-        .single();
+    const data = await apiPut(
+        `/api/admin/tnp-notes/${id}`,
+        tnpToRequest(payload)
+    );
 
-    if (error) {
-        throw error;
-    }
-
-    return data;
+    return normalizeTnp(data);
 }
 
 
@@ -1103,21 +1065,12 @@ async function editPyq(
             record.title
     };
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("previousYearPapers")
-        .update(payload)
-        .eq("id", id)
-        .select()
-        .single();
+    const data = await apiPut(
+        `/api/admin/pyqs/${id}`,
+        pyqToRequest(payload)
+    );
 
-    if (error) {
-        throw error;
-    }
-
-    return data;
+    return normalizePyq(data);
 }
 
 // =====================================================
@@ -1163,44 +1116,61 @@ async function editTimetable(
     };
 
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("timetable")
-        .update(payload)
-        .eq("id", id)
-        .select()
-        .single();
+    const data = await apiPut(
+        `/api/admin/timetables/${id}`,
+        timetableToRequest(payload)
+    );
 
 
-    if (error) {
-        throw error;
-    }
-
-
-    return data;
+    return normalizeTimetable(data);
 }
 
 // =====================================================
-// Get Table Name
+// Get Admin API Path
+// =====================================================
+//
+// Maps an admin panel category to its backend REST
+// resource path (used for PUT/DELETE on a record).
 // =====================================================
 
-function getTableName(category) {
+function getContentPath(category) {
     switch (category) {
 
         case "tnp":
-            return "tnp";
+            return "/api/admin/tnp-notes";
 
         case "pyq":
-            return "previousYearPapers";
+            return "/api/admin/pyqs";
 
         case "timetable":
-            return "timetable";
+            return "/api/admin/timetables";
 
         case "notes":
         default:
-            return "notes";
+            return "/api/admin/notes";
+    }
+}
+
+
+// =====================================================
+// Normalize record by category
+// =====================================================
+
+function normalizeRecord(category, data) {
+    switch (category) {
+
+        case "tnp":
+            return normalizeTnp(data);
+
+        case "pyq":
+            return normalizePyq(data);
+
+        case "timetable":
+            return normalizeTimetable(data);
+
+        case "notes":
+        default:
+            return normalizeNote(data);
     }
 }
 
@@ -1214,7 +1184,7 @@ function getTableName(category) {
 // 1. Upload new PDF
 // 2. Get new Cloudinary URL
 // 3. Get new Cloudinary public ID
-// 4. Update Supabase record
+// 4. Update backend record
 //
 // IMPORTANT:
 // Cloudinary deletion requires API secret.
@@ -1308,36 +1278,22 @@ async function replaceRecordPdf(
 
     try {
 
-        const table =
-            getTableName(category);
+        const path =
+            getContentPath(category);
 
 
         // -------------------------------------------------
-        // Update Supabase
+        // Update backend record (partial PUT: only the
+        // file fields change)
         // -------------------------------------------------
 
-        const {
-            data,
-            error
-        } = await supabase
-            .from(table)
-            .update({
-                // New Cloudinary public ID
-                storage_path:
-                    newPublicId,
-
-                // New Cloudinary URL
-                file_url:
-                    newFileUrl
-            })
-            .eq("id", id)
-            .select()
-            .single();
-
-
-        if (error) {
-            throw error;
-        }
+        const data = await apiPut(
+            `${path}/${id}`,
+            {
+                fileUrl: newFileUrl,
+                storagePath: newPublicId
+            }
+        );
 
 
         // Tell storage.js that upload is now committed
@@ -1381,7 +1337,7 @@ async function replaceRecordPdf(
     }
 }
 
-        return data;
+        return normalizeRecord(category, data);
 
     } catch (error) {
 
@@ -1523,25 +1479,17 @@ export async function deleteRecord(
     }
 
 
-    const table =
-        getTableName(category);
+    const path =
+        getContentPath(category);
 
 
     // -------------------------------------------------
-    // Delete database record
+    // Delete backend record
     // -------------------------------------------------
 
-    const {
-        error
-    } = await supabase
-        .from(table)
-        .delete()
-        .eq("id", id);
-
-
-    if (error) {
-        throw error;
-    }
+    await apiDelete(
+        `${path}/${id}`
+    );
 
 
     // -------------------------------------------------
@@ -1660,8 +1608,10 @@ export async function getStudents() {
 // Delete Student Profile
 // =====================================================
 //
-// Actual Auth deletion happens inside the secure
-// delete-account Edge Function.
+// Account deletion is handled by the backend
+// (DELETE /api/admin/users/{id}), which removes the
+// user, their auth credentials and related data in
+// one transaction.
 //
 // Frontend never receives or handles passwords.
 // =====================================================
@@ -1680,11 +1630,9 @@ export async function deleteStudentProfile(
 
 
     const {
-        data: {
-            user
-        },
+        user,
         error: userError
-    } = await supabase.auth.getUser();
+    } = await getCurrentUser();
 
 
     if (userError) {
@@ -1709,29 +1657,9 @@ export async function deleteStudentProfile(
     }
 
 
-    const {
-        data,
-        error
-    } = await supabase.functions.invoke(
-        "delete-account",
-        {
-            body: {
-                targetUserId:
-                    String(studentId)
-            }
-        }
+    const data = await apiDelete(
+        `/api/admin/users/${studentId}`
     );
-
-
-    if (error) {
-
-        console.error(
-            "Student deletion error:",
-            error
-        );
-
-        throw error;
-    }
 
 
     await reloadStudents();

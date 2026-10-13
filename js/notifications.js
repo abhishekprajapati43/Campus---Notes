@@ -7,22 +7,26 @@
 // admin broadcasts targeted at all / premium / free
 // users, the notifications page and the sidebar badge.
 //
-// Storage: Supabase `notifications` table created by
-// sql/setup.sql (Part 2). When the table is missing the
-// module falls back to this-browser-only storage so the
-// feature still works before the migration is run.
+// Storage: backend /api/notifications (+ /api/admin/
+// notifications). The backend filters the audience
+// (premium = approved, unexpired purchase) per caller.
 // =====================================================
 
-import { supabase } from "../supabase.js";
 import { $, escapeHtml, formatDate } from "./helpers.js";
-import { currentStudent, currentUserRole } from "./state.js";
+import { currentUserRole } from "./state.js";
 import { refreshOwnership, hasActivePremium } from "./courses.js";
+
+import {
+    apiGet,
+    apiPost,
+    apiDelete,
+    normalizeNotification
+} from "./api.js";
 
 // =====================================================
 // Constants
 // =====================================================
 
-const LOCAL_KEY = "campusnotes:notifications";
 const SEEN_KEY = "campusnotes:notifSeen";
 const MAX_LISTED = 100;
 
@@ -50,40 +54,6 @@ let eventsWired = false;
 // Helpers
 // =====================================================
 
-function isMissingTable(error) {
-    if (!error) {
-        return false;
-    }
-
-    return (
-        error.code === "PGRST205" ||
-        error.code === "42P01" ||
-        /could not find the table|does not exist|schema cache/i.test(
-            String(error.message || "")
-        )
-    );
-}
-
-function localRead(key, fallback) {
-    try {
-        const raw = window.localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-    } catch (error) {
-        console.warn("Local storage read failed:", error);
-        return fallback;
-    }
-}
-
-function localWrite(key, value) {
-    try {
-        window.localStorage.setItem(key, JSON.stringify(value));
-        return true;
-    } catch (error) {
-        console.error("Local storage write failed:", error);
-        return false;
-    }
-}
-
 function isAdminUser() {
     return currentUserRole === "admin";
 }
@@ -100,26 +70,15 @@ export async function loadNotifications(force = false) {
     notificationsLoaded = true;
     notificationsCache = [];
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("notifications")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(MAX_LISTED);
+    try {
+        const rows = await apiGet("/api/notifications");
 
-    if (error) {
-        if (!isMissingTable(error)) {
-            console.error("Notifications loading error:", error);
-        }
-
-        notificationsCache = localRead(LOCAL_KEY, []);
-
-        return notificationsCache;
+        notificationsCache = (Array.isArray(rows) ? rows : [])
+            .slice(0, MAX_LISTED)
+            .map(normalizeNotification);
+    } catch (error) {
+        console.error("Notifications loading error:", error);
     }
-
-    notificationsCache = data || [];
 
     return notificationsCache;
 }
@@ -131,73 +90,33 @@ export async function createNotification({
     audience = "all",
     createdBy = ""
 }) {
-    const row = {
-        title: String(title || "").trim(),
-        body: String(body || "").trim(),
-        kind: KINDS.includes(kind) ? kind : "general",
-        audience: AUDIENCES.includes(audience) ? audience : "all",
-        created_by: String(createdBy || currentStudent?.email || ""),
-        created_at: new Date().toISOString()
-    };
+    const finalTitle = String(title || "").trim();
 
-    if (!row.title) {
+    if (!finalTitle) {
         throw new Error("Notification title cannot be empty.");
     }
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("notifications")
-        .insert(row)
-        .select()
-        .single();
-
-    if (error) {
-        if (!isMissingTable(error)) {
-            throw error;
+    const data = await apiPost(
+        "/api/admin/notifications",
+        {
+            title: finalTitle,
+            message: String(body || "").trim(),
+            category: KINDS.includes(kind) ? kind : "general",
+            audience: AUDIENCES.includes(audience) ? audience : "all"
         }
+    );
 
-        const all = localRead(LOCAL_KEY, []);
+    const row = normalizeNotification(data);
 
-        const localRow = {
-            ...row,
-            id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-        };
+    notificationsCache.unshift(row);
 
-        all.unshift(localRow);
-        localWrite(LOCAL_KEY, all);
-
-        notificationsCache.unshift(localRow);
-
-        return { row: localRow, mode: "local" };
-    }
-
-    notificationsCache.unshift(data);
-
-    return { row: data, mode: "cloud" };
+    return { row, mode: "cloud" };
 }
 
 export async function deleteNotification(notificationId) {
-    const {
-        error
-    } = await supabase
-        .from("notifications")
-        .delete()
-        .eq("id", notificationId);
-
-    if (error) {
-        if (!isMissingTable(error)) {
-            throw error;
-        }
-
-        const all = localRead(LOCAL_KEY, []);
-
-        localWrite(
-            LOCAL_KEY,
-            all.filter(row => String(row.id) !== String(notificationId))
-        );
-    }
+    await apiDelete(
+        `/api/admin/notifications/${notificationId}`
+    );
 
     notificationsCache = notificationsCache.filter(
         row => String(row.id) !== String(notificationId)
@@ -466,7 +385,7 @@ async function handleSendNotification(event) {
 
         adminMessage(
             result.mode === "local"
-                ? "Notification saved (local — run sql/setup.sql for database storage)."
+                ? "Notification saved locally — the backend is unreachable."
                 : "Notification sent.",
             "success"
         );

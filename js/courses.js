@@ -5,16 +5,27 @@
 // Course catalog, manual UPI purchases (admin approval),
 // note-bundle gating and the shared commerce UI wiring.
 //
-// Storage: uses the Supabase tables created by
-// sql/setup.sql. When those tables are missing the
-// module falls back to bundled catalog data and
-// this-browser-only purchase storage so the flow still
-// works before the migration is run.
+// Storage: Spring Boot backend (/api/courses, /api/purchases,
+// /api/settings). When the backend is unreachable the module
+// falls back to the bundled catalog data (read-only) so the
+// storefront still renders.
 // =====================================================
 
-import { supabase } from "../supabase.js";
 import { $, escapeHtml, formatDate } from "./helpers.js";
 import { currentUserRole, currentStudent } from "./state.js";
+
+import {
+    apiGet,
+    apiPost,
+    apiPut,
+    apiDelete,
+    getStoredUser,
+    normalizeCourse,
+    normalizePurchase,
+    normalizeSettings,
+    courseToRequest,
+    settingsToRequest
+} from "./api.js";
 
 // =====================================================
 // Constants
@@ -82,20 +93,6 @@ let ownershipLoaded = false;
 // Helpers
 // =====================================================
 
-function isMissingTable(error) {
-    if (!error) {
-        return false;
-    }
-
-    return (
-        error.code === "PGRST205" ||
-        error.code === "42P01" ||
-        /could not find the table|does not exist|schema cache/i.test(
-            String(error.message || "")
-        )
-    );
-}
-
 export function formatPrice(value) {
     const amount = Number(value) || 0;
 
@@ -127,14 +124,12 @@ function localWrite(key, value) {
 }
 
 async function getIdentity() {
-    const { data } = await supabase.auth.getSession();
-
-    const user = data?.session?.user || null;
+    const user = getStoredUser() || null;
 
     return {
         id: user?.id || null,
         email: user?.email || currentStudent?.email || "",
-        name: currentStudent?.name || user?.user_metadata?.name || ""
+        name: user?.name || currentStudent?.name || ""
     };
 }
 
@@ -151,35 +146,25 @@ export async function loadCourses(force = false) {
         return coursesCache;
     }
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("courses")
-        .select("*")
-        .order("sort_order", { ascending: true });
+    try {
+        const rows = await apiGet("/api/courses", false);
 
-    if (error) {
-        if (!isMissingTable(error)) {
-            console.error("Courses loading error:", error);
-        }
+        coursesMode = "cloud";
+        coursesCache = Array.isArray(rows) && rows.length
+            ? rows.map(normalizeCourse)
+            : loadLocalCourses();
+    } catch (error) {
+        console.error("Courses loading error:", error);
 
         coursesMode = "fallback";
         coursesCache = loadLocalCourses();
-
-        return coursesCache;
     }
-
-    coursesMode = "cloud";
-    coursesCache = data?.length
-        ? data
-        : loadLocalCourses();
 
     return coursesCache;
 }
 
-// Local (pre-migration) catalog: admin edits made before
-// the courses table exists are stored in this browser.
+// Local (offline) catalog: reads any browser-stored catalog
+// first, then falls back to the bundled demo courses.
 function loadLocalCourses() {
     const stored = localRead(COURSES_LOCAL_KEY, null);
 
@@ -188,13 +173,6 @@ function loadLocalCourses() {
     }
 
     return FALLBACK_COURSES.map(course => ({ ...course }));
-}
-
-function saveLocalCourses(list) {
-    localWrite(COURSES_LOCAL_KEY, list.map(course => ({ ...course })));
-
-    coursesMode = "fallback";
-    coursesCache = list.map(course => ({ ...course }));
 }
 
 export function courseById(courseId) {
@@ -270,39 +248,16 @@ export async function createCourse(fields) {
         is_active: fields.is_active !== false
     };
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("courses")
-        .insert(row)
-        .select()
-        .single();
-
-    if (error) {
-        if (!isMissingTable(error)) {
-            throw error;
-        }
-
-        const localRow = {
-            ...row,
-            id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-        };
-
-        const list = loadLocalCourses();
-        list.push(localRow);
-        saveLocalCourses(list);
-
-        await notifyCourseLaunch(title, row.description);
-
-        return localRow;
-    }
+    const created = await apiPost(
+        "/api/admin/courses",
+        courseToRequest(row)
+    );
 
     await loadCourses(true);
 
     await notifyCourseLaunch(title, row.description);
 
-    return data;
+    return normalizeCourse(created);
 }
 
 // "New course launched" alert for every student.
@@ -351,61 +306,28 @@ export async function updateCourse(courseId, fields) {
         patch.is_active = Boolean(fields.is_active);
     }
 
-    const {
-        error
-    } = await supabase
-        .from("courses")
-        .update(patch)
-        .eq("id", courseId);
+    // The backend PUT needs the required fields (title, price), so the
+    // patch is merged onto the current course before sending.
+    const existing = courseById(courseId);
 
-    if (error) {
-        if (!isMissingTable(error)) {
-            throw error;
-        }
-
-        const list = loadLocalCourses();
-        const index = list.findIndex(
-            course => String(course.id) === String(courseId)
-        );
-
-        if (index === -1) {
-            throw new Error("Course not found.");
-        }
-
-        list[index] = { ...list[index], ...patch };
-        saveLocalCourses(list);
-
-        return list[index];
+    if (!existing) {
+        throw new Error("Course not found.");
     }
+
+    const updated = await apiPut(
+        `/api/admin/courses/${courseId}`,
+        courseToRequest({ ...existing, ...patch })
+    );
 
     await loadCourses(true);
 
-    return patch;
+    return normalizeCourse(updated);
 }
 
 export async function deleteCourse(courseId) {
-    const {
-        error
-    } = await supabase
-        .from("courses")
-        .delete()
-        .eq("id", courseId);
-
-    if (error) {
-        if (!isMissingTable(error)) {
-            throw error;
-        }
-
-        const list = loadLocalCourses();
-
-        saveLocalCourses(
-            list.filter(
-                course => String(course.id) !== String(courseId)
-            )
-        );
-
-        return;
-    }
+    await apiDelete(
+        `/api/admin/courses/${courseId}`
+    );
 
     await loadCourses(true);
 }
@@ -424,29 +346,19 @@ export async function refreshOwnership() {
         return purchasesCache;
     }
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("course_purchases")
-        .select("*")
-        .eq("user_id", identity.id)
-        .order("created_at", { ascending: false });
+    try {
+        const rows = await apiGet("/api/purchases/mine");
 
-    if (error) {
-        if (!isMissingTable(error)) {
-            console.error("Purchases loading error:", error);
-        }
+        purchasesCache = (Array.isArray(rows) ? rows : [])
+            .map(normalizePurchase);
+    } catch (error) {
+        console.error("Purchases loading error:", error);
 
         const all = localRead(PURCHASES_STORAGE_KEY, []);
         purchasesCache = all.filter(
             row => String(row.user_id) === String(identity.id)
         );
-
-        return purchasesCache;
     }
-
-    purchasesCache = data || [];
 
     return purchasesCache;
 }
@@ -531,50 +443,19 @@ export async function submitPurchase({ course, utr }) {
         );
     }
 
-    const row = {
-        user_id: identity.id,
-        user_email: identity.email,
-        user_name: identity.name,
-        course_id: course.id,
-        course_title: course.title,
-        amount_inr: Number(course.price_inr) || 0,
-        utr: trimmedUtr,
-        status: "pending",
-        created_at: new Date().toISOString()
-    };
-
-    const {
-        data,
-        error
-    } = await supabase
-        .from("course_purchases")
-        .insert(row)
-        .select()
-        .single();
-
-    if (error) {
-        if (!isMissingTable(error)) {
-            throw error;
+    const data = await apiPost(
+        "/api/purchases",
+        {
+            courseId: Number(course.id) || null,
+            utr: trimmedUtr
         }
+    );
 
-        // Demo storage: courses/purchases tables not created yet.
-        const all = localRead(PURCHASES_STORAGE_KEY, []);
-        const localRow = {
-            ...row,
-            id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-        };
-
-        all.unshift(localRow);
-        localWrite(PURCHASES_STORAGE_KEY, all);
-
-        await refreshOwnership();
-
-        return localRow;
-    }
+    const row = normalizePurchase(data);
 
     await refreshOwnership();
 
-    return data;
+    return row;
 }
 
 // =====================================================
@@ -582,219 +463,68 @@ export async function submitPurchase({ course, utr }) {
 // =====================================================
 
 export async function loadAllPurchases() {
-    const {
-        data,
-        error
-    } = await supabase
-        .from("course_purchases")
-        .select("*")
-        .order("created_at", { ascending: false });
+    try {
+        const rows = await apiGet("/api/admin/purchases");
 
-    if (error) {
-        if (!isMissingTable(error)) {
-            console.error("Admin purchases loading error:", error);
-        }
+        return {
+            rows: (Array.isArray(rows) ? rows : []).map(normalizePurchase),
+            mode: "cloud"
+        };
+    } catch (error) {
+        console.error("Admin purchases loading error:", error);
 
         return {
             rows: localRead(PURCHASES_STORAGE_KEY, []),
             mode: "local"
         };
     }
-
-    return { rows: data || [], mode: "cloud" };
 }
 
 export async function setPurchaseStatus(purchaseId, status) {
     const normalized = status === "approved" ? "approved" : "rejected";
-    const nowIso = new Date().toISOString();
 
-    // Look up which course this purchase unlocks so the
-    // approval can stamp the course validity (expiry).
-    const {
-        data: existing,
-        error: fetchError
-    } = await supabase
-        .from("course_purchases")
-        .select("course_id")
-        .eq("id", purchaseId)
-        .maybeSingle();
+    // The backend computes the expiry window (course validity) on approval.
+    const data = normalized === "approved"
+        ? await apiPost(`/api/admin/purchases/${purchaseId}/approve`)
+        : await apiPost(`/api/admin/purchases/${purchaseId}/reject`, {});
 
-    if (fetchError && !isMissingTable(fetchError)) {
-        throw fetchError;
-    }
-
-    const expiresAt =
-        normalized === "approved"
-            ? await computeExpiry(existing?.course_id)
-            : null;
-
-    const {
-        data,
-        error
-    } = await supabase
-        .from("course_purchases")
-        .update({
-            status: normalized,
-            reviewed_at: nowIso,
-            expires_at: expiresAt
-        })
-        .eq("id", purchaseId)
-        .select()
-        .single();
-
-    if (error) {
-        if (!isMissingTable(error)) {
-            throw error;
-        }
-
-        const all = localRead(PURCHASES_STORAGE_KEY, []);
-        const index = all.findIndex(
-            row => String(row.id) === String(purchaseId)
-        );
-
-        if (index === -1) {
-            throw new Error("Purchase request not found.");
-        }
-
-        const localExpires =
-            normalized === "approved"
-                ? await computeExpiry(
-                    existing?.course_id || all[index].course_id
-                )
-                : null;
-
-        all[index] = {
-            ...all[index],
-            status: normalized,
-            reviewed_at: nowIso,
-            expires_at: localExpires
-        };
-
-        localWrite(PURCHASES_STORAGE_KEY, all);
-
-        return all[index];
-    }
-
-    return data;
-}
-
-// Course validity: an approval unlocks content for the
-// course's validity_days window.
-async function computeExpiry(courseId) {
-    const courses = await loadCourses();
-
-    const course = courses.find(
-        item => String(item.id) === String(courseId)
-    );
-
-    const days = Number(course?.validity_days);
-
-    return new Date(
-        Date.now() + (days > 0 ? days : 365) * 86400000
-    ).toISOString();
+    return normalizePurchase(data);
 }
 
 // Admin: push the expiry further out (extend course expiry).
 export async function extendPurchaseExpiry(purchaseId, days = 30) {
     const amount = Number(days) > 0 ? Number(days) : 30;
 
-    const {
-        data: existing,
-        error: fetchError
-    } = await supabase
-        .from("course_purchases")
-        .select("*")
-        .eq("id", purchaseId)
-        .maybeSingle();
-
-    if (fetchError && !isMissingTable(fetchError)) {
-        throw fetchError;
-    }
-
-    const baseFor = row =>
-        row?.expires_at
-            ? Math.max(new Date(row.expires_at).getTime(), Date.now())
-            : Date.now();
-
-    const newExpiry = base =>
-        new Date(base + amount * 86400000).toISOString();
-
-    if (existing) {
-        const {
-            data,
-            error
-        } = await supabase
-            .from("course_purchases")
-            .update({ expires_at: newExpiry(baseFor(existing)) })
-            .eq("id", purchaseId)
-            .select()
-            .single();
-
-        if (error) {
-            throw error;
-        }
-
-        return data;
-    }
-
-    const all = localRead(PURCHASES_STORAGE_KEY, []);
-    const index = all.findIndex(
-        row => String(row.id) === String(purchaseId)
+    const data = await apiPost(
+        `/api/admin/purchases/${purchaseId}/extend-validity`,
+        { days: amount }
     );
 
-    if (index === -1) {
-        throw new Error("Purchase not found.");
-    }
-
-    all[index] = {
-        ...all[index],
-        expires_at: newExpiry(baseFor(all[index]))
-    };
-
-    localWrite(PURCHASES_STORAGE_KEY, all);
-
-    return all[index];
+    return normalizePurchase(data);
 }
 
 // Admin: remove a purchase record entirely.
 export async function deletePurchase(purchaseId) {
-    const {
-        error
-    } = await supabase
-        .from("course_purchases")
-        .delete()
-        .eq("id", purchaseId);
-
-    if (error) {
-        if (!isMissingTable(error)) {
-            throw error;
-        }
-
-        const all = localRead(PURCHASES_STORAGE_KEY, []);
-
-        localWrite(
-            PURCHASES_STORAGE_KEY,
-            all.filter(row => String(row.id) !== String(purchaseId))
-        );
-    }
+    await apiDelete(
+        `/api/admin/purchases/${purchaseId}`
+    );
 }
 
 // =====================================================
-// UPI ID (site_settings, localStorage fallback)
+// UPI ID (site settings, localStorage fallback)
 // =====================================================
 
 export async function getUpiId() {
-    const {
-        data,
-        error
-    } = await supabase
-        .from("site_settings")
-        .select("upi_id")
-        .eq("id", 1)
-        .maybeSingle();
+    try {
+        const settings = normalizeSettings(
+            await apiGet("/api/settings", false)
+        );
 
-    if (!error && data?.upi_id) {
-        return data.upi_id;
+        if (settings?.upi_id) {
+            return settings.upi_id;
+        }
+    } catch (error) {
+        console.error("Settings loading error:", error);
     }
 
     const localValue = localRead(UPi_STORAGE_KEY, null);
@@ -809,26 +539,16 @@ export async function saveUpiId(value) {
         throw new Error("UPI ID cannot be empty.");
     }
 
-    const {
-        error
-    } = await supabase
-        .from("site_settings")
-        .update({ upi_id: trimmed })
-        .eq("id", 1);
-
-    if (error) {
-        if (!isMissingTable(error)) {
-            throw error;
-        }
-
-        localWrite(UPi_STORAGE_KEY, trimmed);
-
-        return { mode: "local", upiId: trimmed };
-    }
+    const settings = normalizeSettings(
+        await apiPut(
+            "/api/settings",
+            settingsToRequest({ upi_id: trimmed })
+        )
+    );
 
     localWrite(UPi_STORAGE_KEY, trimmed);
 
-    return { mode: "cloud", upiId: trimmed };
+    return { mode: "cloud", upiId: settings?.upi_id || trimmed };
 }
 
 export function buildUpiLink({ upiId, amount, title }) {
@@ -865,7 +585,7 @@ export async function populateBundleSelect(selectElement) {
         selectElement.dataset.loaded = "1";
 
         const option = document.createElement("option");
-        option.textContent = "Available after running sql/setup.sql";
+        option.textContent = "Available when the backend is offline";
         selectElement.append(option);
 
         return;
@@ -1307,8 +1027,8 @@ async function renderAdminPurchases() {
 
     if (modeNote) {
         modeNote.textContent = mode === "local"
-            ? "Storage: this browser only — run sql/setup.sql for database storage."
-            : "Storage: Supabase database";
+            ? "Storage: this browser only — the backend is unreachable."
+            : "Storage: TechCampus Hub backend";
     }
 
     if (!rows.length) {
@@ -1479,7 +1199,7 @@ async function handleUpiSave() {
 
         purchasesAdminMessage(
             result.mode === "local"
-                ? "UPI ID saved (local — run sql/setup.sql for database storage)."
+                ? "UPI ID saved (also cached locally — the backend is unreachable)."
                 : "UPI ID saved.",
             "success"
         );

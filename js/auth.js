@@ -1,9 +1,53 @@
 // =====================================================
 // TechCampus_Hub
 // auth.js
+//
+// REST authentication against the Spring Boot backend.
+//
+// The public contract of this module is unchanged from
+// the Supabase version so no caller had to be rewritten:
+//   signUpStudent(...)  -> { data: { user, session }, error }
+//   signIn(...)         -> { data: { user, session }, error }
+//   resetPassword(...)  -> { error }
+//   getSession()        -> { data: { session }, error }
+//   getCurrentUser()    -> { user, error }
+//   signOut()           -> boolean
+//   onAuthStateChange(cb) — cb(event, session)
+//
+// The JWT lives in localStorage (js/api.js) and is sent
+// as "Authorization: Bearer <token>".
 // =====================================================
 
-import { supabase } from "../supabase.js";
+import {
+    apiPost,
+    getAuthToken,
+    getStoredUser,
+    setAuthToken,
+    setStoredUser,
+    clearAuth,
+    normalizeUser
+} from "./api.js";
+
+// =====================================================
+// Auth-state listeners (SIGNED_IN / SIGNED_OUT)
+// =====================================================
+
+const listeners = [];
+
+function emitAuthState(event, session) {
+    listeners.forEach(callback => {
+        try {
+            callback(event, session);
+        } catch (error) {
+            console.error("Auth state listener error:", error);
+        }
+    });
+}
+
+/** Build the Supabase-shaped session object callers expect. */
+function buildSession(user) {
+    return user ? { user } : null;
+}
 
 // =====================================================
 // Student Signup
@@ -18,20 +62,43 @@ export async function signUpStudent({
     year,
     semester
 }) {
-    return await supabase.auth.signUp({
-        email: String(email || "").trim(),
-        password,
-
-        options: {
-            data: {
+    try {
+        const data = await apiPost(
+            "/api/auth/register",
+            {
                 name: String(name || "").trim(),
+                email: String(email || "").trim(),
+                password,
                 course: String(course || "").trim(),
                 branch: String(branch || "").trim(),
-                year: Number(year),
-                semester: Number(semester)
-            }
-        }
-    });
+                year: Number(year) || null,
+                semester: Number(semester) || null
+            },
+            false
+        );
+
+        const user = normalizeUser(data?.user);
+
+        setAuthToken(data?.token || null);
+        setStoredUser(user);
+
+        emitAuthState("SIGNED_IN", buildSession(user));
+
+        return {
+            data: {
+                user,
+                session: buildSession(user)
+            },
+            error: null
+        };
+    } catch (error) {
+        console.error("Sign up error:", error);
+
+        return {
+            data: { user: null, session: null },
+            error
+        };
+    }
 }
 
 // =====================================================
@@ -39,10 +106,38 @@ export async function signUpStudent({
 // =====================================================
 
 export async function signIn(email, password) {
-    return await supabase.auth.signInWithPassword({
-        email: String(email || "").trim(),
-        password
-    });
+    try {
+        const data = await apiPost(
+            "/api/auth/login",
+            {
+                email: String(email || "").trim(),
+                password
+            },
+            false
+        );
+
+        const user = normalizeUser(data?.user);
+
+        setAuthToken(data?.token || null);
+        setStoredUser(user);
+
+        emitAuthState("SIGNED_IN", buildSession(user));
+
+        return {
+            data: {
+                user,
+                session: buildSession(user)
+            },
+            error: null
+        };
+    } catch (error) {
+        console.error("Sign in error:", error);
+
+        return {
+            data: { user: null, session: null },
+            error
+        };
+    }
 }
 
 // =====================================================
@@ -50,15 +145,19 @@ export async function signIn(email, password) {
 // =====================================================
 
 export async function resetPassword(email) {
-    const redirectUrl =
-        `${window.location.origin}${window.location.pathname}`;
+    try {
+        await apiPost(
+            "/api/auth/forgot-password",
+            { email: String(email || "").trim() },
+            false
+        );
 
-    return await supabase.auth.resetPasswordForEmail(
-        String(email || "").trim(),
-        {
-            redirectTo: redirectUrl
-        }
-    );
+        return { error: null };
+    } catch (error) {
+        console.error("Password reset error:", error);
+
+        return { error };
+    }
 }
 
 // =====================================================
@@ -66,7 +165,28 @@ export async function resetPassword(email) {
 // =====================================================
 
 export async function getSession() {
-    return await supabase.auth.getSession();
+    try {
+        const token = getAuthToken();
+
+        if (!token) {
+            return {
+                data: { session: null },
+                error: null
+            };
+        }
+
+        const user = getStoredUser();
+
+        return {
+            data: { session: buildSession(user) },
+            error: null
+        };
+    } catch (error) {
+        return {
+            data: { session: null },
+            error
+        };
+    }
 }
 
 // =====================================================
@@ -74,15 +194,36 @@ export async function getSession() {
 // =====================================================
 
 export async function getCurrentUser() {
-    const {
-        data,
-        error
-    } = await supabase.auth.getUser();
+    try {
+        if (!getAuthToken()) {
+            return { user: null, error: null };
+        }
 
-    return {
-        user: data?.user || null,
-        error
-    };
+        // Refresh the cached profile from the backend.
+        const { apiGet } = await import("./api.js");
+
+        const fresh = await apiGet("/api/auth/me");
+
+        const user = normalizeUser(fresh);
+
+        setStoredUser(user);
+
+        return { user, error: null };
+    } catch (error) {
+        // An expired/invalid token means "signed out".
+        if (error.status === 401 || error.status === 403) {
+            clearAuth();
+
+            return { user: null, error: null };
+        }
+
+        console.error("Current user error:", error);
+
+        return {
+            user: getStoredUser(),
+            error
+        };
+    }
 }
 
 // =====================================================
@@ -93,30 +234,15 @@ export async function signOut() {
     try {
         console.log("Starting logout...");
 
-        const result = await supabase.auth.signOut({
-            scope: "local"
-        });
+        clearAuth();
 
-        console.log("Logout result:", result);
-
-        if (result?.error) {
-            console.error(
-                "Supabase logout error:",
-                result.error
-            );
-
-            return false;
-        }
+        emitAuthState("SIGNED_OUT", null);
 
         console.log("Logout successful");
 
         return true;
-
     } catch (error) {
-        console.error(
-            "Logout exception:",
-            error
-        );
+        console.error("Logout exception:", error);
 
         return false;
     }
@@ -127,7 +253,16 @@ export async function signOut() {
 // =====================================================
 
 export function onAuthStateChange(callback) {
-    return supabase.auth.onAuthStateChange(callback);
+    if (typeof callback === "function") {
+        listeners.push(callback);
+    }
+
+    return {
+        data: {
+            subscription: { unsubscribe() {} }
+        },
+        error: null
+    };
 }
 
 // =====================================================
@@ -136,40 +271,20 @@ export function onAuthStateChange(callback) {
 
 export async function requestAccountDeletion() {
     const {
-        data: {
-            session
-        },
-        error: sessionError
-    } = await supabase.auth.getSession();
-
-    if (sessionError) {
-        throw sessionError;
-    }
+        data: { session }
+    } = await getSession();
 
     if (!session?.user?.id) {
-        throw new Error(
-            "No active session found."
-        );
+        throw new Error("No active session found.");
     }
 
-    const {
-        data,
-        error
-    } = await supabase.functions.invoke(
-        "delete-account",
-        {
-            body: {}
-        }
-    );
+    const { apiDelete } = await import("./api.js");
 
-    if (error) {
-        console.error(
-            "Account deletion error:",
-            error
-        );
+    const data = await apiDelete("/api/account");
 
-        throw error;
-    }
+    clearAuth();
 
-    return data;
+    emitAuthState("SIGNED_OUT", null);
+
+    return data ?? { success: true };
 }

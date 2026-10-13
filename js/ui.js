@@ -1523,33 +1523,18 @@ const DEFAULT_TELEGRAM_LINK =
 
 export async function loadTelegramLink() {
     try {
-        const { supabase } =
-            await import("../supabase.js");
+        const { apiGet, normalizeSettings } =
+            await import("./api.js");
 
-        const {
-            data,
-            error
-        } = await supabase
-            .from("site_settings")
-            .select("telegram_link")
-            .eq("id", 1)
-            .maybeSingle();
+        const data = await apiGet(
+            "/api/settings",
+            false
+        );
 
-        if (error) {
-            console.error(
-                "Telegram link load error:",
-                error
-            );
-
-            setTelegramLinkUI(
-                DEFAULT_TELEGRAM_LINK
-            );
-
-            return DEFAULT_TELEGRAM_LINK;
-        }
+        const settings = normalizeSettings(data);
 
         const telegramLink =
-            data?.telegram_link ||
+            settings?.telegram_link ||
             DEFAULT_TELEGRAM_LINK;
 
         setTelegramLinkUI(
@@ -1560,7 +1545,7 @@ export async function loadTelegramLink() {
 
     } catch (error) {
         console.error(
-            "Telegram link exception:",
+            "Telegram link load error:",
             error
         );
 
@@ -1636,34 +1621,18 @@ export async function updateTelegramLink(
         );
     }
 
-    const { supabase } =
-        await import("../supabase.js");
+    const { apiPut, normalizeSettings } =
+        await import("./api.js");
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("site_settings")
-        .update({
-            telegram_link: link,
-            updated_at:
-                new Date().toISOString()
-        })
-        .eq("id", 1)
-        .select("telegram_link")
-        .single();
+    const data = await apiPut(
+        "/api/settings",
+        { telegramLink: link }
+    );
 
-    if (error) {
-        console.error(
-            "Telegram link update error:",
-            error
-        );
-
-        throw error;
-    }
+    const settings = normalizeSettings(data);
 
     const savedLink =
-        data?.telegram_link || link;
+        settings?.telegram_link || link;
 
     setTelegramLinkUI(
         savedLink
@@ -1681,7 +1650,7 @@ export async function updateTelegramLink(
 
 
 // IMPORTANT:
-// Profile is fetched directly from Supabase instead
+// Profile is fetched from the backend instead
 // of relying only on cached students[] data.
 // =====================================================
 
@@ -1714,7 +1683,7 @@ export async function loadCurrentStudent(
 
         error
 
-    } = await supabaseProfileQuery(
+    } = await profileQuery(
 
         targetUserId
 
@@ -1766,7 +1735,7 @@ export async function loadCurrentStudent(
 
 // =====================================================
 
-async function supabaseProfileQuery(
+async function profileQuery(
 
     userId
 
@@ -1774,28 +1743,46 @@ async function supabaseProfileQuery(
 
     // Dynamic import avoids creating another permanent
     // dependency at module initialization.
+    //
+    // The backend derives the caller from the JWT, so the
+    // profile always belongs to the signed-in user (the only
+    // user loadCurrentStudent is ever asked about).
 
     const {
 
-        supabase
+        apiGet,
 
-    } = await import("../supabase.js");
+        normalizeUser
+
+    } = await import("./api.js");
 
 
 
-    return await supabase
+    try {
 
-        .from("students")
+        const data = await apiGet("/api/auth/me");
 
-        .select(
 
-            "id,email,name,course,branch,year,semester,role,created_at"
 
-        )
+        return {
 
-        .eq("id", userId)
+            data: normalizeUser(data),
 
-        .maybeSingle();
+            error: null
+
+        };
+
+    } catch (error) {
+
+        return {
+
+            data: null,
+
+            error
+
+        };
+
+    }
 
 }
 

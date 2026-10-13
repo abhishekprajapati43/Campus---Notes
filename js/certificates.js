@@ -5,21 +5,21 @@
 // Certification section: students open admin-managed
 // certificate links; admins add, edit and delete them.
 //
-// Storage: Supabase `certificates` table created by
-// sql/setup.sql (Part 2). When the table is missing the
-// module falls back to this-browser-only storage so the
-// feature still works before the migration is run.
+// Storage: backend /api/certificates/links (students see
+// active links only; admins see everything — filtered
+// server-side). Admin writes go through
+// /api/admin/certificates/links.
 // =====================================================
 
-import { supabase } from "../supabase.js";
 import { $, escapeHtml } from "./helpers.js";
-import { currentUserRole } from "./state.js";
 
-// =====================================================
-// Constants
-// =====================================================
-
-const LOCAL_KEY = "campusnotes:certificates";
+import {
+    apiGet,
+    apiPost,
+    apiPut,
+    apiDelete,
+    normalizeCertificateLink
+} from "./api.js";
 
 // =====================================================
 // Module state
@@ -28,44 +28,6 @@ const LOCAL_KEY = "campusnotes:certificates";
 let certificatesCache = [];
 let certificatesLoaded = false;
 let eventsWired = false;
-
-// =====================================================
-// Helpers
-// =====================================================
-
-function isMissingTable(error) {
-    if (!error) {
-        return false;
-    }
-
-    return (
-        error.code === "PGRST205" ||
-        error.code === "42P01" ||
-        /could not find the table|does not exist|schema cache/i.test(
-            String(error.message || "")
-        )
-    );
-}
-
-function localRead(key, fallback) {
-    try {
-        const raw = window.localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-    } catch (error) {
-        console.warn("Local storage read failed:", error);
-        return fallback;
-    }
-}
-
-function localWrite(key, value) {
-    try {
-        window.localStorage.setItem(key, JSON.stringify(value));
-        return true;
-    } catch (error) {
-        console.error("Local storage write failed:", error);
-        return false;
-    }
-}
 
 // =====================================================
 // Storage
@@ -79,36 +41,14 @@ export async function loadCertificates(force = false) {
     certificatesLoaded = true;
     certificatesCache = [];
 
-    const isAdmin = currentUserRole === "admin";
+    try {
+        const rows = await apiGet("/api/certificates/links");
 
-    let query = supabase
-        .from("certificates")
-        .select("*")
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: true });
-
-    if (!isAdmin) {
-        query = query.eq("is_active", true);
+        certificatesCache = (Array.isArray(rows) ? rows : [])
+            .map(normalizeCertificateLink);
+    } catch (error) {
+        console.error("Certificates loading error:", error);
     }
-
-    const {
-        data,
-        error
-    } = await query;
-
-    if (error) {
-        if (!isMissingTable(error)) {
-            console.error("Certificates loading error:", error);
-        }
-
-        certificatesCache = localRead(LOCAL_KEY, []).filter(
-            row => isAdmin || row.is_active !== false
-        );
-
-        return certificatesCache;
-    }
-
-    certificatesCache = data || [];
 
     return certificatesCache;
 }
@@ -125,46 +65,22 @@ export async function createCertificate(fields) {
         throw new Error("Certificate link must start with http:// or https://");
     }
 
-    const row = {
-        title,
-        url,
-        description: String(fields.description || "").trim(),
-        sort_order: Number(fields.sort_order) || 0,
-        is_active: fields.is_active !== false
-    };
-
-    const {
-        data,
-        error
-    } = await supabase
-        .from("certificates")
-        .insert(row)
-        .select()
-        .single();
-
-    if (error) {
-        if (!isMissingTable(error)) {
-            throw error;
+    const data = await apiPost(
+        "/api/admin/certificates/links",
+        {
+            title,
+            url,
+            description: String(fields.description || "").trim(),
+            sortOrder: Number(fields.sort_order) || 0,
+            isActive: fields.is_active !== false
         }
+    );
 
-        const localRow = {
-            ...row,
-            id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            created_at: new Date().toISOString()
-        };
+    const row = normalizeCertificateLink(data);
 
-        const all = localRead(LOCAL_KEY, []);
-        all.push(localRow);
-        localWrite(LOCAL_KEY, all);
+    certificatesCache.push(row);
 
-        certificatesCache.push(localRow);
-
-        return { row: localRow, mode: "local" };
-    }
-
-    certificatesCache.push(data);
-
-    return { row: data, mode: "cloud" };
+    return { row, mode: "cloud" };
 }
 
 export async function updateCertificate(certificateId, fields) {
@@ -197,60 +113,21 @@ export async function updateCertificate(certificateId, fields) {
     }
 
     if (fields.is_active !== undefined) {
-        patch.is_active = Boolean(fields.is_active);
+        patch.isActive = Boolean(fields.is_active);
     }
 
-    const {
-        error
-    } = await supabase
-        .from("certificates")
-        .update(patch)
-        .eq("id", certificateId);
-
-    if (error) {
-        if (!isMissingTable(error)) {
-            throw error;
-        }
-
-        const all = localRead(LOCAL_KEY, []);
-
-        const index = all.findIndex(
-            row => String(row.id) === String(certificateId)
-        );
-
-        if (index === -1) {
-            throw new Error("Certificate not found.");
-        }
-
-        all[index] = { ...all[index], ...patch };
-        localWrite(LOCAL_KEY, all);
-
-        return { mode: "local" };
-    }
+    await apiPut(
+        `/api/admin/certificates/links/${certificateId}`,
+        patch
+    );
 
     return { mode: "cloud" };
 }
 
 export async function deleteCertificate(certificateId) {
-    const {
-        error
-    } = await supabase
-        .from("certificates")
-        .delete()
-        .eq("id", certificateId);
-
-    if (error) {
-        if (!isMissingTable(error)) {
-            throw error;
-        }
-
-        const all = localRead(LOCAL_KEY, []);
-
-        localWrite(
-            LOCAL_KEY,
-            all.filter(row => String(row.id) !== String(certificateId))
-        );
-    }
+    await apiDelete(
+        `/api/admin/certificates/links/${certificateId}`
+    );
 
     certificatesCache = certificatesCache.filter(
         row => String(row.id) !== String(certificateId)
@@ -435,7 +312,7 @@ async function handleCertificateSubmit(event) {
 
             adminMessage(
                 result.mode === "local"
-                    ? "Certificate saved (local — run sql/setup.sql for database storage)."
+                    ? "Certificate saved locally — the backend is unreachable."
                     : "Certificate added.",
                 "success"
             );

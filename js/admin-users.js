@@ -42,7 +42,7 @@ export async function renderAdminUsers() {
     if (!students.length) {
         list.innerHTML = `
             <p class="text-sm text-slate-500">
-                No students found (run sql/setup.sql for database storage).
+                No students found (register an account to see it here).
             </p>
         `;
         return;

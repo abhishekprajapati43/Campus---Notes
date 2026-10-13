@@ -8,9 +8,7 @@
 // =====================================================
 
 
-
-import { supabase } from "../supabase.js";
-
+import { apiGet, normalizeNote, normalizePyq, normalizeTnp, normalizeTimetable, normalizeUser } from "./api.js";
 
 
 
@@ -47,27 +45,15 @@ export let students = [];
 
 export async function loadNotes() {
 
-    const {
+    try {
 
-        data,
-
-        error
-
-    } = await supabase
-
-        .from("notes")
-
-        .select("*")
-
-        .order("created_at", {
-
-            ascending: false
-
-        });
+        const data = await apiGet("/api/notes");
 
 
 
-    if (error) {
+        notes = (data || []).map(normalizeNote);
+
+    } catch (error) {
 
         console.error(
 
@@ -81,21 +67,14 @@ export async function loadNotes() {
 
         notes = [];
 
-
-
-        return notes;
-
     }
-
-
-
-    notes = data || [];
 
 
 
     return notes;
 
 }
+
 
 
 
@@ -111,27 +90,15 @@ export async function loadNotes() {
 
 export async function loadTnp() {
 
-    const {
+    try {
 
-        data,
-
-        error
-
-    } = await supabase
-
-        .from("tnp")
-
-        .select("*")
-
-        .order("created_at", {
-
-            ascending: false
-
-        });
+        const data = await apiGet("/api/tnp-notes");
 
 
 
-    if (error) {
+        tnpItems = (data || []).map(normalizeTnp);
+
+    } catch (error) {
 
         console.error(
 
@@ -145,21 +112,14 @@ export async function loadTnp() {
 
         tnpItems = [];
 
-
-
-        return tnpItems;
-
     }
-
-
-
-    tnpItems = data || [];
 
 
 
     return tnpItems;
 
 }
+
 
 
 
@@ -175,27 +135,15 @@ export async function loadTnp() {
 
 export async function loadPyq() {
 
-    const {
+    try {
 
-        data,
-
-        error
-
-    } = await supabase
-
-        .from("previousYearPapers")
-
-        .select("*")
-
-        .order("created_at", {
-
-            ascending: false
-
-        });
+        const data = await apiGet("/api/pyqs");
 
 
 
-    if (error) {
+        pyqItems = (data || []).map(normalizePyq);
+
+    } catch (error) {
 
         console.error(
 
@@ -209,15 +157,7 @@ export async function loadPyq() {
 
         pyqItems = [];
 
-
-
-        return pyqItems;
-
     }
-
-
-
-    pyqItems = data || [];
 
 
 
@@ -225,33 +165,41 @@ export async function loadPyq() {
 
 }
 // =====================================================
+
 // Load Timetable
+
 // =====================================================
 
 export async function loadTimetable() {
 
-    const { data, error } = await supabase
-        .from("timetable")
-        .select("*")
-        .order("created_at", {
-            ascending: false
-        });
+    try {
 
-    if (error) {
+        const data = await apiGet("/api/timetables");
+
+
+
+        timetableItems = (data || []).map(normalizeTimetable);
+
+    } catch (error) {
 
         console.error(
+
             "Timetable loading error:",
+
             error
+
         );
+
+
 
         timetableItems = [];
 
-        return timetableItems;
     }
 
-    timetableItems = data || [];
+
 
     return timetableItems;
+
 }
 
 // =====================================================
@@ -262,17 +210,11 @@ export async function loadTimetable() {
 
 //
 
-// IMPORTANT:
+// Admin-only endpoint: the backend returns every profile
 
-// Passwords are NEVER selected here.
+// (name, email, course, branch, year, semester, role).
 
-//
-
-// RLS on the students table must ensure that:
-
-// - Student can read only their own profile.
-
-// - Admin can read student profiles as required.
+// Passwords never leave the server.
 
 // =====================================================
 
@@ -280,31 +222,15 @@ export async function loadTimetable() {
 
 export async function loadStudents() {
 
-    const {
+    try {
 
-        data,
-
-        error
-
-    } = await supabase
-
-        .from("students")
-
-        .select(
-
-            "id,email,name,course,branch,year,semester,role,created_at"
-
-        )
-
-        .order("created_at", {
-
-            ascending: false
-
-        });
+        const data = await apiGet("/api/admin/users");
 
 
 
-    if (error) {
+        students = (data || []).map(normalizeUser);
+
+    } catch (error) {
 
         console.error(
 
@@ -318,21 +244,14 @@ export async function loadStudents() {
 
         students = [];
 
-
-
-        return students;
-
     }
-
-
-
-    students = data || [];
 
 
 
     return students;
 
 }
+
 
 
 
@@ -398,6 +317,7 @@ export async function loadAllData(
 
 
 
+
 // =====================================================
 
 // Reload Students
@@ -411,6 +331,7 @@ export async function reloadStudents() {
     return await loadStudents();
 
 }
+
 
 
 
@@ -447,6 +368,7 @@ export function findStudentById(id) {
     );
 
 }
+
 
 
 
@@ -495,5 +417,4 @@ export function findStudentByEmail(email) {
     );
 
 }
-
 

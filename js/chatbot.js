@@ -6,12 +6,18 @@
 // the dashboard opens the official Google Gemini site,
 // and admins can change the link from the admin panel.
 //
-// Storage: site_settings.gemini_url (sql/setup.sql
-// Part 2) with a this-browser fallback.
+// Storage: site settings geminiUrl (GET/PUT /api/settings)
+// with a this-browser fallback.
 // =====================================================
 
-import { supabase } from "../supabase.js";
 import { $ } from "./helpers.js";
+
+import {
+    apiGet,
+    apiPut,
+    normalizeSettings,
+    settingsToRequest
+} from "./api.js";
 
 // =====================================================
 // Constants
@@ -33,17 +39,12 @@ let eventsWired = false;
 
 export async function getGeminiUrl() {
     try {
-        const {
-            data,
-            error
-        } = await supabase
-            .from("site_settings")
-            .select("gemini_url")
-            .eq("id", 1)
-            .maybeSingle();
+        const settings = normalizeSettings(
+            await apiGet("/api/settings", false)
+        );
 
-        if (!error && data?.gemini_url) {
-            return data.gemini_url;
+        if (settings?.gemini_url) {
+            return settings.gemini_url;
         }
     } catch (error) {
         console.warn("Gemini link load failed:", error);
@@ -65,17 +66,15 @@ export async function saveGeminiUrl(value) {
         throw new Error("The Gemini link must start with http:// or https://");
     }
 
-    const {
-        error
-    } = await supabase
-        .from("site_settings")
-        .update({ gemini_url: trimmed })
-        .eq("id", 1);
-
     let mode = "cloud";
 
-    if (error) {
-        // Missing column/table — keep it in this browser.
+    try {
+        await apiPut(
+            "/api/settings",
+            settingsToRequest({ gemini_url: trimmed })
+        );
+    } catch (error) {
+        // Backend unreachable — keep it in this browser.
         mode = "local";
     }
 
@@ -140,7 +139,7 @@ export function setupChatbotEvents() {
 
             settingsMessage(
                 result.mode === "local"
-                    ? "Chatbot link saved (local — run sql/setup.sql for database storage)."
+                    ? "Chatbot link saved locally — the backend is unreachable."
                     : "Chatbot link updated.",
                 "success"
             );

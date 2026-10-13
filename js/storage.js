@@ -5,7 +5,7 @@
 // Cloudinary PDF Storage
 // =====================================================
 
-import { supabase } from "../supabase.js";
+import { apiDelete } from "./api.js";
 
 
 const CLOUDINARY_CLOUD_NAME = "f6yh5vch";
@@ -30,7 +30,6 @@ export const missingPdfPaths = new Set();
 // =====================================================
 //
 // Cloudinary file URL is already public/deliverable.
-// No Supabase signed URL is required.
 // =====================================================
 
 export async function getPdfUrl(item) {
@@ -344,7 +343,7 @@ export async function uploadPdf(
 
 
     // -------------------------------------------------
-    // Return data for Supabase
+    // Return data for the record save
     // -------------------------------------------------
 
     return {
@@ -423,45 +422,23 @@ export async function removeStorage(
             publicId
         );
 
-        const {
-            data,
-            error
-        } = await supabase.functions.invoke(
-            "delete-cloudinary",
-            {
-                body: {
-                    publicId: String(publicId),
-                    resourceType:
-                        resourceType || "raw"
-                }
-            }
+        // The backend holds the Cloudinary API secret and
+        // performs the signed delete request.
+        const params = new URLSearchParams({
+            publicId: String(publicId),
+            resourceType: resourceType || "raw"
+        });
+
+        const data = await apiDelete(
+            `/api/admin/files?${params.toString()}`
         );
-
-        if (error) {
-            console.error(
-                "Cloudinary secure deletion error:",
-                error
-            );
-
-            throw error;
-        }
-
-        if (
-            !data ||
-            data.success !== true
-        ) {
-            throw new Error(
-                data?.error ||
-                "Cloudinary asset deletion failed."
-            );
-        }
 
         console.log(
             "Cloudinary asset deleted successfully:",
             publicId
         );
 
-        return data;
+        return { success: true, ...(data || {}) };
 
     } catch (error) {
 
@@ -480,9 +457,9 @@ export async function removeStorage(
 // =====================================================
 //
 // 1. Upload new PDF
-// 2. Update Supabase record
+// 2. Update backend record
 // 3. Old Cloudinary file can later be deleted
-//    through a secure backend function.
+//    through a secure backend endpoint.
 // =====================================================
 
 export async function preparePdfReplacement(

@@ -7,23 +7,25 @@
 // student's own submissions, and the admin inbox
 // (view / delete).
 //
-// Storage: Supabase `feedback` table created by
-// sql/setup.sql (Part 2). When the table is missing the
-// module falls back to this-browser-only storage so the
-// feature still works before the migration is run.
+// Storage: backend /api/feedback (+ /api/admin/feedback).
 // =====================================================
 
-import { supabase } from "../supabase.js";
 import { $, escapeHtml, formatDate } from "./helpers.js";
-import { currentStudent, currentUserRole } from "./state.js";
+import { currentStudent } from "./state.js";
 import { loadCourses } from "./courses.js";
 import { loadNotes, notes } from "./data.js";
+
+import {
+    apiGet,
+    apiPost,
+    apiDelete,
+    getStoredUser,
+    normalizeFeedback
+} from "./api.js";
 
 // =====================================================
 // Constants
 // =====================================================
-
-const LOCAL_KEY = "campusnotes:feedback";
 
 const TARGET_TYPES = ["website", "course", "note"];
 
@@ -39,49 +41,13 @@ let selectedRating = 0;
 // Helpers
 // =====================================================
 
-function isMissingTable(error) {
-    if (!error) {
-        return false;
-    }
-
-    return (
-        error.code === "PGRST205" ||
-        error.code === "42P01" ||
-        /could not find the table|does not exist|schema cache/i.test(
-            String(error.message || "")
-        )
-    );
-}
-
-function localRead(key, fallback) {
-    try {
-        const raw = window.localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-    } catch (error) {
-        console.warn("Local storage read failed:", error);
-        return fallback;
-    }
-}
-
-function localWrite(key, value) {
-    try {
-        window.localStorage.setItem(key, JSON.stringify(value));
-        return true;
-    } catch (error) {
-        console.error("Local storage write failed:", error);
-        return false;
-    }
-}
-
 async function getIdentity() {
-    const { data } = await supabase.auth.getSession();
-
-    const user = data?.session?.user || null;
+    const user = getStoredUser() || null;
 
     return {
         id: user?.id || null,
         email: user?.email || currentStudent?.email || "",
-        name: currentStudent?.name || user?.user_metadata?.name || ""
+        name: user?.name || currentStudent?.name || ""
     };
 }
 
@@ -152,48 +118,21 @@ export async function submitFeedback({
         throw new Error("Please choose a star rating from 1 to 5.");
     }
 
-    const row = {
-        user_id: identity.id,
-        user_name: identity.name,
-        user_email: identity.email,
-        target_type: normalizedType,
-        target_label: String(targetLabel || "Website").trim(),
-        rating: normalizedRating,
-        message: String(message || "").trim(),
-        created_at: new Date().toISOString()
-    };
-
-    const {
-        data,
-        error
-    } = await supabase
-        .from("feedback")
-        .insert(row)
-        .select()
-        .single();
-
-    if (error) {
-        if (!isMissingTable(error)) {
-            throw error;
+    const data = await apiPost(
+        "/api/feedback",
+        {
+            rating: normalizedRating,
+            message: String(message || "").trim(),
+            targetType: normalizedType,
+            targetLabel: String(targetLabel || "Website").trim()
         }
+    );
 
-        const localRow = {
-            ...row,
-            id: `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-        };
+    const row = normalizeFeedback(data);
 
-        const all = localRead(LOCAL_KEY, []);
-        all.unshift(localRow);
-        localWrite(LOCAL_KEY, all);
+    myFeedbackCache.unshift(row);
 
-        myFeedbackCache.unshift(localRow);
-
-        return { row: localRow, mode: "local" };
-    }
-
-    myFeedbackCache.unshift(data);
-
-    return { row: data, mode: "cloud" };
+    return { row, mode: "cloud" };
 }
 
 export async function loadMyFeedback(force = false) {
@@ -208,72 +147,39 @@ export async function loadMyFeedback(force = false) {
         return myFeedbackCache;
     }
 
-    const {
-        data,
-        error
-    } = await supabase
-        .from("feedback")
-        .select("*")
-        .eq("user_id", identity.id)
-        .order("created_at", { ascending: false });
+    try {
+        const rows = await apiGet("/api/feedback/mine");
 
-    if (error) {
-        if (!isMissingTable(error)) {
-            console.error("Feedback loading error:", error);
-        }
+        myFeedbackCache = (Array.isArray(rows) ? rows : [])
+            .map(normalizeFeedback);
+    } catch (error) {
+        console.error("Feedback loading error:", error);
 
-        myFeedbackCache = localRead(LOCAL_KEY, []).filter(
-            row => String(row.user_id) === String(identity.id)
-        );
-
-        return myFeedbackCache;
+        myFeedbackCache = [];
     }
-
-    myFeedbackCache = data || [];
 
     return myFeedbackCache;
 }
 
 export async function loadAllFeedback() {
-    const {
-        data,
-        error
-    } = await supabase
-        .from("feedback")
-        .select("*")
-        .order("created_at", { ascending: false });
+    try {
+        const rows = await apiGet("/api/admin/feedback");
 
-    if (error) {
-        if (!isMissingTable(error)) {
-            console.error("Admin feedback loading error:", error);
-        }
+        return {
+            rows: (Array.isArray(rows) ? rows : []).map(normalizeFeedback),
+            mode: "cloud"
+        };
+    } catch (error) {
+        console.error("Admin feedback loading error:", error);
 
-        return { rows: localRead(LOCAL_KEY, []), mode: "local" };
+        return { rows: [], mode: "local" };
     }
-
-    return { rows: data || [], mode: "cloud" };
 }
 
 export async function deleteFeedback(feedbackId) {
-    const {
-        error
-    } = await supabase
-        .from("feedback")
-        .delete()
-        .eq("id", feedbackId);
-
-    if (error) {
-        if (!isMissingTable(error)) {
-            throw error;
-        }
-
-        const all = localRead(LOCAL_KEY, []);
-
-        localWrite(
-            LOCAL_KEY,
-            all.filter(row => String(row.id) !== String(feedbackId))
-        );
-    }
+    await apiDelete(
+        `/api/admin/feedback/${feedbackId}`
+    );
 
     myFeedbackCache = myFeedbackCache.filter(
         row => String(row.id) !== String(feedbackId)
@@ -424,7 +330,7 @@ async function handleFeedbackSubmit(event) {
 
         pageMessage(
             result.mode === "local"
-                ? "Feedback saved (local — run sql/setup.sql for database storage)."
+                ? "Feedback saved locally — the backend is unreachable."
                 : "Thank you! Your feedback has been submitted.",
             "success"
         );

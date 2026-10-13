@@ -737,7 +737,7 @@ async function handleAdminLogin() {
         }
 
         // -------------------------------------------------
-        // Supabase login
+        // Backend login
         // -------------------------------------------------
 
         const {
@@ -2216,7 +2216,7 @@ function setupCustomEvents() {
 }
 
 // =====================================================
-// SUPABASE AUTH STATE
+// AUTH STATE LISTENER
 // =====================================================
 
 function setupAuthStateListener() {
@@ -2232,7 +2232,7 @@ function setupAuthStateListener() {
             session
         ) => {
             console.log(
-                "Supabase auth event:",
+                "Auth event:",
                 event
             );
 

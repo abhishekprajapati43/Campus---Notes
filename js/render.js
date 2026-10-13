@@ -183,11 +183,9 @@ function emptyMessage(message) {
 
 //
 
-// Private Supabase storage requires a signed URL.
+// Cloudinary assets are public: file_url is preferred,
 
-// file_url is supported for backward compatibility,
-
-// but storage_path is preferred.
+// with storage_path kept for backward compatibility.
 
 // =====================================================
 
@@ -213,7 +211,7 @@ async function getFileUrl(item) {
 
 
 
-    // Private Supabase Storage
+    // Legacy storage_path records
 
     if (item.storage_path) {
 
