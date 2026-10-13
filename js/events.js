@@ -62,6 +62,14 @@ import {
 } from "./render.js";
 
 import {
+    setupCommerceEvents
+} from "./courses.js";
+
+import {
+    setupAdminUsers
+} from "./admin-users.js";
+
+import {
     loadAllData
 } from "./data.js";
 
@@ -104,7 +112,6 @@ function updateAuthRoleUI() {
     const authHeading = $("authHeading");
     const authMessage = $("authMessage");
     const signupFields = $("signupFields");
-    const authToggleText = $("authToggleText");
     const toggleAuthMode = $("toggleAuthMode");
     const authSubmitBtn = $("authSubmitBtn");
     const forgotPasswordContainer = $("forgotPasswordContainer");
@@ -126,14 +133,20 @@ function updateAuthRoleUI() {
         );
     }
 
-    if (authToggleText) {
-        authToggleText.textContent = isSignupMode
-            ? "Already have an account?"
-            : "Don't have an account?";
-    }
-
     if (toggleAuthMode) {
         toggleAuthMode.classList.remove("hidden");
+
+        toggleAuthMode.textContent = isSignupMode
+            ? "Already have an account? Login"
+            : "Don't have an account? Sign up";
+    }
+
+    const authSubtitle = $("authSubtitle");
+
+    if (authSubtitle) {
+        authSubtitle.textContent = isSignupMode
+            ? "Create your account to unlock notes, papers and timetables."
+            : "Sign in to access your personalized learning resources.";
     }
 
     if (authSubmitBtn) {
@@ -829,6 +842,13 @@ function toggleAdminPassword() {
             visible
                 ? '<i class="fa-solid fa-eye"></i>'
                 : '<i class="fa-solid fa-eye-slash"></i>';
+
+        toggleButton.setAttribute(
+            "aria-label",
+            passwordInput.type === "text"
+                ? "Hide password"
+                : "Show password"
+        );
     }
 }
 
@@ -958,6 +978,49 @@ function setupAdminLoginEvents() {
                 event.currentTarget
             ) {
                 closeAdminLoginModal();
+            }
+        }
+    );
+}
+
+// =====================================================
+// MODAL KEYBOARD SHORTCUTS
+// =====================================================
+
+function setupModalKeyboardShortcuts() {
+    document.addEventListener(
+        "keydown",
+        event => {
+            if (event.key !== "Escape") {
+                return;
+            }
+
+            const adminModal = $("adminLoginModal");
+
+            if (adminModal && !adminModal.classList.contains("hidden")) {
+                closeAdminLoginModal();
+                return;
+            }
+
+            const editModal = $("editResourceModal");
+
+            if (editModal && !editModal.classList.contains("hidden")) {
+                editModal.classList.add("hidden");
+                $("editResourceForm")?.reset();
+                return;
+            }
+
+            const deleteModal = $("deleteProfileModal");
+
+            if (deleteModal && !deleteModal.classList.contains("hidden")) {
+                closeDeleteProfileModal();
+                return;
+            }
+
+            const profileDropdown = $("adminProfileDropdown");
+
+            if (profileDropdown && !profileDropdown.classList.contains("hidden")) {
+                profileDropdown.classList.add("hidden");
             }
         }
     );
@@ -1261,6 +1324,18 @@ async function handleCategoryButtonClick(event) {
             );
         });
 
+    // Sidebar category links mirror the selection.
+    document
+        .querySelectorAll(
+            "[data-nav-category]"
+        )
+        .forEach(item => {
+            item.classList.toggle(
+                "active",
+                item.dataset.navCategory === category
+            );
+        });
+
     await handleCategoryChange(
         category
     );
@@ -1467,6 +1542,13 @@ function setupPasswordToggle() {
                     !visible
                 );
             }
+
+            button.setAttribute(
+                "aria-label",
+                password.type === "text"
+                    ? "Hide password"
+                    : "Show password"
+            );
         }
     );
 }
@@ -1865,6 +1947,55 @@ function setupCategoryButtons() {
 }
 
 // =====================================================
+// STUDENT SIDEBAR
+// (page navigation is plain links between pages; only
+// local preferences are handled here)
+// =====================================================
+
+function setupStudentSidebarEvents() {
+
+    // Notification preference (stored locally)
+    const notificationToggle = $("notificationSettingToggle");
+
+    if (notificationToggle) {
+
+        const savedPreference = window.localStorage.getItem(
+            "campusnotes:notificationsEnabled"
+        );
+
+        if (savedPreference !== null) {
+            notificationToggle.checked =
+                savedPreference === "true";
+        }
+
+        notificationToggle.addEventListener(
+            "change",
+            () => {
+                window.localStorage.setItem(
+                    "campusnotes:notificationsEnabled",
+                    String(notificationToggle.checked)
+                );
+            }
+        );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// =====================================================
 // PROFILE EVENTS
 // =====================================================
 
@@ -1883,6 +2014,7 @@ function setupProfileEvents() {
         "click",
         handleOpenDeleteProfile
     );
+
 
     $("cancelDeleteProfileBtn")?.addEventListener(
         "click",
@@ -2173,6 +2305,53 @@ function setupAuthStateListener() {
 // MAIN EVENT SETUP
 // =====================================================
 
+// =====================================================
+// Admin panel tabs (admin.html)
+// =====================================================
+
+function setupAdminTabs() {
+    const bar = document.querySelector("[data-admin-tabbar]");
+
+    if (!bar) {
+        return;
+    }
+
+    const activate = tab => {
+        bar.querySelectorAll("[data-admin-tab]").forEach(button => {
+            button.classList.toggle(
+                "active",
+                button.dataset.adminTab === tab
+            );
+        });
+
+        document
+            .querySelectorAll("#adminPanel [data-admin-panel]")
+            .forEach(panel => {
+                panel.classList.toggle(
+                    "hidden",
+                    panel.dataset.adminPanel !== tab
+                );
+            });
+    };
+
+    bar.addEventListener("click", event => {
+        const button = event.target.closest("[data-admin-tab]");
+
+        if (!button) {
+            return;
+        }
+
+        activate(button.dataset.adminTab);
+    });
+
+    // Open the tab marked active in the HTML (Content).
+    const initial =
+        bar.querySelector("[data-admin-tab].active") ||
+        bar.querySelector("[data-admin-tab]");
+
+    activate(initial ? initial.dataset.adminTab : "content");
+}
+
 export function setupEvents() {
     if (eventsInitialized) {
         return;
@@ -2219,6 +2398,16 @@ export function setupEvents() {
         handleAuthModeToggle
     );
 
+    $("toggleAuthMode")?.addEventListener(
+        "keydown",
+        event => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                handleAuthModeToggle(event);
+            }
+        }
+    );
+
     $("forgotPasswordBtn")?.addEventListener(
         "click",
         handleForgotPassword
@@ -2229,6 +2418,12 @@ export function setupEvents() {
     // =================================================
 
     setupAdminLoginEvents();
+
+    // =================================================
+    // ESCAPE CLOSES OPEN OVERLAYS
+    // =================================================
+
+    setupModalKeyboardShortcuts();
 
     // =================================================
     // FIELDS
@@ -2259,10 +2454,30 @@ export function setupEvents() {
     setupProfileEvents();
 
     // =================================================
+// STUDENT SIDEBAR
+// =================================================
+
+setupStudentSidebarEvents();
+
+    // =================================================
     // ADMIN
     // =================================================
 
     setupAdminEvents();
+
+    // =================================================
+    // COMMERCE (courses page + payment approvals)
+    // =================================================
+
+    setupCommerceEvents();
+
+    // =================================================
+    // ADMIN TABS + USERS
+    // =================================================
+
+    setupAdminTabs();
+
+    setupAdminUsers();
 
     // =================================================
     // EDIT MODAL

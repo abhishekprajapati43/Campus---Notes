@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Dashboard | TechCampus_Hub</title>
+        <meta name="description" content="TechCampus_Hub - College learning portal for study notes, TNP resources, previous year papers and exam timetables.">
+        <meta name="theme-color" content="#102a56">
+        <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
+        <!-- =====================================================
+         TAILWIND CSS
+    ====================================================== -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+        <!-- =====================================================
+         TAILWIND CONFIG
+    ====================================================== -->
+        <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: "#102a56",
+                        bluehub: "#2563eb",
+                        softbg: "#f5f8fc"
+                    },
+
+                    boxShadow: {
+                        soft: "0 8px 28px rgba(15,39,74,.08)"
+                    }
+                }
+            }
+        };
+        </script>
+        <!-- =====================================================
+         CUSTOM CSS
+    ====================================================== -->
+        <link rel="stylesheet" href="style.css">
+    </head>
+<body data-page="dashboard">
+        <div id="dashboardSection" class="min-h-screen">
+            <div id="pageChrome"></div>
+                <!-- =====================================================
+         MAIN AREA
+    ====================================================== -->
+                <main class="main-area
+               md:ml-64
+               min-h-screen">
+                    <div id="pageHeader"></div>
+                    <!-- =================================================
+             PAGE CONTENT
+        ================================================== -->
+                    <div class="p-5
+                   md:p-8
+                   max-w-[1500px]
+                   mx-auto">
+                        <!-- =================================================
+                 WELCOME
+            ================================================== -->
+                        <section class="card
+                       p-5
+                       md:p-6
+                       mb-5
+                       flex
+                       flex-col
+                       lg:flex-row
+                       lg:items-center
+                       lg:justify-between
+                       gap-5">
+                            <div class="flex
+                           items-center
+                           gap-4">
+                                <div class="w-14
+                               h-14
+                               rounded-2xl
+                               bg-blue-50
+                               flex
+                               items-center
+                               justify-center
+                               text-blue-700
+                               text-2xl">
+                                    <i class="fa-solid
+                                   fa-graduation-cap"></i>
+                                </div>
+                                <div>
+                                    <p class="text-slate-500
+                                   text-sm">
+                                        Welcome back
+                                    </p>
+                                    <h2 id="profileNameWelcome" class="text-2xl
+                                   md:text-3xl
+                                   font-extrabold">
+                                        Student!
+                                    </h2>
+                                    <p class="text-slate-500
+                                   mt-1">
+                                        Keep learning,
+                                keep growing.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex
+                           items-center
+                           gap-3
+                           bg-slate-50
+                           rounded-2xl
+                           px-4
+                           py-3">
+                                <div class="text-logo-icon">
+                                    🎓
+                                </div>
+                                <div>
+                                    <p class="font-extrabold">
+                                        Technocrats Institute of
+                                Technology, Bhopal
+                                    </p>
+                                    <p class="text-sm
+                                   text-slate-500">
+                                        <span id="welcomeCourse">
+                                            MCA
+                                        </span>
+                                        <span class="mx-1">
+                                            |
+                                        </span>
+                                        Computer Applications
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+                        <!-- =================================================
+                 QUICK ACCESS
+            ================================================== -->
+                        <section class="grid
+                       xl:grid-cols-4
+                       md:grid-cols-2
+                       gap-4
+                       mb-5">
+                            <!-- Notes -->
+                            <button
+                                data-dashboard-category="notes"
+                                data-category="notes"
+                                class="resource-card
+                           card
+                           p-5
+                           text-left"
+                                type="button"
+                            >
+                                <div class="w-12
+                               h-12
+                               rounded-xl
+                               bg-blue-50
+                               text-blue-600
+                               flex
+                               items-center
+                               justify-center
+                               text-xl">
+                                    <i class="fa-regular
+                                   fa-file-lines"></i>
+                                </div>
+                                <h3 class="font-extrabold
+                               text-lg
+                               mt-4">
+                                    Notes
+                                </h3>
+                                <p class="text-sm
+                               text-slate-500
+                               mt-1">
+                                    Access your study materials
+                                </p>
+                                <div class="text-blue-600
+                               mt-4">
+                                    <i class="fa-solid
+                                   fa-arrow-right"></i>
+                                </div>
+                            </button>
+                            <!-- TNP -->
+                            <button
+                                data-dashboard-category="tnp"
+                                data-category="tnp"
+                                class="resource-card
+                           card
+                           p-5
+                           text-left"
+                                type="button"
+                            >
+                                <div class="w-12
+                               h-12
+                               rounded-xl
+                               bg-emerald-50
+                               text-emerald-600
+                               flex
+                               items-center
+                               justify-center
+                               text-xl">
+                                    <i class="fa-solid
+                                   fa-briefcase"></i>
+                                </div>
+                                <h3 class="font-extrabold
+                               text-lg
+                               mt-4">
+                                    TNP
+                                </h3>
+                                <p class="text-sm
+                               text-slate-500
+                               mt-1">
+                                    Training & placement resources
+                                </p>
+                                <div class="text-emerald-600
+                               mt-4">
+                                    <i class="fa-solid
+                                   fa-arrow-right"></i>
+                                </div>
+                            </button>
+                            <!-- PYQ -->
+                            <button
+                                data-dashboard-category="pyq"
+                                data-category="pyq"
+                                class="resource-card
+                           card
+                           p-5
+                           text-left"
+                                type="button"
+                            >
+                                <div class="w-12
+                               h-12
+                               rounded-xl
+                               bg-violet-50
+                               text-violet-600
+                               flex
+                               items-center
+                               justify-center
+                               text-xl">
+                                    <i class="fa-solid
+                                   fa-book-open"></i>
+                                </div>
+                                <h3 class="font-extrabold
+                               text-lg
+                               mt-4">
+                                    PYQ
+                                </h3>
+                                <p class="text-sm
+                               text-slate-500
+                               mt-1">
+                                    Previous year questions
+                                </p>
+                                <div class="text-violet-600
+                               mt-4">
+                                    <i class="fa-solid
+                                   fa-arrow-right"></i>
+                                </div>
+                            </button>
+                            <!-- Timetable -->
+                            <button
+                                data-dashboard-category="timetable"
+                                data-category="timetable"
+                                class="resource-card
+                           card
+                           p-5
+                           text-left"
+                                type="button"
+                            >
+                                <div class="w-12
+                               h-12
+                               rounded-xl
+                               bg-amber-50
+                               text-amber-600
+                               flex
+                               items-center
+                               justify-center
+                               text-xl">
+                                    <i class="fa-regular
+                                   fa-calendar-days"></i>
+                                </div>
+                                <h3 class="font-extrabold
+                               text-lg
+                               mt-4">
+                                    Exam Timetable
+                                </h3>
+                                <p class="text-sm
+                               text-slate-500
+                               mt-1">
+                                    View your exam schedule
+                                </p>
+                                <div class="text-amber-600
+                               mt-4">
+                                    <i class="fa-solid
+                                   fa-arrow-right"></i>
+                                </div>
+                            </button>
+                            <!-- =================================================
+                 AI CHATBOT
+            ================================================== -->
+                            <button id="openGeminiBtn" type="button"
+                                class="resource-card
+                           card
+                           p-5
+                           text-left">
+                                <div class="w-12
+                               h-12
+                               rounded-xl
+                               bg-gradient-to-br
+                               from-violet-500
+                               to-fuchsia-500
+                               text-white
+                               flex
+                               items-center
+                               justify-center
+                               text-xl">
+                                    <i class="fa-solid
+                                   fa-robot"></i>
+                                </div>
+                                <h3 class="font-extrabold
+                               text-lg
+                               mt-4">
+                                    AI Chatbot
+                                </h3>
+                                <p class="text-sm
+                               text-slate-500
+                               mt-1">
+                                    Ask Google Gemini for study help
+                                </p>
+                                <div class="text-violet-600
+                               mt-4">
+                                    <i class="fa-solid
+                                   fa-arrow-right"></i>
+                                </div>
+                            </button>
+                        </section>
+                        <!-- =================================================
+                 RESOURCE SUMMARY
+            ================================================== -->
+                        <section class="grid
+                       lg:grid-cols-3
+                       gap-5
+                       mb-5">
+                            <div class="card
+                           p-5
+                           lg:col-span-2">
+                                <div class="flex
+                               items-center
+                               justify-between">
+                                    <div>
+                                        <p class="text-sm
+                                       text-slate-500">
+                                            Resources Found
+                                        </p>
+                                        <p id="totalNotesCount" class="text-3xl
+                                       font-extrabold
+                                       mt-1">
+                                            0
+                                        </p>
+                                    </div>
+                                    <div class="w-12
+                                   h-12
+                                   rounded-xl
+                                   bg-blue-50
+                                   text-blue-600
+                                   flex
+                                   items-center
+                                   justify-center
+                                   text-xl">
+                                        <i class="fa-solid
+                                       fa-layer-group"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card p-5">
+                                <p class="text-sm
+                               text-slate-500">
+                                    Current Category
+                                </p>
+                                <p id="categoryDisplay" class="text-xl
+                               font-extrabold
+                               mt-1">
+                                    Notes
+                                </p>
+                            </div>
+                        </section>
+                        <!-- =================================================
+                 SEARCH / FILTERS
+            ================================================== -->
+                        <section id="searchFiltersSection" class="card p-5 md:p-6 mb-5">
+                            <div class="flex
+                           items-center
+                           justify-between
+                           mb-5">
+                                <div>
+                                    <h2 class="text-lg
+                                   font-extrabold">
+                                        Learning Resources
+                                    </h2>
+                                    <p class="text-sm
+                                   text-slate-500">
+                                        Search and filter your
+                                college resources
+                                    </p>
+                                </div>
+                                <span id="currentCategoryLabel" class="text-sm
+                               font-bold
+                               text-blue-600">
+                                    Notes
+                                </span>
+                            </div>
+                            <!-- CATEGORY SELECT -->
+                            <select id="searchCategory" class="hidden">
+                                <option value="notes">
+                                    Notes
+                                </option>
+                                <option value="tnp">
+                                    TNP
+                                </option>
+                                <option value="pyq">
+                                    Previous Year Papers
+                                </option>
+                                <option value="timetable">
+                                    Exam Timetable
+                                </option>
+                            </select>
+                            <!-- =================================================
+                     NOTES FILTERS
+                ================================================== -->
+                            <div id="notesSearchFilters" class="grid
+                           grid-cols-1
+                           md:grid-cols-2
+                           lg:grid-cols-5
+                           gap-4">
+                                <!-- Course -->
+                                <div class="filter-group">
+                                    <label class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Course
+                                    </label>
+                                    <select id="searchCourse" class="input"></select>
+                                </div>
+                                <!-- Branch -->
+                                <div class="filter-group">
+                                    <label class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Branch
+                                    </label>
+                                    <select id="searchBranch" class="input"></select>
+                                </div>
+                                <!-- Year -->
+                                <div id="notesYearFilter" class="filter-group">
+                                    <label class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Year
+                                    </label>
+                                    <select id="searchYear" class="input"></select>
+                                </div>
+                                <!-- Semester -->
+                                <div class="filter-group">
+                                    <label class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Semester
+                                    </label>
+                                    <select id="filterSemester" class="input"></select>
+                                </div>
+                                <!-- Subject -->
+                                <div class="filter-group">
+                                    <label class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Subject
+                                    </label>
+                                    <select id="searchSubject" class="input">
+                                        <option value="ALL">
+                                            All Subjects
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- =================================================
+                     TNP FILTERS
+                ================================================== -->
+                            <div id="tnpSearchFilters" class="hidden
+                           grid
+                           grid-cols-1
+                           md:grid-cols-2
+                           gap-4">
+                                <!-- Compatibility -->
+                                <input id="tnpSearchCourse" type="hidden">
+                                <!-- Subject -->
+                                <div class="filter-group">
+                                    <label class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Subject
+                                    </label>
+                                    <select id="tnpSearchSubject" class="input">
+                                        <option value="ALL">
+                                            All Subjects
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- =================================================
+                     PYQ FILTERS
+                ================================================== -->
+                            <div id="pyqSearchFilters" class="hidden
+                           grid
+                           grid-cols-1
+                           md:grid-cols-2
+                           lg:grid-cols-4
+                           gap-4">
+                                <!-- Course -->
+                                <div class="filter-group">
+                                    <label class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Course
+                                    </label>
+                                    <select id="pyqSearchCourse" class="input"></select>
+                                </div>
+                                <!-- Previous Year -->
+                                <div class="filter-group">
+                                    <label class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Previous Year
+                                    </label>
+                                    <select id="pyqSearchYear" class="input"></select>
+                                </div>
+                                <!-- Semester -->
+                                <div class="filter-group">
+                                    <label class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Semester
+                                    </label>
+                                    <select id="pyqSearchSemester" class="input"></select>
+                                </div>
+                                <!-- Subject -->
+                                <div class="filter-group">
+                                    <label class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Subject
+                                    </label>
+                                    <select id="pyqSearchSubject" class="input">
+                                        <option value="ALL">
+                                            All Subjects
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- =================================================
+                     TIMETABLE FILTERS
+                ================================================== -->
+                            <div id="timetableSearchFilters" class="hidden
+                           grid
+                           grid-cols-1
+                           md:grid-cols-2
+                           lg:grid-cols-4
+                           gap-4">
+                                <!-- Course -->
+                                <div class="filter-group">
+                                    <label class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Course
+                                    </label>
+                                    <select id="timetableSearchCourse" class="input"></select>
+                                </div>
+                                <!-- Semester -->
+                                <div class="filter-group">
+                                    <label class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Semester
+                                    </label>
+                                    <select id="timetableSearchSemester" class="input"></select>
+                                </div>
+                                <!-- Exam Year -->
+                                <div class="filter-group">
+                                    <label class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Exam Year
+                                    </label>
+                                    <select id="timetableSearchYear" class="input"></select>
+                                </div>
+                                <!-- Subject -->
+                                <div class="filter-group">
+                                    <label class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Subject
+                                    </label>
+                                    <select id="timetableSearchSubject" class="input">
+                                        <option value="ALL">
+                                            All Subjects
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- =================================================
+                     GLOBAL SEARCH
+                ================================================== -->
+                            <div class="mt-5
+                           relative">
+                                <i class="fa-solid
+                               fa-magnifying-glass
+                               absolute
+                               left-4
+                               top-1/2
+                               -translate-y-1/2
+                               text-slate-400"></i>
+                                <input
+                                    id="searchNotes"
+                                    class="input pl-11"
+                                    type="search"
+                                    placeholder="Search by subject, topic, or keyword..."
+                                >
+                            </div>
+                        </section>
+                        <!-- =================================================
+                 RESOURCE LIST
+            ================================================== -->
+                        <section id="resourceList" class="card
+                       p-5
+                       md:p-6
+                       mb-5">
+                            <div class="flex
+                           items-center
+                           justify-between
+                           mb-4">
+                                <div>
+                                    <h2 class="text-xl
+                                   font-extrabold" id="resourceListTitle">
+                                        Study Notes
+                                    </h2>
+                                    <p class="text-sm
+                                   text-slate-500
+                                   mt-1">
+                                        Available college resources
+                                    </p>
+                                </div>
+                                <i class="fa-solid
+                               fa-folder-open
+                               text-emerald-600
+                               text-xl"></i>
+                            </div>
+                            <div id="notesContainer" class="grid
+                           md:grid-cols-2
+                           xl:grid-cols-3
+                           gap-4"></div>
+                        </section>
+                    </div>
+                </main>
+            </div>
+        <script type="module" src="./js/app.js"></script>
+    </body>
+</html>

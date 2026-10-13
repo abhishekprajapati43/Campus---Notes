@@ -200,16 +200,16 @@ export async function uploadPdf(
 
 
     // -------------------------------------------------
-    // 50 MB maximum
+    // 20 MB maximum
     // -------------------------------------------------
 
     const maxSize =
-        50 * 1024 * 1024;
+        20 * 1024 * 1024;
 
     if (file.size > maxSize) {
 
         throw new Error(
-            "PDF file size must be 50 MB or less."
+            "PDF file size must be 20 MB or less."
         );
     }
 

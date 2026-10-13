@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Payment History | TechCampus_Hub</title>
+        <meta name="description" content="TechCampus_Hub - College learning portal for study notes, TNP resources, previous year papers and exam timetables.">
+        <meta name="theme-color" content="#102a56">
+        <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
+        <!-- =====================================================
+         TAILWIND CSS
+    ====================================================== -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+        <!-- =====================================================
+         TAILWIND CONFIG
+    ====================================================== -->
+        <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: "#102a56",
+                        bluehub: "#2563eb",
+                        softbg: "#f5f8fc"
+                    },
+
+                    boxShadow: {
+                        soft: "0 8px 28px rgba(15,39,74,.08)"
+                    }
+                }
+            }
+        };
+        </script>
+        <!-- =====================================================
+         CUSTOM CSS
+    ====================================================== -->
+        <link rel="stylesheet" href="style.css">
+    </head>
+<body data-page="paymentHistory">
+        <div id="dashboardSection" class="min-h-screen">
+            <div id="pageChrome"></div>
+                <!-- =====================================================
+         MAIN AREA
+    ====================================================== -->
+                <main class="main-area
+               md:ml-64
+               min-h-screen">
+                    <div id="pageHeader"></div>
+                    <!-- =================================================
+             PAGE CONTENT
+        ================================================== -->
+                    <div class="p-5
+                   md:p-8
+                   max-w-[1500px]
+                   mx-auto">
+                        <!-- ================= PAYMENT HISTORY ================= -->
+                        <section class="card p-6 mb-5">
+                            <div class="flex items-center gap-4 mb-6">
+                                <div class="w-12 h-12 rounded-xl
+                   bg-blue-50 text-blue-600
+                   flex items-center justify-center
+                   text-xl">
+                                    <i class="fa-solid fa-receipt"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-xl font-extrabold">
+                                        Payment History
+                                    </h2>
+                                    <p class="text-sm text-slate-500">
+                                        Your course purchases, approvals and course validity
+                                    </p>
+                                </div>
+                            </div>
+                            <div id="paymentHistoryList">
+                                <p class="text-sm text-slate-500">
+                                    Loading your payment history…
+                                </p>
+                            </div>
+                        </section>
+                        <!-- ================= HELP ================= -->
+                        <section class="card p-6">
+                            <h3 class="font-extrabold mb-2">
+                                How payment works
+                            </h3>
+                            <p class="text-sm text-slate-500">
+                                Pay the course price to the UPI ID shown at checkout,
+                                submit the UTR (transaction reference), and wait for
+                                admin approval. Each course has a validity period —
+                                you can see the expiry date and time in the table above.
+                            </p>
+                        </section>
+                    </div>
+                </main>
+            </div>
+        <script type="module" src="./js/app.js"></script>
+    </body>
+</html>

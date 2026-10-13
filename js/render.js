@@ -51,6 +51,22 @@ import {
 
 } from "./state.js";
 
+import {
+
+    isNoteLocked,
+
+    courseTitleFor
+
+} from "./courses.js";
+
+import {
+
+    favoriteButtonHtml,
+
+    syncFavoriteButtons
+
+} from "./favorites.js";
+
 
 
 
@@ -421,7 +437,9 @@ function card({
 
     item = null,
 
-    category = ""
+    category = "",
+
+    locked = false
 
 }) {
 
@@ -525,33 +543,39 @@ function card({
 
 
 
-                ${
+                <div class="flex items-center gap-2 shrink-0">
 
-                    fileUrl
+                    ${
 
-                        ? `
+                        fileUrl
 
-                            <span
+                            ? `
 
-                                class="shrink-0 rounded-full
+                                <span
 
-                                       bg-red-50 px-2.5 py-1
+                                    class="shrink-0 rounded-full
 
-                                       text-xs font-medium
+                                           bg-red-50 px-2.5 py-1
 
-                                       text-red-600"
+                                           text-xs font-medium
 
-                            >
+                                           text-red-600"
 
-                                PDF
+                                >
 
-                            </span>
+                                    PDF
 
-                          `
+                                </span>
 
-                        : ""
+                              `
 
-                }
+                            : ""
+
+                    }
+
+                    ${favoriteButtonHtml(category, item ? item.id : "", title)}
+
+                </div>
 
             </div>
 
@@ -609,22 +633,36 @@ function card({
 
                     : ""
 
+            }            ${
+                locked
+                    ? `
+                        <div class="mt-5 flex flex-wrap items-center gap-2">
+                            <span class="inline-flex items-center gap-2 rounded-lg
+                                   bg-amber-100 px-3 py-2 text-sm
+                                   font-medium text-amber-700">
+                                <i class="fa-solid fa-lock"></i>
+                                Premium note
+                            </span>
+                            <a href="./courses.html"
+                               class="inline-flex items-center gap-2 rounded-lg
+                                      bg-blue-600 px-3 py-2 text-sm
+                                      font-medium text-white transition
+                                      hover:bg-blue-700">
+                                <i class="fa-solid fa-cart-shopping"></i>
+                                Unlock course
+                            </a>
+                        </div>
+                      `
+                    : actionButtons(
+
+                        fileUrl,
+
+                        item,
+
+                        category
+
+                    )
             }
-
-
-
-
-
-            ${actionButtons(
-
-                fileUrl,
-
-                item,
-
-                category
-
-            )}
-
         </article>
 
     `;
@@ -711,13 +749,11 @@ function metaBadge(
 
 // =====================================================
 
-
-
 async function renderNoteCard(note) {
 
-    const fileUrl =
+    const locked =
 
-        await getFileUrl(note);
+        isNoteLocked(note);
 
 
 
@@ -771,9 +807,59 @@ async function renderNoteCard(note) {
 
             "bg-blue-50 text-blue-700"
 
-        )
+        ),
+
+        ...(locked
+            ? [metaBadge(
+                "Bundle",
+                courseTitleFor(note.course_id),
+                "bg-amber-50 text-amber-700"
+              )]
+            : [])
 
     ].join("");
+
+
+
+    // Locked notes never resolve the file URL — the card
+    // only advertises the course that unlocks it.
+    if (locked) {
+        return card({
+
+            icon: "fa-lock",
+
+            iconClass: "bg-amber-50 text-amber-600",
+
+            title:
+
+                note.title ||
+
+                note.subject ||
+
+                "Study Note",
+
+
+
+            subtitle:
+
+                note.subject || "",
+
+
+
+            meta,
+
+            locked: true,
+
+            item: note,
+
+            category: "notes"
+
+        });
+    }
+
+    const fileUrl =
+
+        await getFileUrl(note);
 
 
 
@@ -813,12 +899,9 @@ async function renderNoteCard(note) {
 
         item: note,
 
-
-
         category: "notes"
 
     });
-
 }
 
 
@@ -835,9 +918,9 @@ async function renderNoteCard(note) {
 
 async function renderTnpCard(item) {
 
-    const fileUrl =
+    const locked =
 
-        await getFileUrl(item);
+        isNoteLocked(item);
 
 
 
@@ -851,9 +934,55 @@ async function renderTnpCard(item) {
 
             "bg-purple-50 text-purple-700"
 
-        )
+        ),
+
+        ...(locked
+            ? [metaBadge(
+                "Bundle",
+                courseTitleFor(item.course_id),
+                "bg-amber-50 text-amber-700"
+              )]
+            : [])
 
     ].join("");
+
+
+
+    // Locked TNP teasers never resolve the file URL —
+    // the card only advertises the course that unlocks it.
+    if (locked) {
+        return card({
+
+            icon: "fa-lock",
+
+            iconClass: "bg-amber-50 text-amber-600",
+
+            title:
+
+                item.title ||
+
+                item.subject ||
+
+                "Training & Placement",
+
+            subtitle:
+
+                item.subject || "",
+
+            meta,
+
+            locked: true,
+
+            item,
+
+            category: "tnp"
+
+        });
+    }
+
+    const fileUrl =
+
+        await getFileUrl(item);
 
 
 
@@ -1595,6 +1724,10 @@ export async function renderCurrentCategory(
 
     );
 
+    // Hearts must reflect the student's favourites
+    // after every re-render.
+    syncFavoriteButtons();
+
 }
 
 
@@ -1763,12 +1896,17 @@ export function updateCategoryLabel(
 
 
 
-    label.textContent =
-
-        labels[selectedCategory] ||
+    label.textContent =        labels[selectedCategory] ||
 
         "Resources";
 
+    const resourceTitle = $("resourceListTitle");
+
+    if (resourceTitle) {
+        resourceTitle.textContent =
+            labels[selectedCategory] ||
+            "Resources";
+    }
 }
 // =====================================================
 // Render Everything

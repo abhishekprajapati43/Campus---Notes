@@ -32,6 +32,10 @@ import {
     currentUserRole
 } from "./state.js";
 
+import {
+    notifyContentUpload
+} from "./notifications.js";
+
 
 // =====================================================
 // Admin Check
@@ -223,6 +227,10 @@ export async function uploadNotes(event) {
         const semester =
             getNumber("noteSemester");
 
+        // Paid bundle this note belongs to ("" = free note).
+        const bundleId =
+            getValue("noteCourseBundle");
+
         const file =
             getFile("noteFile");
 
@@ -314,6 +322,13 @@ export async function uploadNotes(event) {
                     year,
                     semester,
 
+                    // Paid bundle (only sent when a bundle is
+                    // selected, so uploads still work before
+                    // sql/setup.sql adds the column).
+                    ...(bundleId
+                        ? { course_id: bundleId }
+                        : {}),
+
                     // Cloudinary URL
                     file_url:
                         fileUrl,
@@ -336,6 +351,7 @@ export async function uploadNotes(event) {
                 "Note uploaded successfully."
             );
 
+            notifyContentUpload("notes", getValue("noteTitle"));
 
             event?.target?.reset();
 
@@ -483,6 +499,7 @@ export async function uploadTnp(event) {
                 "TNP resource uploaded successfully."
             );
 
+            notifyContentUpload("tnp", getValue("tnpTitle"));
 
             event?.target?.reset();
 
@@ -657,6 +674,7 @@ export async function uploadPyq(event) {
                 "Previous year paper uploaded successfully."
             );
 
+            notifyContentUpload("pyq", getValue("pyqTitle"));
 
             event?.target?.reset();
 
@@ -837,6 +855,7 @@ export async function uploadTimetable(event) {
                 "Exam timetable uploaded successfully."
             );
 
+            notifyContentUpload("timetable", getValue("timetableSubject"));
 
             event?.target?.reset();
 

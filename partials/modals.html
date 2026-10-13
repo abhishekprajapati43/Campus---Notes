@@ -1,0 +1,290 @@
+            <!-- =========================================================
+     DELETE PROFILE MODAL
+========================================================= -->
+            <div id="deleteProfileModal" class="hidden
+           fixed
+           inset-0
+           z-[100]
+           bg-slate-950/50
+           items-center
+           justify-center
+           p-4">
+                <div class="bg-white
+               rounded-2xl
+               w-full
+               max-w-md
+               p-6
+               shadow-2xl">
+                    <div class="w-12
+                   h-12
+                   rounded-xl
+                   bg-red-50
+                   text-red-600
+                   flex
+                   items-center
+                   justify-center
+                   text-xl">
+                        <i class="fa-regular
+                       fa-trash-can"></i>
+                    </div>
+                    <h3 class="text-xl
+                   font-extrabold
+                   mt-4">
+                        Delete Profile
+                    </h3>
+                    <p id="deleteProfileMessage" class="text-slate-500
+                   mt-2">
+                        Are you sure you want to delete your profile?
+                    </p>
+                    <div class="flex
+                   justify-end
+                   gap-3
+                   mt-6">
+                        <button id="cancelDeleteProfileBtn" type="button" class="px-5
+                       py-2.5
+                       rounded-xl
+                       border
+                       font-semibold
+                       hover:bg-slate-50">
+                            Cancel
+                        </button>
+                        <button id="confirmDeleteProfileBtn" type="button" class="px-5
+                       py-2.5
+                       rounded-xl
+                       bg-red-600
+                       hover:bg-red-700
+                       text-white
+                       font-semibold">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- =========================================================
+     EDIT RESOURCE MODAL
+========================================================= -->
+            <div id="editResourceModal" class="hidden fixed inset-0 z-[110] bg-slate-950/50 items-center justify-center p-4">
+                <div class="bg-white rounded-2xl
+               w-full max-w-2xl
+               p-6 shadow-2xl
+               max-h-[90vh]
+               overflow-y-auto">
+                    <!-- HEADER -->
+                    <div class="flex items-center
+                   justify-between mb-5">
+                        <div>
+                            <p class="text-sm
+                           text-blue-600
+                           font-semibold">
+                                Administrator
+                            </p>
+                            <h3 class="text-2xl
+                           font-extrabold">
+                                Edit Resource
+                            </h3>
+                        </div>
+                        <button id="closeEditResourceBtn" type="button" aria-label="Close" class="w-10 h-10
+                       rounded-xl
+                       bg-slate-100
+                       hover:bg-slate-200
+                       flex items-center
+                       justify-center">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <!-- FORM -->
+                    <form id="editResourceForm" class="space-y-4">
+                        <input id="editResourceId" type="hidden">
+                        <input id="editResourceCategory" type="hidden">
+                        <!-- SUBJECT + TITLE -->
+                        <div class="grid md:grid-cols-2
+                       gap-4">
+                            <!-- SUBJECT -->
+                            <div class="edit-field-group">
+                                <label class="block text-sm
+                               font-semibold mb-2">
+                                    Subject
+                                </label>
+                                <input id="editResourceSubject" class="input" type="text">
+                            </div>
+                            <!-- TITLE -->
+                            <div class="edit-field-group">
+                                <label class="block text-sm
+                               font-semibold mb-2">
+                                    Title / Topic
+                                </label>
+                                <input id="editResourceTitle" class="input" type="text">
+                            </div>
+                        </div>
+                        <!-- COURSE + BRANCH -->
+                        <div class="grid md:grid-cols-2
+                       gap-4">
+                            <!-- COURSE -->
+                            <div class="edit-field-group">
+                                <label class="block text-sm
+                               font-semibold mb-2">
+                                    Course
+                                </label>
+                                <select id="editResourceCourse" class="input">
+                                    <option value>
+                                        Select Course
+                                    </option>
+                                    <option value="MCA">
+                                        MCA
+                                    </option>
+                                    <option value="B.Tech">
+                                        B.Tech
+                                    </option>
+                                </select>
+                            </div>
+                            <!-- BRANCH -->
+                            <div class="edit-field-group">
+                                <label class="block text-sm
+                               font-semibold mb-2">
+                                    Branch
+                                </label>
+                                <select id="editResourceBranch" class="input">
+                                    <option value>
+                                        Select Branch
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- YEAR + SEMESTER + EXAM YEAR -->
+                        <div class="grid md:grid-cols-3
+                       gap-4">
+                            <!-- YEAR -->
+                            <div id="editResourceYearGroup" class="edit-field-group">
+                                <label class="block text-sm
+                               font-semibold mb-2">
+                                    Year
+                                </label>
+                                <select id="editResourceYear" class="input">
+                                    <option value>
+                                        Select Year
+                                    </option>
+                                </select>
+                            </div>
+                            <!-- SEMESTER -->
+                            <div class="edit-field-group">
+                                <label class="block text-sm
+                               font-semibold mb-2">
+                                    Semester
+                                </label>
+                                <select id="editResourceSemester" class="input">
+                                    <option value>
+                                        Select Semester
+                                    </option>
+                                </select>
+                            </div>
+                            <!-- EXAM YEAR -->
+                            <div id="editResourceExamYearGroup" class="edit-field-group">
+                                <label class="block text-sm
+                               font-semibold mb-2">
+                                    Exam Year
+                                </label>
+                                <input
+                                    id="editResourceExamYear"
+                                    class="input"
+                                    type="number"
+                                    placeholder="Exam Year"
+                                    min="2000"
+                                    max="2100"
+                                >
+                            </div>
+                        </div>
+                        <!-- =================================================
+                 TIMETABLE ONLY FIELDS
+            ================================================== -->
+                        <!-- EXAM DATE -->
+                        <div id="editResourceDateGroup" class="edit-field-group hidden">
+                            <label class="block text-sm
+                           font-semibold mb-2">
+                                Exam Date
+                            </label>
+                            <input id="editResourceDate" class="input" type="date">
+                        </div>
+                        <!-- START TIME + END TIME -->
+                        <div id="editResourceTimeGroup" class="hidden grid md:grid-cols-2
+                       gap-4">
+                            <div class="edit-field-group">
+                                <label class="block text-sm
+                               font-semibold mb-2">
+                                    Start Time
+                                </label>
+                                <input id="editResourceStartTime" class="input" type="time">
+                            </div>
+                            <div class="edit-field-group">
+                                <label class="block text-sm
+                               font-semibold mb-2">
+                                    End Time
+                                </label>
+                                <input id="editResourceEndTime" class="input" type="time">
+                            </div>
+                        </div>
+                        <!-- EXAM TYPE -->
+                        <div id="editResourceExamTypeGroup" class="edit-field-group hidden">
+                            <label class="block text-sm
+                           font-semibold mb-2">
+                                Exam Type
+                            </label>
+                            <select id="editResourceExamType" class="input">
+                                <option value>
+                                    Select Exam Type
+                                </option>
+                                <option value="Semester Exam">
+                                    Semester Exam
+                                </option>
+                                <option value="Practical">
+                                    Practical
+                                </option>
+                                <option value="Placement Exam">
+                                    Placement Exam
+                                </option>
+                            </select>
+                        </div>
+                        <!-- REPLACE PDF -->
+                        <div class="edit-field-group">
+                            <label class="block text-sm
+                           font-semibold mb-2">
+                                Replace PDF
+                                <span class="font-normal
+                               text-slate-400">
+                                    (optional)
+                                </span>
+                            </label>
+                            <input
+                                id="editResourceFile"
+                                class="input"
+                                type="file"
+                                accept="application/pdf"
+                            >
+                            <p class="text-xs
+                           text-slate-500 mt-2">
+                                Leave empty if you only want
+                        to update the information.
+                            </p>
+                        </div>
+                        <!-- BUTTONS -->
+                        <div class="flex justify-end
+                       gap-3 pt-4
+                       border-t">
+                            <button id="cancelEditResourceBtn" type="button" class="px-5 py-2.5
+                           rounded-xl
+                           border
+                           font-semibold
+                           hover:bg-slate-50">
+                                Cancel
+                            </button>
+                            <button id="saveEditResourceBtn" type="submit" class="px-5 py-2.5
+                           rounded-xl
+                           bg-blue-600
+                           hover:bg-blue-700
+                           text-white
+                           font-semibold">
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>

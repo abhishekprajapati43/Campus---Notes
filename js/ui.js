@@ -257,6 +257,11 @@ export function resetAuthForm() {
 
 
 
+// Current route: "auth", "dashboard", "notifications", ...
+function currentPage() {
+    return document.body?.dataset?.page || "auth";
+}
+
 export function showAuthSection() {
 
     showElement(
@@ -670,6 +675,37 @@ export function updateStudentProfileUI(
 
 
     // -------------------------------------------------
+    // -------------------------------------------------
+    // Profile Page Section
+    // -------------------------------------------------
+
+    const pageName = $("studentProfilePageName");
+
+    const pageEmail = $("studentProfilePageEmail");
+
+    const pageCourse = $("studentProfilePageCourse");
+
+    const pageSemester = $("studentProfilePageSemester");
+
+    if (pageName) {
+        pageName.textContent = name;
+    }
+
+    if (pageEmail) {
+        pageEmail.textContent = email || "-";
+    }
+
+    if (pageCourse) {
+        pageCourse.textContent = course || "-";
+    }
+
+    if (pageSemester) {
+        pageSemester.textContent = semester
+            ? `Semester ${semester}`
+            : "-";
+    }
+
+    // -------------------------------------------------
     // Role
     // -------------------------------------------------
 
@@ -855,36 +891,23 @@ export function updateDeleteProfileVisibility() {
 
 // =====================================================
 
-// Admin Login Button
+// Admin nav visibility
 
 // =====================================================
 
 
 
-export function updateAdminLoginButton() {
+export function updateAdminNavVisibility() {
+    const navLink = $("adminNavBtn");
 
-    const button =
-
-        $("adminLoginBtn");
-
-
-
-    if (!button) {
-
+    if (!navLink) {
         return;
-
     }
 
-
-
-    button.classList.toggle(
-
+    navLink.classList.toggle(
         "hidden",
-
         !isAdminRole()
-
     );
-
 }
 
 
@@ -1423,6 +1446,22 @@ export function updateProfileDropdown() {
 
 
 export function applyRoleUI() {
+    const page = currentPage();
+
+    // Login page: after a successful login go to the right home.
+    if (page === "auth") {
+        window.location.replace(
+            isAdminRole() ? "./admin.html" : "./dashboard.html"
+        );
+        return;
+    }
+
+    // The admin area is only for admins.
+    if (page === "admin" && !isAdminRole()) {
+        window.location.replace("./dashboard.html");
+        return;
+    }
+
 
     if (isAdminRole()) {
 
@@ -1465,6 +1504,7 @@ updateSearchVisibility();
 updateSearchUI();
 updateAllSearchSubjects();
 
+    updateAdminNavVisibility();
 }
 
 
@@ -1726,8 +1766,6 @@ export async function loadCurrentStudent(
 
 // =====================================================
 
-
-
 async function supabaseProfileQuery(
 
     userId
@@ -1735,7 +1773,6 @@ async function supabaseProfileQuery(
 ) {
 
     // Dynamic import avoids creating another permanent
-
     // dependency at module initialization.
 
     const {
@@ -2206,7 +2243,7 @@ if (getSignupMode()){
 
             toggleButton.textContent =
 
-                "Create a new student account";
+                "Don't have an account? Sign up";
 
         }
 
@@ -2322,15 +2359,16 @@ function initializeRegistrationFields() {
 
 export async function initializeApp() {
 
-    showAuthSection();
+    // The auth screen only exists on the login page.
+    if (currentPage() === "auth") {
 
+        showAuthSection();
 
+        updateAuthModeUI();
 
-    updateAuthModeUI();
+        initializeRegistrationFields();
 
-
-
-    initializeRegistrationFields();
+    }
 
 
 
@@ -2470,6 +2508,13 @@ export async function logoutUser() {
         hideElement($("dashboardSection"));
         hideElement($("adminPanel"));
         showAuthSection();
+
+        // Logging out returns the user to the Home page;
+        // logging in again happens via the Login page.
+        if (currentPage() !== "auth" && currentPage() !== "home") {
+            window.location.replace("./index.html");
+            return;
+        }
 
         resetAuthForm();
         setSignupMode(false);

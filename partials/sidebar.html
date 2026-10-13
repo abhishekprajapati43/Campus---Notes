@@ -1,0 +1,235 @@
+            <!-- =====================================================
+         MOBILE SIDEBAR OVERLAY
+    ====================================================== -->
+            <div id="sidebarOverlay" class="fixed
+               inset-0
+               bg-slate-950/50
+               z-[60]
+               hidden"></div>
+            <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+            <aside id="sidebar" class="sidebar
+               fixed
+               left-0
+               top-0
+               bottom-0
+               w-64
+               text-white
+               z-[70]
+               hidden
+               md:flex
+               flex-col">
+                <!-- BRAND -->
+                <div class="h-24
+                   px-5
+                   flex
+                   items-center
+                   gap-3
+                   border-b
+                   border-white/10">
+                    <a href="./index.html" aria-label="Go to home page" class="flex items-center gap-3 min-w-0 text-white">
+                    <div class="w-12
+                       h-12
+                       bg-white
+                       rounded-xl
+                       p-1
+                       flex
+                       items-center
+                       justify-center
+                       shrink-0">
+                        <div class="text-logo-icon">
+                            🎓
+                        </div>
+                    </div>
+                    <div class="brand-text">
+                        <div class="font-extrabold
+                           text-lg">
+                            TechCampus_Hub
+                        </div>
+                        <div class="text-xs
+                           text-blue-200">
+                            College Learning Portal
+                        </div>
+                    </div>
+                    </a>
+                    <button id="closeSidebarBtn" type="button" aria-label="Close" class="ml-auto
+                       md:hidden
+                       text-white/70
+                       hover:text-white" type="button">
+                        <i class="fa-solid
+                           fa-xmark"></i>
+                    </button>
+                </div>
+                <!-- NAVIGATION -->
+                <nav class="p-4 space-y-2 flex-1 min-h-0 overflow-y-auto hide-scroll">
+                        <!-- Dashboard -->
+                        <a id="dashboardHomeBtn" href="./dashboard.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <i class="fa-solid fa-house w-5"></i>
+                            <span class="nav-label font-semibold">
+                                Dashboard
+                            </span>
+                        </a>
+                        <!-- Notifications -->
+                        <a id="notificationsBtn" href="./notifications.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <i class="fa-regular fa-bell w-5"></i>
+                            <span class="nav-label font-semibold">
+                                Notifications
+                            </span>
+                            <!-- Badge - Logic baad me -->
+                            <span id="notificationBadge" class="hidden ml-auto min-w-[22px] h-[22px] px-1
+                   items-center justify-center rounded-full
+                   bg-red-500 text-white text-xs font-bold">
+                                0
+                            </span>
+                        </a>
+                        <!-- Favorites -->
+                        <a id="favoritesBtn" href="./favorites.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <i class="fa-regular fa-heart w-5"></i>
+                            <span class="nav-label font-semibold">
+                                Favorites
+                            </span>
+                            <!-- Badge - Logic baad me -->
+                            <span id="favoritesBadge" class="hidden ml-auto min-w-[22px] h-[22px] px-1
+                   items-center justify-center rounded-full
+                   bg-red-500 text-white text-xs font-bold">
+                                0
+                            </span>
+                        </a>
+                        <!-- Courses -->
+                        <a id="coursesBtn" href="./courses.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <i class="fa-solid fa-graduation-cap w-5"></i>
+                            <span class="nav-label font-semibold">
+                                Courses
+                            </span>
+                        </a>
+                        <!-- My Notes -->
+                        <a
+                            href="./dashboard.html?category=notes"
+                            data-nav-category="notes"
+                            data-category="notes"
+                            class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl"
+                        >
+                            <i class="fa-solid fa-book-open w-5"></i>
+                            <span class="nav-label font-semibold">
+                                My Notes
+                            </span>
+                        </a>
+                        <!-- My PYQs -->
+                        <a
+                            href="./dashboard.html?category=pyq"
+                            data-nav-category="pyq"
+                            data-category="pyq"
+                            class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl"
+                        >
+                            <i class="fa-solid fa-file-pen w-5"></i>
+                            <span class="nav-label font-semibold">
+                                My PYQs
+                            </span>
+                        </a>
+                        <!-- Timetable -->
+                        <a
+                            href="./dashboard.html?category=timetable"
+                            data-nav-category="timetable"
+                            data-category="timetable"
+                            class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl"
+                        >
+                            <i class="fa-regular fa-calendar-days w-5"></i>
+                            <span class="nav-label font-semibold">
+                                Timetable
+                            </span>
+                        </a>
+                        <!-- TNP Notes -->
+                        <a
+                            href="./dashboard.html?category=tnp"
+                            data-nav-category="tnp"
+                            data-category="tnp"
+                            class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl"
+                        >
+                            <i class="fa-solid fa-briefcase w-5"></i>
+                            <span class="nav-label font-semibold">
+                                TNP Notes
+                            </span>
+                        </a>
+                        <!-- Payment History -->
+                        <a id="paymentHistoryBtn" href="./payment-history.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <i class="fa-solid fa-receipt w-5"></i>
+                            <span class="nav-label font-semibold">
+                                Payment History
+                            </span>
+                        </a>
+                        <!-- Certificates -->
+                        <a id="certificatesBtn" href="./certificates.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <i class="fa-solid fa-certificate w-5"></i>
+                            <span class="nav-label font-semibold">
+                                Certificates
+                            </span>
+                        </a>
+                        <!-- Feedback -->
+                        <a id="feedbackBtn" href="./feedback.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <i class="fa-solid fa-star w-5"></i>
+                            <span class="nav-label font-semibold">
+                                Feedback
+                            </span>
+                        </a>
+                        <!-- Join Telegram -->
+                        <a
+                            id="telegramJoinLink"
+                            href="https://t.me/TechCampus_Hub"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl"
+                        >
+                            <i class="fa-brands fa-telegram w-5"></i>
+                            <span class="nav-label font-semibold">
+                                Join Telegram
+                            </span>
+                        </a>
+                        <!-- Divider -->
+                        <div class="my-3 border-t border-white/10"></div>
+                        <!-- Admin Panel (admins only) -->
+                        <a id="adminNavBtn" href="./admin.html" class="nav-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <i class="fa-solid fa-user-shield w-5"></i>
+                            <span class="nav-label font-semibold">
+                                Admin Panel
+                            </span>
+                        </a>
+                        <!-- Settings -->
+                        <a id="settingsBtn" href="./settings.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <i class="fa-solid fa-gear w-5"></i>
+                            <span class="nav-label font-semibold">
+                                Settings
+                            </span>
+                        </a>
+                        <!-- Profile -->
+                        <a id="sidebarProfileBtn" href="./profile.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <i class="fa-regular fa-user w-5"></i>
+                            <span class="nav-label font-semibold">
+                                Profile
+                            </span>
+                        </a>
+                        <!-- Logout -->
+                    </nav>
+                    <!-- LOGOUT -->
+                    <div class="p-4
+                   border-t
+                   border-white/10">
+                        <button id="logoutBtn" class="nav-item
+                       w-full
+                       flex
+                       items-center
+                       gap-4
+                       px-4
+                       py-3
+                       rounded-xl
+                       text-left" type="button">
+                            <i class="fa-solid
+                           fa-right-from-bracket
+                           w-5"></i>
+                            <span class="nav-label
+                           font-semibold">
+                                Logout
+                            </span>
+                        </button>
+                    </div>
+                </aside>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Feedback & Rating | TechCampus_Hub</title>
+        <meta name="description" content="TechCampus_Hub - College learning portal for study notes, TNP resources, previous year papers and exam timetables.">
+        <meta name="theme-color" content="#102a56">
+        <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
+        <!-- =====================================================
+         TAILWIND CSS
+    ====================================================== -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+        <!-- =====================================================
+         TAILWIND CONFIG
+    ====================================================== -->
+        <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: "#102a56",
+                        bluehub: "#2563eb",
+                        softbg: "#f5f8fc"
+                    },
+
+                    boxShadow: {
+                        soft: "0 8px 28px rgba(15,39,74,.08)"
+                    }
+                }
+            }
+        };
+        </script>
+        <!-- =====================================================
+         CUSTOM CSS
+    ====================================================== -->
+        <link rel="stylesheet" href="style.css">
+        <style>
+            .star-btn {
+                font-size: 1.9rem;
+                line-height: 1;
+                color: #cbd5e1;
+                transition: transform .15s ease, color .15s ease;
+            }
+
+            .star-btn:hover {
+                transform: scale(1.12);
+            }
+
+            .star-btn.active {
+                color: #f59e0b;
+            }
+        </style>
+    </head>
+<body data-page="feedback">
+        <div id="dashboardSection" class="min-h-screen">
+            <div id="pageChrome"></div>
+                <!-- =====================================================
+         MAIN AREA
+    ====================================================== -->
+                <main class="main-area
+               md:ml-64
+               min-h-screen">
+                    <div id="pageHeader"></div>
+                    <!-- =================================================
+             PAGE CONTENT
+        ================================================== -->
+                    <div class="p-5
+                   md:p-8
+                   max-w-[1500px]
+                   mx-auto">
+                        <div class="grid lg:grid-cols-3 gap-5">
+                            <!-- ================= SUBMIT FEEDBACK ================= -->
+                            <section class="card p-6 lg:col-span-2">
+                                <div class="flex items-center gap-4 mb-6">
+                                    <div class="w-12 h-12 rounded-xl
+                   bg-violet-50 text-violet-600
+                   flex items-center justify-center
+                   text-xl">
+                                        <i class="fa-solid fa-star"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-xl font-extrabold">
+                                            Feedback & Rating
+                                        </h2>
+                                        <p class="text-sm text-slate-500">
+                                            Rate courses, notes or the website (1–5 stars)
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <p id="feedbackPageMessage" class="hidden text-sm min-h-5 mb-4 px-4 py-3 rounded-xl"></p>
+
+                                <form id="feedbackForm" class="space-y-4">
+                                    <!-- What are you rating? -->
+                                    <div class="filter-group">
+                                        <label class="text-sm font-semibold mb-2 block">
+                                            I want to rate
+                                        </label>
+                                        <select id="feedbackTargetType" class="input">
+                                            <option value="website">The website</option>
+                                            <option value="course">A course</option>
+                                            <option value="note">A note</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Course / note picker -->
+                                    <div id="feedbackTargetGroup" class="filter-group hidden">
+                                        <label class="text-sm font-semibold mb-2 block">
+                                            Choose
+                                        </label>
+                                        <select id="feedbackTargetSelect" class="input">
+                                            <option value="">Select…</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Stars -->
+                                    <div>
+                                        <p class="text-sm font-semibold mb-2">
+                                            Your rating
+                                        </p>
+                                        <div id="feedbackStars" class="flex items-center gap-2" role="radiogroup" aria-label="Star rating">
+                                            <button type="button" class="star-btn" data-rating="1" aria-label="1 star">★</button>
+                                            <button type="button" class="star-btn" data-rating="2" aria-label="2 stars">★</button>
+                                            <button type="button" class="star-btn" data-rating="3" aria-label="3 stars">★</button>
+                                            <button type="button" class="star-btn" data-rating="4" aria-label="4 stars">★</button>
+                                            <button type="button" class="star-btn" data-rating="5" aria-label="5 stars">★</button>
+                                        </div>
+                                        <input type="hidden" id="feedbackRating" value="0">
+                                        <p id="feedbackRatingHint" class="text-xs text-slate-400 mt-1">
+                                            Tap a star to rate
+                                        </p>
+                                    </div>
+
+                                    <!-- Written feedback -->
+                                    <div class="filter-group">
+                                        <label class="text-sm font-semibold mb-2 block">
+                                            Written feedback
+                                        </label>
+                                        <textarea id="feedbackMessage" class="input" rows="4"
+                                                  placeholder="Tell us what you liked or what we should improve…"></textarea>
+                                    </div>
+
+                                    <button id="submitFeedbackBtn" type="submit"
+                                            class="rounded-xl bg-blue-600 hover:bg-blue-700
+                                                   text-white font-bold px-6 py-3 transition">
+                                        <i class="fa-solid fa-paper-plane mr-2"></i>Submit feedback
+                                    </button>
+                                </form>
+                            </section>
+
+                            <!-- ================= MY FEEDBACK ================= -->
+                            <section class="card p-6">
+                                <h3 class="text-lg font-extrabold mb-4">
+                                    My submissions
+                                </h3>
+                                <div id="myFeedbackList" class="space-y-3">
+                                    <p class="text-sm text-slate-500">
+                                        No feedback submitted yet.
+                                    </p>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        <script type="module" src="./js/app.js"></script>
+    </body>
+</html>

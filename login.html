@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Login | TechCampus_Hub</title>
+        <meta name="description" content="TechCampus_Hub - College learning portal for study notes, TNP resources, previous year papers and exam timetables.">
+        <meta name="theme-color" content="#102a56">
+        <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
+        <!-- =====================================================
+         TAILWIND CSS
+    ====================================================== -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+        <!-- =====================================================
+         TAILWIND CONFIG
+    ====================================================== -->
+        <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: "#102a56",
+                        bluehub: "#2563eb",
+                        softbg: "#f5f8fc"
+                    },
+
+                    boxShadow: {
+                        soft: "0 8px 28px rgba(15,39,74,.08)"
+                    }
+                }
+            }
+        };
+        </script>
+        <!-- =====================================================
+         CUSTOM CSS
+    ====================================================== -->
+        <link rel="stylesheet" href="style.css">
+    </head>
+<body data-page="auth">
+        <!-- =========================================================
+     AUTH SECTION
+========================================================= -->
+        <section id="authSection" class="auth-bg min-h-screen flex items-center justify-center p-4 md:p-8">
+            <div class="w-full max-w-5xl
+               grid lg:grid-cols-2
+               gap-8 items-stretch">
+                <!-- =================================================
+     LEFT BRANDING
+================================================== -->
+                <div class="hidden lg:flex
+           relative
+           rounded-3xl
+           overflow-hidden
+           bg-gradient-to-br
+           from-[#102a56]
+           via-[#173d78]
+           to-[#2563eb]
+           text-white
+           p-10
+           flex-col
+           justify-between
+           auth-card">
+                    <!-- =================================================
+         ADMIN LOGIN ICON
+    ================================================== -->
+                    <button
+                        id="adminLoginIcon"
+                        type="button"
+                        class="admin-login-icon
+               absolute
+               top-6
+               right-6"
+                        title="Administrator Login"
+                        aria-label="Administrator Login"
+                    >
+                        <i class="fa-solid fa-user-shield"></i>
+                    </button>
+                    <!-- =================================================
+         BRAND CONTENT
+    ================================================== -->
+                    <div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-16 h-16
+                       bg-white
+                       rounded-2xl
+                       p-2
+                       flex
+                       items-center
+                       justify-center">
+                                <div class="text-logo-icon">
+                                    🎓
+                                </div>
+                            </div>
+                            <div>
+                                <h1 class="text-2xl
+                           font-extrabold">
+                                    TechCampus_Hub
+                                </h1>
+                                <p class="text-blue-100
+                           text-sm">
+                                    College Learning Portal
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mt-16">
+                            <p class="uppercase
+                       tracking-[.25em]
+                       text-blue-200
+                       text-xs
+                       font-bold">
+                                Learn • Practice • Achieve
+                            </p>
+                            <h2 class="text-4xl
+                       font-extrabold
+                       leading-tight
+                       mt-4">
+                                Everything you need for your
+                            college journey.
+                            </h2>
+                            <p class="text-blue-100
+                       mt-5
+                       leading-7">
+                                Access notes, training &
+                            placement resources, previous
+                            year papers and exam timetables
+                            from one organized portal.
+                            </p>
+                        </div>
+                    </div>
+                    <!-- =================================================
+         FEATURES
+    ================================================== -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Notes -->
+                        <div class="bg-white/10
+                   rounded-2xl
+                   p-4
+                   border border-white/10">
+                            <i class="fa-solid
+                       fa-book-open
+                       text-xl"></i>
+                            <p class="font-semibold
+                       mt-2">
+                                Study Notes
+                            </p>
+                        </div>
+                        <!-- TNP -->
+                        <div class="bg-white/10
+                   rounded-2xl
+                   p-4
+                   border border-white/10">
+                            <i class="fa-solid
+                       fa-briefcase
+                       text-xl"></i>
+                            <p class="font-semibold
+                       mt-2">
+                                TNP Resources
+                            </p>
+                        </div>
+                        <!-- PYQ -->
+                        <div class="bg-white/10
+                   rounded-2xl
+                   p-4
+                   border border-white/10">
+                            <i class="fa-solid
+                       fa-file-circle-question
+                       text-xl"></i>
+                            <p class="font-semibold
+                       mt-2">
+                                PYQ Papers
+                            </p>
+                        </div>
+                        <!-- Timetable -->
+                        <div class="bg-white/10
+                   rounded-2xl
+                   p-4
+                   border border-white/10">
+                            <i class="fa-solid
+                       fa-calendar-days
+                       text-xl"></i>
+                            <p class="font-semibold
+                       mt-2">
+                                Exam Timetable
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <!-- =================================================
+             LOGIN / SIGNUP CARD
+        ================================================== -->
+                <div class="bg-white
+                   rounded-3xl
+                   p-7 sm:p-10
+                   auth-card
+                   flex flex-col
+                   justify-center">
+                    <!-- Mobile Logo -->
+                    <div class="flex items-center gap-4
+                       mb-8 lg:hidden">
+                        <div class="w-14 h-14
+                           rounded-2xl
+                           bg-white
+                           border
+                           p-1
+                           flex
+                           items-center
+                           justify-center">
+                            <div class="text-logo-icon">
+                                🎓
+                            </div>
+                        </div>
+                        <div>
+                            <h1 class="text-xl
+                               font-extrabold">
+                                TechCampus_Hub
+                            </h1>
+                            <p class="text-sm
+                               text-slate-500">
+                                College Learning Portal
+                            </p>
+                        </div>
+                    </div>
+                    <!-- Auth Heading -->
+                    <div class="mb-7">
+                        <a href="./index.html" class="inline-flex items-center gap-2 text-sm
+                           font-semibold text-slate-500 hover:text-blue-600
+                           transition mb-3">
+                            <i class="fa-solid fa-arrow-left"></i>
+                            Back to home
+                        </a>
+                        <p class="text-sm
+                           font-semibold
+                           text-blue-600">
+                            Welcome to TechCampus_Hub
+                        </p>
+                        <h2 id="authHeading" class="text-3xl
+                           font-extrabold
+                           text-slate-900
+                           mt-2">
+                            Welcome Back
+                        </h2>
+                        <p id="authSubtitle" class="text-slate-500
+                           mt-2">
+                            Sign in to access your
+                        personalized learning resources.
+                        </p>
+                    </div>
+                    <!-- =================================================
+                 AUTH FORM
+            ================================================== -->
+                    <form id="authForm" class="space-y-4">
+                        <!-- SIGNUP FIELDS -->
+                        <div id="signupFields" class="hidden space-y-4">
+                            <!-- Name -->
+                            <div>
+                                <label class="block
+                                   text-sm
+                                   font-semibold
+                                   mb-2">
+                                    Full Name
+                                </label>
+                                <input
+                                    id="regName"
+                                    autocomplete="name"
+                                    class="input"
+                                    type="text"
+                                    placeholder="Enter your full name"
+                                >
+                            </div>
+                            <!-- Course / Branch -->
+                            <div class="grid
+                               sm:grid-cols-2
+                               gap-4">
+                                <div>
+                                    <label class="block
+                                       text-sm
+                                       font-semibold
+                                       mb-2">
+                                        Course
+                                    </label>
+                                    <select id="regCourse" class="input">
+                                        <option value>
+                                            Select Course
+                                        </option>
+                                        <option value="MCA">
+                                            MCA
+                                        </option>
+                                        <option value="B.Tech">
+                                            B.Tech
+                                        </option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block
+                                       text-sm
+                                       font-semibold
+                                       mb-2">
+                                        Branch
+                                    </label>
+                                    <select id="regBranch" class="input">
+                                        <option value>
+                                            Select Branch
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Year / Semester -->
+                            <div class="grid
+                               sm:grid-cols-2
+                               gap-4">
+                                <div>
+                                    <label class="block
+                                       text-sm
+                                       font-semibold
+                                       mb-2">
+                                        Year
+                                    </label>
+                                    <select id="regYear" class="input">
+                                        <option value>
+                                            Select Year
+                                        </option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block
+                                       text-sm
+                                       font-semibold
+                                       mb-2">
+                                        Semester
+                                    </label>
+                                    <select id="regSemester" class="input">
+                                        <option value>
+                                            Select Semester
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- EMAIL -->
+                        <div>
+                            <label class="block
+                               text-sm
+                               font-semibold
+                               mb-2">
+                                Email Address
+                            </label>
+                            <div class="relative">
+                                <i class="fa-regular
+                                   fa-envelope
+                                   absolute
+                                   left-4
+                                   top-1/2
+                                   -translate-y-1/2
+                                   text-slate-400"></i>
+                                <input
+                                    id="authEmail"
+                                    autocomplete="email"
+                                    class="input pl-11"
+                                    type="email"
+                                    placeholder="you@example.com"
+                                    required
+                                >
+                            </div>
+                        </div>
+                        <!-- PASSWORD -->
+                        <div>
+                            <label class="block
+                               text-sm
+                               font-semibold
+                               mb-2">
+                                Password
+                            </label>
+                            <div class="relative">
+                                <i class="fa-solid
+                                   fa-lock
+                                   absolute
+                                   left-4
+                                   top-1/2
+                                   -translate-y-1/2
+                                   text-slate-400"></i>
+                                <input
+                                    id="authPassword"
+                                    autocomplete="current-password"
+                                    class="input pl-11 pr-12"
+                                    type="password"
+                                    placeholder="Enter your password"
+                                    required
+                                >
+                                <button
+                                    type="button"
+                                    id="togglePasswordBtn"
+                                    class="absolute
+                                   right-4
+                                   top-1/2
+                                   -translate-y-1/2
+                                   text-slate-400"
+                                    aria-label="Show password"
+                                >
+                                    <i class="fa-regular
+                                       fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- FORGOT PASSWORD -->
+                        <div id="forgotPasswordContainer" class="flex justify-end">
+                            <button type="button" id="forgotPasswordBtn" class="text-sm
+                               font-semibold
+                               text-blue-600
+                               hover:text-blue-800">
+                                Forgot password?
+                            </button>
+                        </div>
+                        <!-- SUBMIT -->
+                        <button id="authSubmitBtn" type="submit" class="w-full
+                           bg-blue-600
+                           hover:bg-blue-700
+                           text-white
+                           font-bold
+                           py-3.5
+                           rounded-xl
+                           shadow-lg
+                           shadow-blue-600/20
+                           transition">
+                            Login
+                        </button>
+                        <!-- MESSAGE -->
+                        <p id="authMessage" aria-live="polite" class="text-sm
+                           text-center
+                           min-h-5"></p>
+                    </form>
+                    <!-- TOGGLE -->
+                    <div id="toggleAuthMode" role="button" tabindex="0" class="text-center
+           mt-6
+           pt-6
+           border-t
+           border-slate-100
+           cursor-pointer
+           text-sm
+           font-bold
+           text-blue-600
+           hover:text-blue-800
+           transition">
+                        Don't have an account?
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- =========================================================
+     ADMIN LOGIN MODAL
+========================================================= -->
+        <div id="adminLoginModal" class="hidden
+           fixed
+           inset-0
+           z-[200]
+           bg-slate-950/60
+           admin-modal
+           items-center
+           justify-center
+           p-4">
+            <div class="bg-white
+               rounded-3xl
+               w-full
+               max-w-md
+               p-7
+               shadow-2xl
+               relative">
+                <!-- CLOSE BUTTON -->                    <button id="closeAdminLoginBtn" type="button" aria-label="Close" class="absolute
+                   top-5
+                   right-5
+                   w-9
+                   h-9
+                   rounded-xl
+                   bg-slate-100
+                   hover:bg-slate-200
+                   flex
+                   items-center
+                   justify-center
+                   text-slate-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <!-- HEADER -->
+                <div class="text-center mb-7">
+                    <div class="w-14
+                       h-14
+                       mx-auto
+                       rounded-2xl
+                       bg-blue-50
+                       text-blue-600
+                       flex
+                       items-center
+                       justify-center
+                       text-xl">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <h2 class="text-2xl
+                       font-extrabold
+                       text-slate-900
+                       mt-4">
+                        Administrator Login
+                    </h2>
+                    <p id="adminLoginStepText" class="text-sm
+                       text-slate-500
+                       mt-2">
+                        Enter your administrator ID
+                    </p>
+                </div>
+                <!-- =================================================
+             STEP 1 : ADMIN ID
+        ================================================== -->
+                <div id="adminStep1" class="admin-step">
+                    <label class="block
+                       text-sm
+                       font-semibold
+                       mb-2">
+                        Administrator ID
+                    </label>
+                    <div class="relative">
+                        <i class="fa-solid
+                           fa-user-shield
+                           absolute
+                           left-4
+                           top-1/2
+                           -translate-y-1/2
+                           text-slate-400"></i>
+                        <input
+                            id="adminLoginId"
+                            class="input pl-11"
+                            type="text"
+                            placeholder="Enter administrator ID"
+                            autocomplete="username"
+                        >
+                    </div>
+                    <button id="adminContinueBtn" type="button" class="w-full
+                       mt-5
+                       bg-blue-600
+                       hover:bg-blue-700
+                       text-white
+                       font-bold
+                       py-3.5
+                       rounded-xl
+                       transition">
+                        Continue
+                        <i class="fa-solid
+                           fa-arrow-right
+                           ml-2"></i>
+                    </button>
+                </div>
+                <!-- =================================================
+             STEP 2 : PASSWORD
+        ================================================== -->
+                <div id="adminStep2" class="admin-step hidden">
+                    <div class="mb-4
+                       px-3
+                       py-2
+                       bg-slate-50
+                       rounded-xl
+                       text-sm">
+                        <span class="text-slate-500">
+                            Administrator ID:
+                        </span>
+                        <span id="adminLoginIdDisplay" class="font-bold
+                           text-slate-800
+                           ml-1">
+                            -
+                        </span>
+                    </div>
+                    <label class="block
+                       text-sm
+                       font-semibold
+                       mb-2">
+                        Password
+                    </label>
+                    <div class="relative">
+                        <i class="fa-solid
+                           fa-lock
+                           absolute
+                           left-4
+                           top-1/2
+                           -translate-y-1/2
+                           text-slate-400"></i>
+                        <input
+                            id="adminLoginPassword"
+                            class="input
+                           pl-11
+                           pr-12"
+                            type="password"
+                            placeholder="Enter administrator password"
+                            autocomplete="current-password"
+                        >
+                        <button
+                            id="toggleAdminPasswordBtn"
+                            type="button"
+                            class="absolute
+                           right-4
+                           top-1/2
+                           -translate-y-1/2
+                           text-slate-400"
+                            aria-label="Show password"
+                        >
+                            <i class="fa-regular
+                               fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="grid
+                       grid-cols-2
+                       gap-3
+                       mt-5">
+                        <button id="adminBackBtn" type="button" class="border
+                           border-slate-200
+                           hover:bg-slate-50
+                           text-slate-700
+                           font-bold
+                           py-3
+                           rounded-xl
+                           transition">
+                            <i class="fa-solid
+                               fa-arrow-left
+                               mr-2"></i>
+                            Back
+                        </button>
+                        <button id="adminLoginSubmitBtn" type="button" class="bg-blue-600
+                           hover:bg-blue-700
+                           text-white
+                           font-bold
+                           py-3
+                           rounded-xl
+                           transition">
+                            Login
+                        </button>
+                    </div>
+                </div>
+                <!-- MESSAGE -->
+                <p id="adminLoginMessage" aria-live="polite" class="text-sm
+                   text-center
+                   min-h-5
+                   mt-4"></p>
+            </div>
+        </div>
+        <script type="module" src="./js/app.js"></script>
+    </body>
+</html>

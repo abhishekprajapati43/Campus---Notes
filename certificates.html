@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Certificates | TechCampus_Hub</title>
+        <meta name="description" content="TechCampus_Hub - College learning portal for study notes, TNP resources, previous year papers and exam timetables.">
+        <meta name="theme-color" content="#102a56">
+        <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8E%93%3C/text%3E%3C/svg%3E">
+        <!-- =====================================================
+         TAILWIND CSS
+    ====================================================== -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+        <!-- =====================================================
+         TAILWIND CONFIG
+    ====================================================== -->
+        <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: "#102a56",
+                        bluehub: "#2563eb",
+                        softbg: "#f5f8fc"
+                    },
+
+                    boxShadow: {
+                        soft: "0 8px 28px rgba(15,39,74,.08)"
+                    }
+                }
+            }
+        };
+        </script>
+        <!-- =====================================================
+         CUSTOM CSS
+    ====================================================== -->
+        <link rel="stylesheet" href="style.css">
+    </head>
+<body data-page="certificates">
+        <div id="dashboardSection" class="min-h-screen">
+            <div id="pageChrome"></div>
+                <!-- =====================================================
+         MAIN AREA
+    ====================================================== -->
+                <main class="main-area
+               md:ml-64
+               min-h-screen">
+                    <div id="pageHeader"></div>
+                    <!-- =================================================
+             PAGE CONTENT
+        ================================================== -->
+                    <div class="p-5
+                   md:p-8
+                   max-w-[1500px]
+                   mx-auto">
+                        <!-- ================= CERTIFICATES ================= -->
+                        <section class="card p-6 mb-5">
+                            <div class="flex items-center gap-4 mb-6">
+                                <div class="w-12 h-12 rounded-xl
+                   bg-amber-50 text-amber-600
+                   flex items-center justify-center
+                   text-xl">
+                                    <i class="fa-solid fa-certificate"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-xl font-extrabold">
+                                        Certification
+                                    </h2>
+                                    <p class="text-sm text-slate-500">
+                                        Click a certificate link to claim your certificate
+                                    </p>
+                                </div>
+                            </div>
+                            <div id="certificatesList" class="grid
+               grid-cols-1
+               md:grid-cols-2
+               lg:grid-cols-3
+               gap-5">
+                                <div id="certificatesEmptyState" class="col-span-full
+                   text-center py-12
+                   text-slate-500">
+                                    <div class="w-16 h-16 mx-auto mb-4
+                       rounded-full bg-slate-100
+                       flex items-center justify-center
+                       text-2xl">
+                                        📜
+                                    </div>
+                                    <p class="font-semibold">
+                                        No certificates published yet
+                                    </p>
+                                    <p class="text-sm mt-1">
+                                        Certificates added by the admin will appear here.
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </main>
+            </div>
+        <script type="module" src="./js/app.js"></script>
+    </body>
+</html>
