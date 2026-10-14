@@ -150,6 +150,15 @@
             flex-shrink: 0;
         }
 
+        /* Brand logo image inside the logo chips */
+        .text-logo-icon img,
+        .text-logo-icon-small img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
         .hide-scroll::-webkit-scrollbar {
             display: none;
         }
