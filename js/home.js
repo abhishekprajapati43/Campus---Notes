@@ -7,8 +7,53 @@
 // =====================================================
 
 import { getSession } from "./auth.js";
-import { loadCourses, formatPrice } from "./courses.js";
+import { loadCourses, formatPrice, ratingBadgeHtml } from "./courses.js";
+import { getOverallRating } from "./api.js";
 import { escapeHtml } from "./helpers.js";
+
+/**
+ * Platform-wide average rating shown above the homepage catalog,
+ * e.g. "⭐ 4.8/5 · from 1,240 reviews".
+ */
+async function renderOverallRating() {
+    const box = document.getElementById("overallRatingSummary");
+
+    if (!box) {
+        return;
+    }
+
+    try {
+        const summary = await getOverallRating();
+        const count = Number(summary?.count) || 0;
+        const average = Number(summary?.average) || 0;
+
+        if (!count) {
+            box.innerHTML = `
+                <span class="text-sm text-slate-500 font-semibold">
+                    <i class="fa-regular fa-star text-amber-400 mr-1"></i>
+                    No reviews yet — be the first to rate a course
+                </span>
+            `;
+            return;
+        }
+
+        box.innerHTML = `
+            <span class="inline-flex items-center gap-2 rounded-full
+                         bg-amber-50 border border-amber-200
+                         px-4 py-1.5 text-sm font-extrabold text-amber-700"
+                  title="Average of ${count} review${count === 1 ? "" : "s"}">
+                <i class="fa-solid fa-star text-amber-400"></i>
+                ${average.toFixed(1)}/5
+                <span class="font-semibold text-amber-600">
+                    from ${count.toLocaleString("en-IN")} review${count === 1 ? "" : "s"}
+                </span>
+            </span>
+        `;
+    } catch (error) {
+        console.error("Overall rating load error:", error);
+        box.innerHTML = "";
+    }
+}
 
 async function renderCourseCatalog() {
     const grid = document.getElementById("homeCourseGrid");
@@ -57,6 +102,7 @@ async function renderCourseCatalog() {
                     <h3 class="mt-4 text-lg font-extrabold text-slate-900">
                         ${escapeHtml(course.title)}
                     </h3>
+                    ${ratingBadgeHtml(course)}
                     <p class="mt-2 text-sm text-slate-500 flex-1">
                         ${escapeHtml(course.description || "")}
                     </p>
@@ -104,6 +150,7 @@ async function updateNavForSession() {
 
 document.addEventListener("DOMContentLoaded", () => {
     updateNavForSession();
+    renderOverallRating();
     renderCourseCatalog();
 
     // Viewing or buying a course requires an account:

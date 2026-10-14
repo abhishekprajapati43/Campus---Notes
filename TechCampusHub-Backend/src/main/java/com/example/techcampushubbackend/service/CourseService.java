@@ -5,39 +5,65 @@ import com.example.techcampushubbackend.dto.CourseDtos.CourseResponse;
 import com.example.techcampushubbackend.entity.Course;
 import com.example.techcampushubbackend.exception.ResourceNotFoundException;
 import com.example.techcampushubbackend.repository.CourseRepository;
+import com.example.techcampushubbackend.repository.FeedbackRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Course catalog: public browsing plus admin create/edit/delete.
+ * Course catalog: public browsing plus admin create/edit/delete. Each
+ * response carries the live average rating / review count of the course.
  */
 @Service
 @RequiredArgsConstructor
 public class CourseService {
 
     private final CourseRepository courseRepository;
+    private final FeedbackRepository feedbackRepository;
 
     @Transactional(readOnly = true)
     public List<CourseResponse> listPublic() {
-        return courseRepository.findAllByActiveTrueOrderBySortOrderAscTitleAsc().stream()
-                .map(CourseService::toResponse)
-                .toList();
+        return withRatings(courseRepository.findAllByActiveTrueOrderBySortOrderAscTitleAsc());
     }
 
     @Transactional(readOnly = true)
     public List<CourseResponse> listAll() {
-        return courseRepository.findAllByOrderBySortOrderAscTitleAsc().stream()
-                .map(CourseService::toResponse)
-                .toList();
+        return withRatings(courseRepository.findAllByOrderBySortOrderAscTitleAsc());
     }
 
     @Transactional(readOnly = true)
     public CourseResponse get(Long id) {
-        return toResponse(require(id));
+        return toResponse(require(id), ratingFor(id));
+    }
+
+    /** One batched query for the catalog's rating badges (no N+1). */
+    private List<CourseResponse> withRatings(List<Course> courses) {
+        Map<Long, double[]> ratings = new HashMap<>();
+        for (Object[] row : feedbackRepository.findAllCourseRatingSummaries()) {
+            ratings.put((Long) row[0],
+                    new double[]{(Double) row[1], ((Number) row[2]).doubleValue()});
+        }
+        return courses.stream()
+                .map(course -> {
+                    double[] rating = ratings.get(course.getId());
+                    return toResponse(course, rating);
+                })
+                .toList();
+    }
+
+    /** Rating summary for a single course: [average, count]. */
+    private double[] ratingFor(Long courseId) {
+        List<Object[]> rows = feedbackRepository.findCourseRatingSummary(courseId);
+        if (rows.isEmpty() || rows.get(0) == null || rows.get(0)[0] == null) {
+            return new double[]{0.0, 0};
+        }
+        Object[] row = rows.get(0);
+        return new double[]{(Double) row[0], ((Number) row[1]).longValue()};
     }
 
     /** Loads a course entity or throws 404 - used by other services. */
@@ -62,7 +88,8 @@ public class CourseService {
                 .sortOrder(request.sortOrder() == null ? 0 : request.sortOrder())
                 .active(request.active() == null || request.active())
                 .build();
-        return toResponse(courseRepository.save(course));
+        Course saved = courseRepository.save(course);
+        return toResponse(saved, ratingFor(saved.getId()));
     }
 
     @Transactional
@@ -79,7 +106,8 @@ public class CourseService {
         if (request.highlights() != null) course.setHighlights(joinHighlights(request.highlights()));
         if (request.sortOrder() != null) course.setSortOrder(request.sortOrder());
         if (request.active() != null) course.setActive(request.active());
-        return toResponse(courseRepository.save(course));
+        Course saved = courseRepository.save(course);
+        return toResponse(saved, ratingFor(saved.getId()));
     }
 
     /** Soft delete: the course is deactivated so existing purchases keep working. */
@@ -91,11 +119,18 @@ public class CourseService {
     }
 
     public static CourseResponse toResponse(Course course) {
+        return toResponse(course, null);
+    }
+
+    /** @param rating optional [average, count] pair; null means unrated. */
+    public static CourseResponse toResponse(Course course, double[] rating) {
+        double average = rating == null ? 0.0 : Math.round(rating[0] * 10.0) / 10.0;
+        long count = rating == null ? 0 : (long) rating[1];
         return new CourseResponse(
                 course.getId(), course.getTitle(), course.getCode(), course.getCategory(),
                 course.getDescription(), course.getPriceInr(), course.getThumbnailUrl(),
                 course.getValidityDays(), course.getSlug(), splitHighlights(course.getHighlights()),
-                course.getSortOrder(), course.isActive(), course.getCreatedAt());
+                course.getSortOrder(), course.isActive(), average, count, course.getCreatedAt());
     }
 
     /** Highlights round-trip as newline-separated text in the database. */

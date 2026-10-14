@@ -1,5 +1,6 @@
 package com.example.techcampushubbackend.service;
 
+import com.example.techcampushubbackend.dto.PurchaseDtos.PurchaseApproveRequest;
 import com.example.techcampushubbackend.dto.PurchaseDtos.PurchaseCreateRequest;
 import com.example.techcampushubbackend.dto.PurchaseDtos.PurchaseResponse;
 import com.example.techcampushubbackend.entity.Course;
@@ -92,7 +93,7 @@ public class PurchaseService {
     }
 
     @Transactional
-    public PurchaseResponse approve(Long id) {
+    public PurchaseResponse approve(Long id, PurchaseApproveRequest request) {
         Purchase purchase = require(id);
         if (purchase.getStatus() != PurchaseStatus.PENDING) {
             throw new BadRequestException("Only pending purchases can be approved");
@@ -101,7 +102,7 @@ public class PurchaseService {
         LocalDateTime now = LocalDateTime.now();
         purchase.setStatus(PurchaseStatus.APPROVED);
         purchase.setValidFrom(now);
-        purchase.setValidUntil(now.plusDays(purchase.getCourse().getValidityDays()));
+        purchase.setValidUntil(resolveValidityUntil(purchase, request, now));
         purchase.setReviewedAt(now);
         purchase.setReviewedBy(admin);
         purchase.setRejectionReason(null);
@@ -136,6 +137,41 @@ public class PurchaseService {
                 : purchase.getValidUntil();
         purchase.setValidUntil(base.plusDays(days));
         return toResponse(purchaseRepository.save(purchase));
+    }
+
+    /** Sets an exact expiry date on an approved purchase (admin edit). */
+    @Transactional
+    public PurchaseResponse setValidity(Long id, LocalDateTime validUntil) {
+        Purchase purchase = require(id);
+        if (purchase.getStatus() != PurchaseStatus.APPROVED) {
+            throw new BadRequestException("Only approved purchases have a validity window");
+        }
+        if (validUntil.isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("The expiry date must be in the future");
+        }
+        if (purchase.getValidFrom() == null) {
+            purchase.setValidFrom(LocalDateTime.now());
+        }
+        purchase.setValidUntil(validUntil);
+        return toResponse(purchaseRepository.save(purchase));
+    }
+
+    /**
+     * Validity window for a fresh approval: explicit validUntil wins, then
+     * validityDays, then the course's default.
+     */
+    private static LocalDateTime resolveValidityUntil(
+            Purchase purchase, PurchaseApproveRequest request, LocalDateTime now) {
+        if (request != null && request.validUntil() != null) {
+            if (request.validUntil().isBefore(now)) {
+                throw new BadRequestException("The expiry date must be in the future");
+            }
+            return request.validUntil();
+        }
+        int days = request != null && request.validityDays() != null
+                ? request.validityDays()
+                : purchase.getCourse().getValidityDays();
+        return now.plusDays(days);
     }
 
     /** Removes a purchase record entirely (admin cleanup). */

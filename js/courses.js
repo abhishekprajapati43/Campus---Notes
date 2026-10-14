@@ -24,7 +24,12 @@ import {
     normalizePurchase,
     normalizeSettings,
     courseToRequest,
-    settingsToRequest
+    settingsToRequest,
+    approvePurchaseWithValidity,
+    setPurchaseValidity,
+    getCourseRating,
+    getCourseReviews,
+    submitCourseReview
 } from "./api.js";
 
 // =====================================================
@@ -726,6 +731,22 @@ async function renderCourseGrid() {
             `)
             .join("");
 
+        // Purchase expiry shown right on the student's course card.
+        let expiryLine = "";
+
+        if (status === "approved" && purchase?.expires_at) {
+            expiryLine = `
+                <p class="mt-3 text-xs font-semibold
+                          ${expired ? "text-red-600" : "text-emerald-600"}">
+                    <i class="fa-regular fa-clock mr-1"></i>
+                    ${expired ? "Expired on" : "Valid until"}
+                    ${escapeHtml(formatExpiryDateTime(purchase.expires_at))}
+                </p>
+            `;
+        }
+
+        const ratingHtml = ratingBadgeHtml(course);
+
         return `
             <article class="card p-6 flex flex-col">
                 <div class="flex items-start justify-between gap-3">
@@ -738,6 +759,7 @@ async function renderCourseGrid() {
                 <h3 class="mt-4 text-lg font-extrabold text-slate-900">
                     ${escapeHtml(course.title)}
                 </h3>
+                ${ratingHtml}
                 <p class="mt-2 text-sm text-slate-500">
                     ${escapeHtml(course.description || "")}
                 </p>
@@ -753,13 +775,49 @@ async function renderCourseGrid() {
                             ${escapeHtml(price)}
                         </p>
                     </div>
+                    <button type="button"
+                        class="reviews-trigger-btn text-xs font-bold text-slate-500
+                               hover:text-blue-600 underline underline-offset-2"
+                        data-course-id="${escapeHtml(String(course.id))}"
+                        data-course-title="${escapeHtml(course.title)}">
+                        Reviews
+                    </button>
                 </div>
                 <div class="mt-4">
                     ${action}
                 </div>
+                ${expiryLine}
             </article>
         `;
     }).join("");
+}
+
+// =====================================================
+// Rating badge shared by the course cards
+// =====================================================
+
+/** "⭐ 4.5 · 12 reviews" (or "No reviews yet") from course.rating_*. */
+export function ratingBadgeHtml(course) {
+    const count = Number(course?.rating_count) || 0;
+    const average = Number(course?.rating_avg) || 0;
+
+    if (!count) {
+        return `
+            <p class="mt-1 text-xs text-slate-400 font-semibold">
+                <i class="fa-regular fa-star mr-1"></i>No reviews yet
+            </p>
+        `;
+    }
+
+    return `
+        <p class="mt-1 text-xs text-slate-600 font-bold"
+           title="${average.toFixed(1)} out of 5 from ${count} review${count === 1 ? "" : "s"}">
+            <i class="fa-solid fa-star text-amber-400 mr-1"></i>${average.toFixed(1)}
+            <span class="text-slate-400 font-semibold">
+                · ${count} review${count === 1 ? "" : "s"}
+            </span>
+        </p>
+    `;
 }
 
 // Full date + time for a purchase expiry (timestamptz).
@@ -859,6 +917,46 @@ async function renderMyPurchases() {
     await renderPurchasesTable("myPurchasesList");
 }
 
+/**
+ * Dashboard header: shows the nearest course expiry so students always
+ * know how long their access lasts ("Course access valid until …").
+ */
+async function renderDashboardAccessLine() {
+    const line = $("dashboardAccessLine");
+
+    if (!line) {
+        return;
+    }
+
+    await refreshOwnership();
+
+    const active = purchasesCache
+        .filter(row => row.status === "approved" && !purchaseExpired(row))
+        .map(row => row.expires_at)
+        .filter(Boolean)
+        .sort();
+
+    if (!active.length) {
+        const expired = purchasesCache.some(
+            row => row.status === "approved" && purchaseExpired(row)
+        );
+
+        line.textContent = expired
+            ? "Course access expired — renew a course to keep learning."
+            : "No active course access yet.";
+        line.className = "text-xs font-bold mt-2 text-slate-400";
+        return;
+    }
+
+    const nearest = active[0];
+
+    line.innerHTML = `
+        <i class="fa-regular fa-clock mr-1"></i>
+        Course access valid until
+        <span class="text-emerald-600">${escapeHtml(formatExpiryDateTime(nearest))}</span>
+    `;
+}
+
 // payment-history.html reuses the same table.
 export async function renderPaymentHistory() {
     await renderPurchasesTable("paymentHistoryList");
@@ -906,6 +1004,12 @@ function openBuyModal(course) {
     $("buyCourseTitle").textContent = course.title;
     $("buyCoursePrice").textContent = formatPrice(course.price_inr);
     $("buyUpiIdText").textContent = upiId;
+
+    // Average rating of this course (details/checkout view).
+    const ratingBox = $("buyCourseRating");
+    if (ratingBox) {
+        ratingBox.innerHTML = ratingBadgeHtml(course);
+    }
 
     const upiLink = $("buyUpiLink");
 
@@ -1065,6 +1169,7 @@ async function renderAdminPurchases() {
                     <button type="button"
                         class="approve-purchase-btn rounded-lg bg-emerald-600 hover:bg-emerald-700
                                text-white text-xs font-bold px-3 py-2"
+                        title="Approve and choose the course validity"
                         data-purchase-id="${escapeHtml(String(row.id))}">
                         Approve
                     </button>
@@ -1080,11 +1185,18 @@ async function renderAdminPurchases() {
             actions = `
                 <div class="flex gap-2">
                     <button type="button"
+                        class="validity-purchase-btn rounded-lg bg-indigo-50 hover:bg-indigo-100
+                               text-indigo-700 text-xs font-bold px-3 py-2"
+                        title="Set or modify the expiry date"
+                        data-purchase-id="${escapeHtml(String(row.id))}">
+                        <i class="fa-regular fa-calendar mr-1"></i>Validity
+                    </button>
+                    <button type="button"
                         class="extend-purchase-btn rounded-lg bg-blue-50 hover:bg-blue-100
                                text-blue-700 text-xs font-bold px-3 py-2"
                         title="Extend course expiry by 30 days"
                         data-purchase-id="${escapeHtml(String(row.id))}">
-                        <i class="fa-solid fa-calendar-plus mr-1"></i>Extend 30 days
+                        <i class="fa-solid fa-calendar-plus mr-1"></i>+30 days
                     </button>
                     <button type="button"
                         class="delete-purchase-btn rounded-lg bg-red-50 hover:bg-red-100
@@ -1146,7 +1258,8 @@ async function renderAdminPurchases() {
 async function handlePurchaseAction(event) {
     const button = event.target.closest(
         ".approve-purchase-btn, .reject-purchase-btn, " +
-        ".extend-purchase-btn, .delete-purchase-btn"
+        ".extend-purchase-btn, .delete-purchase-btn, " +
+        ".validity-purchase-btn"
     );
 
     if (!button) {
@@ -1157,6 +1270,13 @@ async function handlePurchaseAction(event) {
     const approved = button.classList.contains("approve-purchase-btn");
     const extended = button.classList.contains("extend-purchase-btn");
     const removed = button.classList.contains("delete-purchase-btn");
+    const validityEdit = button.classList.contains("validity-purchase-btn");
+
+    // Approve / edit validity: ask the admin how long access should last.
+    if (approved || validityEdit) {
+        openValidityModal(purchaseId, approved ? "approve" : "edit");
+        return;
+    }
 
     button.disabled = true;
 
@@ -1197,6 +1317,513 @@ async function handlePurchaseAction(event) {
 
         button.disabled = false;
     }
+}
+
+// =====================================================
+// Validity modal (admin): 30/90/180/365 days or a
+// custom expiry date, used on approve and when editing
+// the validity of an already approved purchase.
+// =====================================================
+
+let validityModalState = { purchaseId: null, mode: "approve" };
+
+function openValidityModal(purchaseId, mode) {
+    const modal = $("purchaseValidityModal");
+
+    if (!modal) {
+        return;
+    }
+
+    validityModalState = { purchaseId, mode };
+
+    const title = $("validityModalTitle");
+    const context = $("validityModalContext");
+    const dateInput = $("validityDateInput");
+
+    if (title) {
+        title.textContent = mode === "approve"
+            ? "Approve & set validity"
+            : "Modify course validity";
+    }
+
+    if (context) {
+        context.textContent = mode === "approve"
+            ? "Choose how long the student keeps access to this course."
+            : "Replace the current expiry with a new preset or exact date.";
+    }
+
+    if (dateInput) {
+        dateInput.value = "";
+    }
+
+    document
+        .querySelectorAll("#purchaseValidityModal .validity-preset-btn")
+        .forEach(btn => {
+            btn.classList.remove("bg-blue-600", "text-white", "border-blue-600");
+        });
+
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+}
+
+function closeValidityModal() {
+    const modal = $("purchaseValidityModal");
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+    validityModalState = { purchaseId: null, mode: "approve" };
+}
+
+function selectedPresetDays() {
+    const active = document.querySelector(
+        "#purchaseValidityModal .validity-preset-btn.bg-blue-600"
+    );
+
+    return active ? Number(active.dataset.days) : 0;
+}
+
+async function handleValidityConfirm() {
+    const { purchaseId, mode } = validityModalState;
+
+    if (!purchaseId) {
+        return;
+    }
+
+    const confirmButton = $("confirmValidityBtn");
+    const dateInput = $("validityDateInput");
+    const customDate = dateInput?.value
+        ? `${dateInput.value}T23:59:59`
+        : "";
+    const presetDays = selectedPresetDays();
+
+    if (!customDate && !presetDays && mode === "edit") {
+        purchasesAdminMessage(
+            "Pick a validity preset or a custom expiry date first.",
+            "error"
+        );
+        return;
+    }
+
+    if (confirmButton) {
+        confirmButton.disabled = true;
+    }
+
+    try {
+        if (mode === "approve") {
+            // Approve: exact date wins over preset; neither = course default.
+            const validity = customDate
+                ? { validUntil: customDate }
+                : presetDays
+                    ? { validityDays: presetDays }
+                    : {};
+
+            await approvePurchaseWithValidity(purchaseId, validity);
+
+            purchasesAdminMessage(
+                customDate
+                    ? `Purchase approved — valid until ${customDate.slice(0, 10)}.`
+                    : presetDays
+                        ? `Purchase approved — ${presetDays} days of access.`
+                        : "Purchase approved — course default validity applied.",
+                "success"
+            );
+        } else {
+            const validUntil = customDate || daysFromToday(presetDays);
+
+            await setPurchaseValidity(purchaseId, validUntil);
+
+            purchasesAdminMessage(
+                `Expiry updated — valid until ${validUntil.slice(0, 10)}.`,
+                "success"
+            );
+        }
+
+        closeValidityModal();
+        await renderAdminPurchases();
+    } catch (error) {
+        console.error("Validity update error:", error);
+
+        purchasesAdminMessage(
+            error?.message || "Could not update the validity.",
+            "error"
+        );
+    } finally {
+        if (confirmButton) {
+            confirmButton.disabled = false;
+        }
+    }
+}
+
+function daysFromToday(days) {
+    const date = new Date();
+    date.setDate(date.getDate() + Number(days || 0));
+    date.setHours(23, 59, 59, 0);
+
+    const pad = value => String(value).padStart(2, "0");
+
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+        + `T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function setupValidityModal() {
+    const modal = $("purchaseValidityModal");
+
+    if (!modal) {
+        return;
+    }
+
+    // Preset buttons only select; Confirm applies the choice.
+    modal.querySelectorAll(".validity-preset-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            modal
+                .querySelectorAll(".validity-preset-btn")
+                .forEach(other => {
+                    other.classList.remove(
+                        "bg-blue-600", "text-white", "border-blue-600"
+                    );
+                });
+
+            btn.classList.add("bg-blue-600", "text-white", "border-blue-600");
+
+            // An explicit preset clears a conflicting custom date.
+            const dateInput = $("validityDateInput");
+            if (dateInput) {
+                dateInput.value = "";
+            }
+        });
+    });
+
+    // Choosing a date clears the preset selection.
+    $("validityDateInput")?.addEventListener("change", () => {
+        modal
+            .querySelectorAll(".validity-preset-btn")
+            .forEach(other => {
+                other.classList.remove(
+                    "bg-blue-600", "text-white", "border-blue-600"
+                );
+            });
+    });
+
+    $("confirmValidityBtn")?.addEventListener("click", handleValidityConfirm);
+    $("cancelValidityBtn")?.addEventListener("click", closeValidityModal);
+    $("closeValidityModalBtn")?.addEventListener("click", closeValidityModal);
+
+    modal.addEventListener("click", event => {
+        if (event.target === modal) {
+            closeValidityModal();
+        }
+    });
+}
+
+// =====================================================
+// Reviews modal: average + review list, and the rating
+// form (verified purchasers only — enforced server-side).
+// =====================================================
+
+let reviewsModalState = {
+    courseId: null,
+    rating: 0,
+    canReview: false
+};
+
+function closeReviewsModal() {
+    const modal = $("courseReviewsModal");
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+    reviewsModalState = { courseId: null, rating: 0, canReview: false };
+}
+
+function setStarPicker(rating) {
+    reviewsModalState.rating = Number(rating) || 0;
+
+    document.querySelectorAll("#reviewStarPicker .review-star-btn")
+        .forEach(btn => {
+            const active = Number(btn.dataset.rating) <= reviewsModalState.rating;
+            btn.classList.toggle("text-amber-400", active);
+            btn.classList.toggle("text-slate-300", !active);
+        });
+
+    const label = $("reviewRatingLabel");
+
+    if (label) {
+        const names = ["", "Poor", "Fair", "Good", "Very good", "Excellent"];
+        label.textContent = reviewsModalState.rating
+            ? `${reviewsModalState.rating}/5 — ${names[reviewsModalState.rating]}`
+            : "Select 1-5 stars";
+    }
+}
+
+function starRow(rating) {
+    let html = "";
+
+    for (let i = 1; i <= 5; i++) {
+        html += `<i class="fa-${i <= rating ? "solid" : "regular"} fa-star
+                    ${i <= rating ? "text-amber-400" : "text-slate-300"}"></i>`;
+    }
+
+    return html;
+}
+
+function summaryHtml(summary) {
+    const count = Number(summary?.count) || 0;
+    const average = Number(summary?.average) || 0;
+
+    if (!count) {
+        return `
+            <div class="rounded-xl bg-slate-50 p-4 text-sm text-slate-500 font-semibold">
+                No reviews yet — your rating will be the first.
+            </div>
+        `;
+    }
+
+    return `
+        <div class="rounded-xl bg-slate-50 p-4 flex items-center gap-4">
+            <div class="text-center">
+                <p class="text-3xl font-extrabold text-slate-900">${average.toFixed(1)}</p>
+                <p class="text-xs text-amber-400">${starRow(Math.round(average))}</p>
+            </div>
+            <div class="text-sm text-slate-600 font-semibold">
+                ${count} review${count === 1 ? "" : "s"} from verified purchasers
+            </div>
+        </div>
+    `;
+}
+
+function reviewItemHtml(review) {
+    const rating = Number(review.rating) || 0;
+    const name = review.userName || "Student";
+    const when = review.createdAt
+        ? formatDate(review.createdAt)
+        : "";
+
+    return `
+        <div class="border border-slate-200 rounded-xl p-3">
+            <div class="flex items-center justify-between gap-2">
+                <p class="font-bold text-slate-800 text-sm truncate">
+                    ${escapeHtml(name)}
+                </p>
+                <span class="text-amber-400 text-xs shrink-0">${starRow(rating)}</span>
+            </div>
+            ${review.comment
+                ? `<p class="text-sm text-slate-600 mt-1">${escapeHtml(review.comment)}</p>`
+                : ""}
+            ${when
+                ? `<p class="text-xs text-slate-400 mt-1">${escapeHtml(when)}</p>`
+                : ""}
+        </div>
+    `;
+}
+
+async function openReviewsModal(courseId, courseTitle) {
+    const modal = $("courseReviewsModal");
+
+    if (!modal) {
+        return;
+    }
+
+    reviewsModalState = { courseId, rating: 0, canReview: false };
+
+    const title = $("reviewsModalTitle");
+    const summaryBox = $("reviewsModalSummary");
+    const list = $("reviewList");
+    const note = $("reviewListNote");
+
+    if (title) {
+        title.textContent = courseTitle || "Course";
+    }
+
+    if (summaryBox) {
+        summaryBox.innerHTML = `<p class="text-sm text-slate-500">Loading…</p>`;
+    }
+
+    if (list) {
+        list.innerHTML = `<p class="text-sm text-slate-500">Loading reviews…</p>`;
+    }
+
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+
+    // Make sure the purchase cache is fresh before deciding whether the
+    // visitor may rate this course.
+    await refreshOwnership();
+
+    try {
+        const [summary, reviews] = await Promise.all([
+            getCourseRating(courseId),
+            getCourseReviews(courseId)
+        ]);
+
+        if (summaryBox) {
+            summaryBox.innerHTML = summaryHtml(summary);
+        }
+
+        const rows = Array.isArray(reviews) ? reviews : [];
+
+        if (list) {
+            list.innerHTML = rows.length
+                ? rows.map(reviewItemHtml).join("")
+                : `<p class="text-sm text-slate-500">No reviews yet.</p>`;
+        }
+
+        // The signed-in student may rate only their own approved course.
+        const status = purchaseStatusFor(courseId);
+        const owned = status === "approved";
+        const myReview = rows.find(
+            review => String(review.userId) === String(getStoredUser()?.id)
+        );
+
+        const formBox = $("reviewFormBox");
+
+        if (formBox) {
+            formBox.classList.toggle("hidden", !owned);
+
+            if (owned) {
+                reviewsModalState.canReview = true;
+
+                const heading = $("reviewFormHeading");
+                const comment = $("reviewCommentInput");
+
+                if (heading) {
+                    heading.textContent = myReview
+                        ? "Update your review"
+                        : "Rate this course";
+                }
+
+                if (comment) {
+                    comment.value = myReview?.comment || "";
+                }
+
+                setStarPicker(myReview?.rating || 0);
+            }
+        }
+
+        if (note) {
+            note.textContent = owned
+                ? "Reviews from students who purchased this course."
+                : "Buy this course to leave a rating and review.";
+        }
+    } catch (error) {
+        console.error("Reviews loading error:", error);
+
+        if (summaryBox) {
+            summaryBox.innerHTML = "";
+        }
+
+        if (list) {
+            list.innerHTML = `
+                <p class="text-sm text-red-600">
+                    ${escapeHtml(error.message || "Could not load reviews.")}
+                </p>
+            `;
+        }
+    }
+}
+
+async function handleReviewSubmit() {
+    const { courseId, rating, canReview } = reviewsModalState;
+    const message = $("reviewFormMessage");
+    const button = $("submitReviewBtn");
+
+    const setNote = (text, isError = false) => {
+        if (message) {
+            message.textContent = text || "";
+            message.className = `text-xs flex-1 ${
+                isError ? "text-red-600 font-semibold" : "text-slate-500"
+            }`;
+        }
+    };
+
+    if (!courseId || !canReview) {
+        return;
+    }
+
+    if (!rating) {
+        setNote("Please select a star rating first.", true);
+        return;
+    }
+
+    if (button) {
+        button.disabled = true;
+    }
+
+    try {
+        const comment = $("reviewCommentInput")?.value || "";
+
+        await submitCourseReview(courseId, rating, comment);
+
+        setNote("Thanks! Your review has been saved.");
+
+        // Refresh the average + list in place.
+        const [summary, reviews] = await Promise.all([
+            getCourseRating(courseId),
+            getCourseReviews(courseId)
+        ]);
+
+        const summaryBox = $("reviewsModalSummary");
+        const list = $("reviewList");
+
+        if (summaryBox) {
+            summaryBox.innerHTML = summaryHtml(summary);
+        }
+
+        if (list) {
+            const rows = Array.isArray(reviews) ? reviews : [];
+            list.innerHTML = rows.length
+                ? rows.map(reviewItemHtml).join("")
+                : `<p class="text-sm text-slate-500">No reviews yet.</p>`;
+        }
+
+        const heading = $("reviewFormHeading");
+        if (heading) {
+            heading.textContent = "Update your review";
+        }
+
+        // Cards show the live average — bust the catalog cache first so the
+        // refreshed ratingCount/averageRating reach the grid.
+        loadCourses(true)
+            .then(() => renderCourseGrid())
+            .catch(() => {});
+    } catch (error) {
+        console.error("Review submit error:", error);
+        setNote(error.message || "Could not save your review.", true);
+    } finally {
+        if (button) {
+            button.disabled = false;
+        }
+    }
+}
+
+function setupReviewsModal() {
+    const modal = $("courseReviewsModal");
+
+    if (!modal) {
+        return;
+    }
+
+    $("closeReviewsModalBtn")?.addEventListener("click", closeReviewsModal);
+    $("submitReviewBtn")?.addEventListener("click", handleReviewSubmit);
+
+    modal.addEventListener("click", event => {
+        if (event.target === modal) {
+            closeReviewsModal();
+        }
+    });
+
+    document.querySelectorAll("#reviewStarPicker .review-star-btn")
+        .forEach(btn => {
+            btn.addEventListener("click", () => {
+                setStarPicker(btn.dataset.rating);
+            });
+        });
 }
 
 async function handleUpiSave() {
@@ -1501,6 +2128,13 @@ export function setupCourseAdmin() {
 
 export function setupCommerceEvents() {
     // ---------------------------------------------
+    // dashboard.html — course access / expiry line
+    // ---------------------------------------------
+    renderDashboardAccessLine().catch(error => {
+        console.error("Dashboard access line error:", error);
+    });
+
+    // ---------------------------------------------
     // courses.html
     // ---------------------------------------------
     if ($("courseGrid")) {
@@ -1521,6 +2155,16 @@ export function setupCommerceEvents() {
         });
 
         $("courseGrid").addEventListener("click", event => {
+            const reviewsBtn = event.target.closest(".reviews-trigger-btn");
+
+            if (reviewsBtn) {
+                openReviewsModal(
+                    reviewsBtn.dataset.courseId,
+                    reviewsBtn.dataset.courseTitle
+                );
+                return;
+            }
+
             const button = event.target.closest(".buy-course-btn");
 
             if (!button) {
@@ -1539,6 +2183,7 @@ export function setupCommerceEvents() {
         });
 
         setupBuyModalEvents();
+        setupReviewsModal();
     }
 
     // ---------------------------------------------
@@ -1548,6 +2193,8 @@ export function setupCommerceEvents() {
         renderAdminPurchases().catch(error => {
             console.error("Admin purchases render error:", error);
         });
+
+        setupValidityModal();
 
         getUpiId().then(value => {
             const input = $("upiIdInput");

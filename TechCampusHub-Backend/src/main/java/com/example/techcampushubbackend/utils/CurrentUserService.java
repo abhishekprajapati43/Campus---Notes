@@ -42,9 +42,15 @@ public class CurrentUserService {
     /** @return the caller's {@link User} entity; throws 401 when anonymous. */
     public User requireUser() {
         AuthenticatedUser principal = requirePrincipal();
-        return userRepository.findById(principal.id())
+        User user = userRepository.findById(principal.id())
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED,
                         "Authenticated user no longer exists"));
+        // A suspended account loses access immediately, even while its JWT is
+        // still technically valid.
+        if (!user.isEnabled()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Your account has been suspended");
+        }
+        return user;
     }
 
     /** Convenience check used by admin-only services. */

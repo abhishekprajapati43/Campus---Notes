@@ -863,9 +863,13 @@ export function updateDeleteProfileVisibility() {
 
         $("deleteProfileBtn");
 
+    const section =
+
+        $("deleteProfileSection");
 
 
-    if (!button) {
+
+    if (!button && !section) {
 
         return;
 
@@ -873,15 +877,25 @@ export function updateDeleteProfileVisibility() {
 
 
 
-    // Student only
+    // Student only — admins manage accounts from the admin panel.
 
-    button.classList.toggle(
+    const hide = isAdminRole();
 
-        "hidden",
 
-        isAdminRole()
 
-    );
+    if (button) {
+
+        button.classList.toggle("hidden", hide);
+
+    }
+
+
+
+    if (section) {
+
+        section.classList.toggle("hidden", hide);
+
+    }
 
 }
 
@@ -1986,6 +2000,12 @@ applyRoleUI();
 
 
 
+// Danger-zone delete button (settings page) is students-only.
+
+updateDeleteProfileVisibility();
+
+
+
 // =====================================================
 
 // Populate all dynamic dropdowns
@@ -2355,6 +2375,19 @@ export async function initializeApp() {
 
         initializeRegistrationFields();
 
+        // Arrived here after deleting the profile: confirm it worked.
+        if (new URLSearchParams(window.location.search).get("deleted") === "1") {
+
+            showAuthMessage(
+
+                "Your profile has been deleted. You can create a new account.",
+
+                "success"
+
+            );
+
+        }
+
     }
 
 
@@ -2710,6 +2743,12 @@ export async function confirmDeleteProfile() {
             "success"
 
         );
+
+
+
+        // The account is gone: log out for good and land on the login page.
+
+        window.location.replace("./login.html?deleted=1");
 
 
 

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -124,10 +125,18 @@ public final class AuthDtos {
             String phone,
             Role role,
             boolean emailVerified,
+            /** False while an admin has suspended the account (login is blocked). */
+            boolean enabled,
             String course,
             String branch,
             Integer year,
             Integer semester,
             LocalDateTime createdAt) {
+    }
+
+    /** Admin panel: temporarily disable ("suspend") or re-enable an account. */
+    public record UserEnabledRequest(
+            @NotNull(message = "enabled is required")
+            Boolean enabled) {
     }
 }

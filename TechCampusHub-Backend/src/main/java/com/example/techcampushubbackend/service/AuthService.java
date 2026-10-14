@@ -211,6 +211,38 @@ public class AuthService {
     }
 
     /**
+     * Admin "Remove User" (suspend) / "Restore User": a suspended account keeps
+     * its data but cannot log in until it is re-enabled.
+     */
+    @Transactional
+    public UserResponse setUserEnabled(Long userId, boolean enabled, Long requestedByUserId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        if (enabled) {
+            user.setEnabled(true);
+            userRepository.save(user);
+            log.info("Re-enabled account {} (by {})", user.getEmail(), requestedByUserId);
+            return toUserResponse(user);
+        }
+
+        // Suspension guards: an admin cannot lock themselves out, and the last
+        // enabled admin must stay in place so the platform remains manageable.
+        if (userId.equals(requestedByUserId)) {
+            throw new BadRequestException("You cannot suspend your own account");
+        }
+        if (user.getRole() == Role.ADMIN
+                && userRepository.countByRoleAndEnabledTrue(Role.ADMIN) <= 1) {
+            throw new BadRequestException("The last enabled admin account cannot be suspended");
+        }
+
+        user.setEnabled(false);
+        userRepository.save(user);
+        log.info("Suspended account {} (by {})", user.getEmail(), requestedByUserId);
+        return toUserResponse(user);
+    }
+
+    /**
      * Permanently removes an account and everything attached to it. Used both for
      * "delete my account" (self service) and for the admin Users panel.
      */
@@ -242,7 +274,7 @@ public class AuthService {
     public static UserResponse toUserResponse(User user) {
         return new UserResponse(
                 user.getId(), user.getName(), user.getEmail(), user.getPhone(),
-                user.getRole(), user.isEmailVerified(),
+                user.getRole(), user.isEmailVerified(), user.isEnabled(),
                 user.getCourse(), user.getBranch(), user.getYear(), user.getSemester(),
                 user.getCreatedAt());
     }

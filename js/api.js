@@ -156,6 +156,10 @@ export function apiPut(path, body, auth = true) {
     return apiFetch(path, { method: "PUT", body, auth });
 }
 
+export function apiPatch(path, body, auth = true) {
+    return apiFetch(path, { method: "PATCH", body, auth });
+}
+
 export function apiDelete(path, auth = true) {
     return apiFetch(path, { method: "DELETE", auth });
 }
@@ -288,6 +292,9 @@ export function normalizeCourse(course) {
             : [],
         sort_order: course.sortOrder,
         is_active: course.active,
+        // Ratings come back as averageRating/ratingCount (0 when unrated).
+        rating_avg: Number(course.averageRating) || 0,
+        rating_count: Number(course.ratingCount) || 0,
         created_at: course.createdAt
     };
 }
@@ -338,6 +345,8 @@ export function normalizeUser(user) {
         semester: user.semester,
         role: String(user.role || "student").toLowerCase(),
         email_verified: user.emailVerified,
+        // False while an admin has suspended the account.
+        enabled: user.enabled !== false,
         created_at: user.createdAt
     };
 }
@@ -563,5 +572,71 @@ export function settingsToRequest(row = {}) {
         upiId: row.upi_id,
         geminiUrl: row.gemini_url,
         telegramLink: row.telegram_link
+    });
+}
+
+// =====================================================
+// Account / admin user management
+// =====================================================
+
+/**
+ * Admin: suspend (enabled=false) or restore (enabled=true) an account.
+ * A suspended account keeps its data but cannot log in.
+ */
+export function setUserEnabled(userId, enabled) {
+    return apiPatch(`/api/admin/users/${userId}/enabled`, { enabled });
+}
+
+/** Admin: permanently delete an account and all of its data. */
+export function adminDeleteUser(userId) {
+    return apiDelete(`/api/admin/users/${userId}`);
+}
+
+// =====================================================
+// Course validity (admin)
+// =====================================================
+
+/**
+ * Approve a purchase with a custom validity window.
+ * @param {object} validity - { validityDays: 30|90|180|365 } or
+ *                            { validUntil: "2027-01-01T00:00:00" };
+ *                            omit to use the course default.
+ */
+export function approvePurchaseWithValidity(purchaseId, validity = {}) {
+    return apiPost(`/api/admin/purchases/${purchaseId}/approve`, compact(validity));
+}
+
+/** Replace an approved purchase's expiry with an exact date. */
+export function setPurchaseValidity(purchaseId, validUntil) {
+    return apiPut(`/api/admin/purchases/${purchaseId}/validity`, { validUntil });
+}
+
+// =====================================================
+// Ratings & reviews
+// =====================================================
+
+/** Platform-wide average + total review count (public). */
+export function getOverallRating() {
+    return apiGet("/api/ratings/overall", false);
+}
+
+/** Average + count for one course (public). */
+export function getCourseRating(courseId) {
+    return apiGet(`/api/courses/${courseId}/rating`, false);
+}
+
+/** Reviews left on a course, newest first (public). */
+export function getCourseReviews(courseId) {
+    return apiGet(`/api/courses/${courseId}/reviews`, false);
+}
+
+/**
+ * Submit (or update) the signed-in student's review. Only verified
+ * purchasers may rate — the backend enforces that.
+ */
+export function submitCourseReview(courseId, rating, comment) {
+    return apiPost(`/api/courses/${courseId}/reviews`, {
+        rating: Number(rating),
+        comment: comment || ""
     });
 }

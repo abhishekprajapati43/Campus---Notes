@@ -103,4 +103,34 @@ public final class EngagementDtos {
             String targetLabel,
             LocalDateTime createdAt) {
     }
+
+    // -------------------------------------------------------------- reviews
+
+    /** Star rating + comment left by a verified purchaser on a course. */
+    public record ReviewRequest(
+            @NotNull(message = "rating is required")
+            @Min(value = 1, message = "rating must be 1-5")
+            @Max(value = 5, message = "rating must be 1-5")
+            Integer rating,
+
+            @Size(max = 2000, message = "comment must be at most 2000 characters")
+            String comment) {
+    }
+
+    public record ReviewResponse(
+            Long id,
+            Long courseId,
+            String courseTitle,
+            Long userId,
+            String userName,
+            int rating,
+            String comment,
+            LocalDateTime createdAt) {
+    }
+
+    /** Average + total, used for the homepage and course cards. */
+    public record RatingSummaryResponse(
+            double average,
+            long count) {
+    }
 }

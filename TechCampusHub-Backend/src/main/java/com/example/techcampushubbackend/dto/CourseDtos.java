@@ -62,6 +62,10 @@ public final class CourseDtos {
             List<String> highlights,
             int sortOrder,
             boolean active,
+            /** Average star rating across verified purchasers (0 when unrated). */
+            double averageRating,
+            /** Total number of reviews left on this course. */
+            long ratingCount,
             LocalDateTime createdAt) {
     }
 }

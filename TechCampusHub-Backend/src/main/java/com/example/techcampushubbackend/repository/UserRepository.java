@@ -23,5 +23,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     long countByRole(Role role);
 
+    /** Enabled admins only - used to protect the last active admin account. */
+    long countByRoleAndEnabledTrue(Role role);
+
     List<User> findAllByOrderByCreatedAtDesc();
 }
