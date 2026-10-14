@@ -19,7 +19,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Converts every thrown exception into a consistent JSON body:
@@ -42,7 +44,24 @@ public class GlobalExceptionHandler {
         Map<String, String> fields = new LinkedHashMap<>();
         ex.getBindingResult().getFieldErrors()
                 .forEach(f -> fields.putIfAbsent(f.getField(), f.getDefaultMessage()));
-        return respond(HttpStatus.BAD_REQUEST, "Validation failed", request, fields);
+
+        // Build a human-readable message so API clients (and users) see exactly
+        // which field failed instead of a bare "Validation failed".
+        String message = "Validation failed";
+        if (!fields.isEmpty()) {
+            message = fields.entrySet().stream()
+                    .map(e -> {
+                        String field = e.getKey();
+                        String msg = e.getValue();
+                        // Avoid "password password must be..." duplication when
+                        // the constraint message already names the field.
+                        return msg != null && msg.toLowerCase(Locale.ROOT).startsWith(field.toLowerCase(Locale.ROOT))
+                                ? msg
+                                : field + " " + msg;
+                    })
+                    .collect(Collectors.joining("; "));
+        }
+        return respond(HttpStatus.BAD_REQUEST, message, request, fields);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

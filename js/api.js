@@ -458,17 +458,28 @@ export function normalizeSettings(settings) {
 // Inverse converters: frontend row -> backend request
 // =====================================================
 //
-// Keys whose value is undefined are dropped so partial
-// updates (PUT) only touch the fields that changed.
+// Keys whose value is undefined or an empty string are
+// dropped so partial updates (PUT) only touch fields the
+// user actually filled in. This keeps existing backend
+// values (e.g. course/branch) intact when an edit form
+// leaves a dropdown blank.
 // =====================================================
 
 function compact(record) {
     const out = {};
 
     Object.entries(record).forEach(([key, value]) => {
-        if (value !== undefined) {
-            out[key] = value;
+        if (value === undefined) {
+            return;
         }
+
+        // Treat empty strings as "not provided" so they never
+        // overwrite stored backend values on a partial PUT.
+        if (typeof value === "string" && value.trim() === "") {
+            return;
+        }
+
+        out[key] = value;
     });
 
     return out;

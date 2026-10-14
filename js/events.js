@@ -95,10 +95,32 @@ function isAdmin() {
 }
 
 function getErrorMessage(error) {
-    return (
+    const base =
         error?.message ||
-        "Something went wrong. Please try again."
-    );
+        "Something went wrong. Please try again.";
+
+    // Surface per-field validation errors (e.g. "password must be 8-72
+    // characters") so the user knows exactly which input to fix.
+    const fieldErrors = error?.fieldErrors;
+
+    if (
+        fieldErrors &&
+        typeof fieldErrors === "object" &&
+        Object.keys(fieldErrors).length > 0
+    ) {
+        const details = Object.entries(fieldErrors)
+            .map(([field, message]) => `${message}`)
+            .join(". ");
+
+        // Avoid duplicating text the backend already folded into the message.
+        const combined = details && !base.includes(details)
+            ? `${base}: ${details}`
+            : base;
+
+        return combined;
+    }
+
+    return base;
 }
 
 // =====================================================

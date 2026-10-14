@@ -42,13 +42,13 @@ public class FileController {
 
     @Operation(summary = "Delete a Cloudinary asset by public id (admin)",
             description = "Replaces the Supabase 'delete-cloudinary' edge function. "
-                    + "Deletion is best-effort: a missing asset is not an error.")
+                    + "A missing asset is reported as 'not-found' rather than an error.")
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> delete(
             @RequestParam("publicId") String publicId,
             @RequestParam(value = "resourceType", required = false, defaultValue = "raw") String resourceType) {
-        cloudinaryService.delete(publicId.trim(), resourceType);
-        return ResponseEntity.ok(ApiResponse.ok("File deleted", null));
+        String outcome = cloudinaryService.delete(publicId.trim(), resourceType);
+        return ResponseEntity.ok(ApiResponse.ok("File delete " + outcome, null));
     }
 }

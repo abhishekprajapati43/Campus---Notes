@@ -77,19 +77,44 @@ public class CloudinaryService {
     /**
      * Best-effort deletion of a previously uploaded asset by public id.
      *
+     * <p>Returns a short human-readable outcome so callers can surface what
+     * actually happened instead of silently keeping orphaned files:
+     * {@code "deleted"}, {@code "not-found"}, {@code "skipped"} or
+     * {@code "failed"}.</p>
+     *
      * @param publicId     Cloudinary public id returned at upload time
      * @param resourceType {@code raw} for PDFs, {@code image} for pictures
+     * @return outcome of the deletion attempt
      */
-    public void delete(String publicId, String resourceType) {
-        if (publicId == null || publicId.isBlank() || !properties.getCloudinary().isConfigured()) {
-            return;
+    public String delete(String publicId, String resourceType) {
+        if (publicId == null || publicId.isBlank()) {
+            return "skipped (no public id)";
+        }
+        if (!properties.getCloudinary().isConfigured()) {
+            // Surface misconfiguration instead of silently keeping orphaned files.
+            log.warn("Skipping Cloudinary delete for '{}': CLOUDINARY_* environment "
+                    + "variables (cloud name, API key, API secret) are not configured.",
+                    publicId);
+            return "skipped (Cloudinary not configured)";
         }
         String normalizedType = "image".equalsIgnoreCase(resourceType) ? "image" : "raw";
         try {
-            cloudinary.uploader().destroy(publicId,
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = cloudinary.uploader().destroy(publicId,
                     ObjectUtils.asMap("resource_type", normalizedType, "invalidate", true));
+
+            // Cloudinary reports {"result":"ok"} on success; anything else (e.g.
+            // "not found") means the asset was not removed.
+            String status = result == null ? null : String.valueOf(result.get("result"));
+            if ("ok".equalsIgnoreCase(status)) {
+                log.info("Deleted Cloudinary asset {} ({})", publicId, normalizedType);
+                return "deleted";
+            }
+            log.warn("Cloudinary did not delete '{}': result={}", publicId, status);
+            return "not-found (" + status + ")";
         } catch (IOException ex) {
             log.warn("Could not delete Cloudinary asset {}: {}", publicId, ex.getMessage());
+            return "failed (" + ex.getMessage() + ")";
         }
     }
 }
