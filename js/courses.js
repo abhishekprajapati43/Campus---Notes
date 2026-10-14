@@ -443,10 +443,22 @@ export async function submitPurchase({ course, utr }) {
         );
     }
 
+    // The backend stores courses with numeric ids. The offline
+    // fallback catalog uses string ids (e.g. "local-mca-notes")
+    // which cannot be purchased. Catch that here for a clear
+    // message instead of a confusing backend 400.
+    const courseId = Number(course.id);
+
+    if (!courseId) {
+        throw new Error(
+            "This course is not available for purchase right now. Please refresh the page and try again."
+        );
+    }
+
     const data = await apiPost(
         "/api/purchases",
         {
-            courseId: Number(course.id) || null,
+            courseId,
             utr: trimmedUtr
         }
     );

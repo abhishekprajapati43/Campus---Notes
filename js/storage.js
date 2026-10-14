@@ -26,6 +26,65 @@ export const missingPdfPaths = new Set();
 
 
 // =====================================================
+// Extract Cloudinary Resource Type From URL
+// =====================================================
+//
+// Cloudinary URLs embed the resource type:
+//   .../image/upload/...   -> "image"
+//   .../raw/upload/...     -> "raw"
+//   .../video/upload/...   -> "video"
+//
+// The unsigned upload preset can store a PDF under
+// "image" instead of "raw". Deleting with the wrong
+// resource type silently fails ("not found"), so the
+// asset must be deleted with the SAME type it was
+// uploaded with. This derives that type from the URL.
+// =====================================================
+
+export function extractCloudinaryResourceType(url) {
+    if (!url) {
+        return null;
+    }
+
+    const match =
+        String(url).match(
+            /\/(image|video|raw)\/upload\//
+        );
+
+    return match ? match[1] : null;
+}
+
+
+// =====================================================
+// Resolve Record Resource Type
+// =====================================================
+//
+// Best available type for deleting a stored asset:
+//   1. explicit record.resource_type (if present)
+//   2. derived from the record's Cloudinary file_url
+//   3. fallback "raw" (historic default)
+// =====================================================
+
+export function resolveResourceType(record) {
+    if (!record) {
+        return "raw";
+    }
+
+    if (record.resource_type) {
+        return record.resource_type;
+    }
+
+    return (
+        extractCloudinaryResourceType(record.file_url) ||
+        extractCloudinaryResourceType(
+            record.storage_path
+        ) ||
+        "raw"
+    );
+}
+
+
+// =====================================================
 // Get PDF URL
 // =====================================================
 //
@@ -433,9 +492,14 @@ export async function removeStorage(
             `/api/admin/files?${params.toString()}`
         );
 
+        // The backend reports the actual Cloudinary outcome
+        // (deleted / not-found / skipped / failed). Surface it
+        // so a silent "not found" is visible in the console.
         console.log(
-            "Cloudinary asset deleted successfully:",
-            publicId
+            "Cloudinary deletion result:",
+            publicId,
+            "->",
+            data?.message || "completed"
         );
 
         return { success: true, ...(data || {}) };

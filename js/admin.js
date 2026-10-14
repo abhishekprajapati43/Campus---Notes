@@ -37,7 +37,8 @@ import {
 import {
     uploadOptionalPdf,
     removeStorage,
-    preparePdfReplacement
+    preparePdfReplacement,
+    resolveResourceType
 } from "./storage.js";
 
 import {
@@ -1276,6 +1277,14 @@ async function replaceRecordPdf(
         null;
 
 
+    // Cloudinary stores this PDF under a specific resource
+    // type (image OR raw). Deleting with the wrong type
+    // silently fails, so resolve the type from the record's
+    // own file_url.
+    const oldResourceType =
+        resolveResourceType(record);
+
+
     try {
 
         const path =
@@ -1318,9 +1327,7 @@ async function replaceRecordPdf(
 
         await removeStorage(
             oldPublicId,
-            replacement.resource_type ||
-            record.resource_type ||
-            null
+            oldResourceType
         );
 
     } catch (storageError) {
@@ -1507,7 +1514,8 @@ export async function deleteRecord(
         try {
 
             await removeStorage(
-                record.storage_path
+                record.storage_path,
+                resolveResourceType(record)
             );
 
         } catch (storageError) {
