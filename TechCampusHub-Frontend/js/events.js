@@ -2037,6 +2037,13 @@ function setupProfileEvents() {
         handleOpenDeleteProfile
     );
 
+    // Header profile dropdown entry (separate id —
+    // duplicate ids would leave one button dead).
+    $("headerDeleteProfileBtn")?.addEventListener(
+        "click",
+        handleOpenDeleteProfile
+    );
+
 
     $("cancelDeleteProfileBtn")?.addEventListener(
         "click",

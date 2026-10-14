@@ -859,9 +859,15 @@ if (adminRoleDetail) {
 
 export function updateDeleteProfileVisibility() {
 
-    const button =
+    const buttons =
 
-        $("deleteProfileBtn");
+        document.querySelectorAll(
+
+            "#deleteProfileBtn," +
+
+            " #headerDeleteProfileBtn"
+
+        );
 
     const section =
 
@@ -869,7 +875,7 @@ export function updateDeleteProfileVisibility() {
 
 
 
-    if (!button && !section) {
+    if (!buttons.length && !section) {
 
         return;
 
@@ -883,11 +889,11 @@ export function updateDeleteProfileVisibility() {
 
 
 
-    if (button) {
+    buttons.forEach(
 
-        button.classList.toggle("hidden", hide);
+        btn => btn.classList.toggle("hidden", hide)
 
-    }
+    );
 
 
 
