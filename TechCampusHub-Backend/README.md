@@ -4,7 +4,7 @@ Production-ready REST API for the TechCampus Hub learning portal.
 
 | Layer | Choice |
 |---|---|
-| Framework | Java 17 · Spring Boot **4.1.1** (Spring MVC, Spring Security 7) |
+| Framework | Java 25 · Spring Boot **4.1.1** (Spring MVC, Spring Security 7) |
 | Database | PostgreSQL + Spring Data JPA (Hibernate) |
 | Auth | Stateless **JWT** (HS256) · **BCrypt** password hashing · role-based access (`ADMIN`, `STUDENT`) |
 | Files | **Cloudinary** (only the secure URL is stored in PostgreSQL) |
@@ -36,7 +36,7 @@ src/main/java/com/example/techcampushubbackend/
 
 ## Quick start
 
-Prerequisites: **JDK 17+**, **PostgreSQL 14+**.
+Prerequisites: **JDK 25+**, **PostgreSQL 14+**.
 
 ```bash
 # 1. Create the database
