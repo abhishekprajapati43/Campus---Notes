@@ -112,7 +112,7 @@ class AuthIntegrationTest {
                 .andReturn();
 
         JsonNode node = objectMapper.readTree(result.getResponse().getContentAsString());
-        loginToken = node.path("data").path("token").asText();
+        loginToken = node.path("data").path("token").asString();
         assertThat(loginToken).isNotBlank();
     }
 

@@ -74,5 +74,6 @@ public class User extends Auditable {
     private LocalDateTime resetTokenExpiresAt;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean enabled = true;
 }

@@ -76,7 +76,7 @@ class AuthorizationIntegrationTest {
                 .andExpect(status().isOk())
                 .andReturn();
         JsonNode node = objectMapper.readTree(result.getResponse().getContentAsString());
-        return node.path("data").path("token").asText();
+        return node.path("data").path("token").asString();
     }
 
     // ------------------------------------------------------------ public/401

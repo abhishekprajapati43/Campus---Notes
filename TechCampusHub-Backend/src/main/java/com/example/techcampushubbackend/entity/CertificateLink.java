@@ -48,5 +48,6 @@ public class CertificateLink extends Auditable {
 
     /** Hidden links stay visible to admins but never to students. */
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private boolean active = true;
 }
