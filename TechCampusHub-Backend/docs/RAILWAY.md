@@ -71,18 +71,22 @@ Stack: Spring Boot **4.1.1**, Java **25**, PostgreSQL, Cloudinary, JWT (jjwt).
 
 ## 4. Frontend ↔ backend URL
 
-The frontend reads its API base URL from exactly one place:
+The frontend reads its API base URL from exactly one file:
 
 ```
-TechCampusHub-Frontend/js/env.js   →   window.__API_BASE_URL__ = "http://localhost:8080";
+TechCampusHub-Frontend/js/env.js
 ```
 
-`js/config.js` picks it up (`window.__API_BASE_URL__ || "http://localhost:8080"`).
-For production change that single line to e.g.
+Resolution order: `?api=` query param → `localStorage.campusnotes:apiBase` →
+`PROD_API` constant → `http://localhost:8080`. For production, set the constant
+and redeploy the frontend:
 
 ```js
-window.__API_BASE_URL__ = "https://your-service.up.railway.app";
+const PROD_API = "https://your-service.up.railway.app"; // inside env.js
 ```
+
+Local Live Server keeps using `localhost:8080` while `PROD_API` is empty; once
+it is set, force local API anytime with `?api=http://localhost:8080` on the URL.
 
 No other file hardcodes the backend host (verified by repo scan), and remember to
 list the frontend origin in `CORS_ALLOWED_ORIGINS`.
