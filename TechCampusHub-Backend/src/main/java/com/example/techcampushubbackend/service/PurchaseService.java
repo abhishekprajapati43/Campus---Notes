@@ -6,7 +6,6 @@ import com.example.techcampushubbackend.dto.PurchaseDtos.PurchaseResponse;
 import com.example.techcampushubbackend.entity.Course;
 import com.example.techcampushubbackend.entity.Purchase;
 import com.example.techcampushubbackend.entity.PurchaseStatus;
-import com.example.techcampushubbackend.entity.Role;
 import com.example.techcampushubbackend.entity.User;
 import com.example.techcampushubbackend.exception.ApiException;
 import com.example.techcampushubbackend.exception.BadRequestException;
@@ -188,10 +187,6 @@ public class PurchaseService {
         }
         return purchaseRepository.existsByUserIdAndCourseIdAndStatusAndValidUntilAfter(
                 userId, courseId, PurchaseStatus.APPROVED, LocalDateTime.now());
-    }
-
-    public boolean isAdmin(User user) {
-        return user != null && user.getRole() == Role.ADMIN;
     }
 
     private Purchase require(Long id) {

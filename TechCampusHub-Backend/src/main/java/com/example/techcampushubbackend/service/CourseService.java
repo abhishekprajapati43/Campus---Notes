@@ -118,10 +118,6 @@ public class CourseService {
         courseRepository.save(course);
     }
 
-    public static CourseResponse toResponse(Course course) {
-        return toResponse(course, null);
-    }
-
     /** @param rating optional [average, count] pair; null means unrated. */
     public static CourseResponse toResponse(Course course, double[] rating) {
         double average = rating == null ? 0.0 : Math.round(rating[0] * 10.0) / 10.0;

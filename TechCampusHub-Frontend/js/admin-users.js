@@ -12,7 +12,7 @@ import {
     purchaseExpired,
     formatExpiryDateTime
 } from "./courses.js";
-import { $, escapeHtml, formatDate } from "./helpers.js";
+import { $, escapeHtml } from "./helpers.js";
 import {
     setUserEnabled,
     adminDeleteUser,

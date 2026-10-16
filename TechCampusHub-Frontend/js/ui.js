@@ -2072,13 +2072,6 @@ populateSearchDropdowns();
 
 
 
-console.log("ROLE:", role);
-
-
-// console.log("STUDENT:", student);
-
-
-
 updateRegistrationFields();
 
 updateNoteFields();
@@ -2092,9 +2085,6 @@ updateSearchUI();
 updateStudentFilters();
 
 updateUploadPanel();
-
-
-console.log("All dropdown update functions completed");
 
 
 
@@ -2123,16 +2113,6 @@ return {
 
 
 export function updateAuthModeUI() {
-
-
-
-    console.log(
-
-        "updateAuthModeUI called, getSignupMode() =",
-
-        getSignupMode()
-
-    );
 
 
 
@@ -2453,66 +2433,6 @@ export async function initializeApp() {
         session.user
 
     );
-
-}
-
-
-
-
-
-// =====================================================
-
-// Refresh Dashboard
-
-// =====================================================
-
-
-
-export async function refreshDashboard() {
-
-    const result =
-
-        await initializeAuthenticatedUser();
-
-
-
-    if (!result) {
-
-        return null;
-
-    }
-
-
-
-    applyRoleUI();
-
-
-
-    populateSearchDropdowns();
-
-
-
-    console.log("ROLE:", result.role);
-
-
-
-    const category =
-
-        $("searchCategory")?.value ||
-
-        "notes";
-
-
-
-    await renderCurrentCategory(
-
-        category
-
-    );
-
-
-
-    return result;
 
 }
 
@@ -2857,28 +2777,4 @@ export async function handleCategoryChange(
     );
 
 }
-
-// =====================================================
-// Initialize Profile UI
-// =====================================================
-
-export function initializeProfileUI() {
-
-    updateProfileDropdown();
-
-    updateDeleteProfileVisibility();
-
-}
-
-// =====================================================
-// Compatibility Export
-// =====================================================
-
-export function updateDeleteProfileButton() {
-
-    updateDeleteProfileVisibility();
-
-}
-
-
 

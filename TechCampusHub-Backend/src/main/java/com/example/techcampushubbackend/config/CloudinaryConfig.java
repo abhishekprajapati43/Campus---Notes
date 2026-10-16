@@ -5,8 +5,6 @@ import com.cloudinary.utils.ObjectUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Map;
-
 /**
  * Cloudinary SDK configuration. Credentials come from the environment
  * (CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET).
@@ -23,10 +21,5 @@ public class CloudinaryConfig {
                 "api_key", cfg.getApiKey() == null ? "" : cfg.getApiKey(),
                 "api_secret", cfg.getApiSecret() == null ? "" : cfg.getApiSecret(),
                 "secure", true));
-    }
-
-    @Bean
-    public Map<String, Object> cloudinaryUploadDefaults(AppProperties properties) {
-        return ObjectUtils.asMap("folder", properties.getCloudinary().getFolder());
     }
 }

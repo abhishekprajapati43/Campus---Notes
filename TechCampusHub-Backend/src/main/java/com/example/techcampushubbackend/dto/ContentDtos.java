@@ -1,8 +1,6 @@
 package com.example.techcampushubbackend.dto;
 
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -258,20 +256,13 @@ public final class ContentDtos {
             LocalDateTime createdAt) {
     }
 
-    // -------------------------------------------------------------- file upload    /** Result of POST /api/admin/files - the URL that gets persisted. */
+    // -------------------------------------------------------------- file upload
+
+    /** Result of POST /api/admin/files - the URL that gets persisted. */
     public record FileUploadResponse(
             String url,
             String publicId,
             String originalName,
             long sizeBytes) {
-    }
-
-    public record FileUploadRequest(
-            @NotBlank(message = "fileUrl is required")
-            String fileUrl,
-            @NotNull(message = "itemType is required")
-            String itemType,
-            @NotNull(message = "itemId is required")
-            Long itemId) {
     }
 }

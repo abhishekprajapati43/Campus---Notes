@@ -52,13 +52,4 @@ public class CurrentUserService {
         }
         return user;
     }
-
-    /** Convenience check used by admin-only services. */
-    public User requireAdmin() {
-        User user = requireUser();
-        if (user.getRole() != com.example.techcampushubbackend.entity.Role.ADMIN) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "Admin role required");
-        }
-        return user;
-    }
 }

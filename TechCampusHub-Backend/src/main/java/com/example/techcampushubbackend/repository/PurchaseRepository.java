@@ -10,7 +10,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
@@ -20,8 +19,6 @@ public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
     List<Purchase> findByStatusOrderByCreatedAtDesc(PurchaseStatus status);
 
     List<Purchase> findAllByOrderByCreatedAtDesc();
-
-    Optional<Purchase> findByUserIdAndCourseIdAndStatus(Long userId, Long courseId, PurchaseStatus status);
 
     boolean existsByUserIdAndCourseIdAndStatus(Long userId, Long courseId, PurchaseStatus status);
 
@@ -36,8 +33,6 @@ public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
     /** True while the user holds at least one approved, unexpired purchase. */
     boolean existsByUserIdAndStatusAndValidUntilAfter(
             Long userId, PurchaseStatus status, LocalDateTime now);
-
-    long countByStatus(PurchaseStatus status);
 
     // ------------------------------------------------------------- deletion
 

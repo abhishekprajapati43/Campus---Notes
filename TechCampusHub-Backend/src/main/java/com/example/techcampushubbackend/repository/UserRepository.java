@@ -19,8 +19,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByResetToken(String resetToken);
 
-    List<User> findByRole(Role role);
-
     long countByRole(Role role);
 
     /** Enabled admins only - used to protect the last active admin account. */

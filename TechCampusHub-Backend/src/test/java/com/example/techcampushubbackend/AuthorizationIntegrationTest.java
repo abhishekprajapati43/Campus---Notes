@@ -347,7 +347,7 @@ class AuthorizationIntegrationTest {
                         "https://res.cloudinary.com/demo/raw/upload/free.pdf"));
 
         // bundle-gated note - student without access gets 404
-        MvcResult gatedNote = mockMvc.perform(post("/api/admin/notes")
+        mockMvc.perform(post("/api/admin/notes")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -355,10 +355,7 @@ class AuthorizationIntegrationTest {
                                  "courseId":%d,
                                  "fileUrl":"https://res.cloudinary.com/demo/raw/upload/premium.pdf"}
                                 """.formatted(courseId)))
-                .andExpect(status().isCreated())
-                .andReturn();
-        long gatedNoteId = objectMapper.readTree(gatedNote.getResponse().getContentAsString())
-                .path("data").path("id").asLong();
+                .andExpect(status().isCreated());
 
         // The student from this class already holds an approved purchase (fullPurchaseLifecycle
         // ran before), so they SHOULD see it; verify admin listing always works.

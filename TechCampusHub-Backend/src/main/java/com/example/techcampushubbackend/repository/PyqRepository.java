@@ -10,10 +10,4 @@ import java.util.List;
 public interface PyqRepository extends JpaRepository<Pyq, Long> {
 
     List<Pyq> findAllByOrderByCreatedAtDesc();
-
-    List<Pyq> findByCourseIgnoreCaseOrderByCreatedAtDesc(String course);
-
-    List<Pyq> findByCourseBundleIdIsNullOrderByCreatedAtDesc();
-
-    List<Pyq> findByCourseBundleIdOrderByCreatedAtDesc(Long courseId);
 }

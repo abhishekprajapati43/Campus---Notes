@@ -7,8 +7,4 @@ import com.example.techcampushubbackend.entity.Role;
  * carrying a valid JWT.
  */
 public record AuthenticatedUser(Long id, String email, Role role) {
-
-    public boolean isAdmin() {
-        return role == Role.ADMIN;
-    }
 }

@@ -86,10 +86,6 @@ export function isFavorite(category, itemId) {
     );
 }
 
-export function favoriteCount() {
-    return favoritesCache.length;
-}
-
 export async function toggleFavorite({ category, itemId, itemTitle }) {
     const normalizedCategory = FAV_CATEGORIES.includes(category)
         ? category

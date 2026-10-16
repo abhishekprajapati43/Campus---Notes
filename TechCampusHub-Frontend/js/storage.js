@@ -144,27 +144,6 @@ export function isPdfFile(file) {
 
 
 // =====================================================
-// Get File Name
-// =====================================================
-
-export function getStorageFileName(path) {
-
-    if (!path) {
-        return "";
-    }
-
-    const cleanPath =
-        String(path)
-            .split("?")[0]
-            .replace(/\\/g, "/");
-
-    const parts = cleanPath.split("/");
-
-    return parts[parts.length - 1] || "";
-}
-
-
-// =====================================================
 // Safe File Name
 // =====================================================
 
@@ -476,11 +455,6 @@ export async function removeStorage(
     }
 
     try {
-        console.log(
-            "Requesting secure Cloudinary deletion:",
-            publicId
-        );
-
         // The backend holds the Cloudinary API secret and
         // performs the signed delete request.
         const params = new URLSearchParams({
@@ -490,16 +464,6 @@ export async function removeStorage(
 
         const data = await apiDelete(
             `/api/admin/files?${params.toString()}`
-        );
-
-        // The backend reports the actual Cloudinary outcome
-        // (deleted / not-found / skipped / failed). Surface it
-        // so a silent "not found" is visible in the console.
-        console.log(
-            "Cloudinary deletion result:",
-            publicId,
-            "->",
-            data?.message || "completed"
         );
 
         return { success: true, ...(data || {}) };

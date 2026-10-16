@@ -22,16 +22,10 @@ import {
 } from "./api.js";
 
 import {
-    STORAGE_BUCKET,
-    ADMIN_EMAIL
-} from "./config.js";
-
-import {
     notes,
     tnpItems,
     pyqItems,
-    timetableItems,
-    reloadStudents
+    timetableItems
 } from "./data.js";
 
 import {
@@ -44,10 +38,6 @@ import {
 import {
     currentUserRole
 } from "./state.js";
-
-import {
-    getCurrentUser
-} from "./auth.js";
 
 import {
     notifyContentUpload
@@ -1545,140 +1535,6 @@ export async function deleteRecord(
 
 
 // =====================================================
-// Admin Upload UI
-// =====================================================
-//
-// Compatibility function.
-// Main application UI uses updateUploadPanel()
-// from ui.js.
-// =====================================================
-
-export function updateAdminUploadUI() {
-
-    const typeSelect =
-        $("adminUploadType");
-
-
-    if (!typeSelect) {
-        return;
-    }
-
-
-    const selectedType =
-        typeSelect.value;
-
-
-    const forms = {
-
-        notes:
-            $("uploadNotesForm"),
-
-        tnp:
-            $("uploadTnpForm"),
-
-        pyq:
-            $("uploadPyqForm"),
-
-        timetable:
-            $("uploadTimetableForm")
-    };
-
-
-    Object.entries(forms).forEach(
-        ([type, form]) => {
-
-            if (!form) {
-                return;
-            }
-
-            form.classList.toggle(
-                "hidden",
-                type !== selectedType
-            );
-        }
-    );
-}
-
-
-// =====================================================
-// Student Management
-// =====================================================
-
-export async function getStudents() {
-
-    ensureAdmin();
-
-    return await reloadStudents();
-}
-
-
-// =====================================================
-// Delete Student Profile
-// =====================================================
-//
-// Account deletion is handled by the backend
-// (DELETE /api/admin/users/{id}), which removes the
-// user, their auth credentials and related data in
-// one transaction.
-//
-// Frontend never receives or handles passwords.
-// =====================================================
-
-export async function deleteStudentProfile(
-    studentId
-) {
-    ensureAdmin();
-
-
-    if (!studentId) {
-        throw new Error(
-            "Student ID is required."
-        );
-    }
-
-
-    const {
-        user,
-        error: userError
-    } = await getCurrentUser();
-
-
-    if (userError) {
-        throw userError;
-    }
-
-
-    if (!user?.id) {
-        throw new Error(
-            "No authenticated administrator found."
-        );
-    }
-
-
-    if (
-        String(user.id) ===
-        String(studentId)
-    ) {
-        throw new Error(
-            "Administrator account cannot be deleted from Student Management."
-        );
-    }
-
-
-    const data = await apiDelete(
-        `/api/admin/users/${studentId}`
-    );
-
-
-    await reloadStudents();
-
-    dispatchRefresh();
-
-    return data;
-}
-
-
-// =====================================================
 // Edit Modal Helpers
 // =====================================================
 
@@ -2299,57 +2155,4 @@ export function setupAdminDynamicActions() {
         }
     );
 }
-
-// =====================================================
-// Setup Admin
-// =====================================================
-
-export function setupAdmin() {
-
-    if (!isAdmin()) {
-        return;
-    }
-
-    const adminUploadType =
-        $("adminUploadType");
-
-    if (adminUploadType) {
-
-        adminUploadType.addEventListener(
-            "change",
-            updateAdminUploadUI
-        );
-
-        updateAdminUploadUI();
-    }
-
-    const timetableCourse =
-    $("timetableCourse");
-
-if (timetableCourse) {
-
-    timetableCourse.addEventListener(
-        "change",
-        () => {
-
-            updateTimetableSemesterOptions(
-                timetableCourse.value,
-                "timetableSemester"
-            );
-
-        }
-    );
-
-}
-
-    setupAdminDynamicActions();
-
-}
-
-// =====================================================
-// Prevent unused import warnings
-// =====================================================
-
-void ADMIN_EMAIL;
-void STORAGE_BUCKET;
 

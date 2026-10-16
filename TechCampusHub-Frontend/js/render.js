@@ -1907,28 +1907,6 @@ export function updateCategoryLabel(
     }
 }
 // =====================================================
-// Render Everything
-// =====================================================
-
-export async function renderAll(
-
-    category = null
-
-) {
-
-    await renderCurrentCategory(
-
-        category
-
-    );
-
-}
-
-
-
-
-
-// =====================================================
 
 // Setup Render Actions
 

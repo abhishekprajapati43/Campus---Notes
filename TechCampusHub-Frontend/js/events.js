@@ -22,8 +22,7 @@ import {
     signIn,
     signUpStudent,
     resetPassword,
-    onAuthStateChange,
-    signOut
+    onAuthStateChange
 } from "./auth.js";
 
 import {
@@ -38,7 +37,6 @@ import {
     handleCategoryChange,
     updateUploadPanel,
     updateStudentFilters,
-    loadTelegramLink,
     updateTelegramLink
 } from "./ui.js";
 
@@ -808,10 +806,6 @@ async function handleAdminLogin() {
 
         closeAdminLoginModal();
 
-        console.log(
-            "Administrator login successful."
-        );
-
     } catch (error) {
         console.error(
             "Administrator login error:",
@@ -1367,14 +1361,6 @@ async function handleCategoryButtonClick(event) {
 // ADMIN UPLOAD TYPE
 // =====================================================
 function handleAdminUploadTypeChange() {
-
-    const type =
-        $("adminUploadType")?.value;
-
-    console.log(
-        "ADMIN UPLOAD TYPE:",
-        type
-    );
 
     updateUploadPanel();
 }
@@ -2166,11 +2152,6 @@ async function handleTelegramLinkUpdate() {
                 "text-sm mt-3 min-h-5 text-green-600";
         }
 
-        console.log(
-            "Telegram link updated:",
-            savedLink
-        );
-
     } catch (error) {
         console.error(
             "Telegram settings error:",
@@ -2260,10 +2241,6 @@ function setupAuthStateListener() {
             event,
             session
         ) => {
-            console.log(
-                "Auth event:",
-                event
-            );
 
             // ---------------------------------------------
             // LOGIN / SIGNUP
@@ -2387,10 +2364,6 @@ export function setupEvents() {
     }
 
     eventsInitialized = true;
-
-    console.log(
-        "Initializing TechCampus_Hub events..."
-    );
 
     // =================================================
     // INITIAL AUTH UI
@@ -2543,10 +2516,6 @@ setupStudentSidebarEvents();
     // =================================================
 
     setupAuthStateListener();
-
-    console.log(
-        "TechCampus_Hub events initialized successfully."
-    );
 }
 
 

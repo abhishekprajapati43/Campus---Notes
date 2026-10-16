@@ -232,13 +232,9 @@ export async function getCurrentUser() {
 
 export async function signOut() {
     try {
-        console.log("Starting logout...");
-
         clearAuth();
 
         emitAuthState("SIGNED_OUT", null);
-
-        console.log("Logout successful");
 
         return true;
     } catch (error) {

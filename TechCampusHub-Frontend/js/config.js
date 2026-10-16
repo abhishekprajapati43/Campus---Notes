@@ -14,8 +14,6 @@ export const API_BASE_URL =
 
 export const ADMIN_EMAIL = "admin@college.com";
 
-export const STORAGE_BUCKET = "college-notes-pdfs";
-
 export const courseStructure = {
 
     MCA: {
@@ -68,12 +66,5 @@ export const courseStructure = {
             }
         ]
     }
-};
-
-export const categories = {
-    NOTES: "notes",
-    TNP: "tnp",
-    PYQ: "pyq",
-    TIMETABLE: "timetable"
 };
 

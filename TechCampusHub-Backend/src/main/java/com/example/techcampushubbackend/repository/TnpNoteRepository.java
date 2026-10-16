@@ -10,10 +10,4 @@ import java.util.List;
 public interface TnpNoteRepository extends JpaRepository<TnpNote, Long> {
 
     List<TnpNote> findAllByOrderByCreatedAtDesc();
-
-    List<TnpNote> findByTopicIgnoreCaseOrderByCreatedAtDesc(String topic);
-
-    List<TnpNote> findByCourseBundleIdIsNullOrderByCreatedAtDesc();
-
-    List<TnpNote> findByCourseBundleIdOrderByCreatedAtDesc(Long courseId);
 }

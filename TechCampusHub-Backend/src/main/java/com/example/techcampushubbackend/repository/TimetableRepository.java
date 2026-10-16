@@ -10,10 +10,4 @@ import java.util.List;
 public interface TimetableRepository extends JpaRepository<Timetable, Long> {
 
     List<Timetable> findAllByOrderByCreatedAtDesc();
-
-    List<Timetable> findByCourseIgnoreCaseOrderByCreatedAtDesc(String course);
-
-    List<Timetable> findByCourseBundleIdIsNullOrderByCreatedAtDesc();
-
-    List<Timetable> findByCourseBundleIdOrderByCreatedAtDesc(Long courseId);
 }

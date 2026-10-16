@@ -10,17 +10,9 @@ import java.util.Optional;
 @Repository
 public interface CourseRepository extends JpaRepository<Course, Long> {
 
-    List<Course> findAllByActiveTrue();
-
-    List<Course> findAllByActiveTrueOrderByTitleAsc();
-
-    List<Course> findAllByOrderByTitleAsc();
-
     List<Course> findAllByActiveTrueOrderBySortOrderAscTitleAsc();
 
     List<Course> findAllByOrderBySortOrderAscTitleAsc();
 
     Optional<Course> findBySlugIgnoreCase(String slug);
-
-    boolean existsByCode(String code);
 }

@@ -138,10 +138,6 @@ async function getIdentity() {
     };
 }
 
-export function storageMode() {
-    return coursesMode;
-}
-
 // =====================================================
 // Course catalog
 // =====================================================
@@ -382,16 +378,6 @@ export function purchaseStatusFor(courseId) {
     const purchase = getPurchaseFor(courseId);
 
     return purchase ? purchase.status : null;
-}
-
-export function getOwnedCourseIds() {
-    return new Set(
-        purchasesCache
-            .filter(
-                row => row.status === "approved" && !purchaseExpired(row)
-            )
-            .map(row => String(row.course_id))
-    );
 }
 
 // A purchase stops unlocking content once the course
