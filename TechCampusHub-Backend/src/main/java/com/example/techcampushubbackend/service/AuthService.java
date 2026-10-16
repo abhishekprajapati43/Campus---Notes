@@ -9,6 +9,7 @@ import com.example.techcampushubbackend.dto.AuthDtos.RegisterRequest;
 import com.example.techcampushubbackend.dto.AuthDtos.ResetPasswordRequest;
 import com.example.techcampushubbackend.dto.AuthDtos.UpdateProfileRequest;
 import com.example.techcampushubbackend.dto.AuthDtos.UserResponse;
+import com.example.techcampushubbackend.entity.RegistrationStatus;
 import com.example.techcampushubbackend.entity.Role;
 import com.example.techcampushubbackend.entity.User;
 import com.example.techcampushubbackend.exception.ApiException;
@@ -64,8 +65,10 @@ public class AuthService {
 
         Role role = resolveRegistrationRole(request.role());
         String phone = blankToNull(request.phone());
+        // Address is stored for every role (students can enter one at sign-up);
+        // only faculty are required to provide it.
+        String address = blankToNull(request.address());
         String aadhaarHash = null;
-        String address = null;
         boolean declarationAccepted = false;
 
         if (role == Role.FACULTY) {
@@ -77,7 +80,7 @@ public class AuthService {
             if (request.aadhaarNumber() == null || !request.aadhaarNumber().trim().matches("\\d{12}")) {
                 throw new BadRequestException("Faculty registration requires a 12-digit aadhaarNumber");
             }
-            if (request.address() == null || request.address().isBlank()) {
+            if (address == null) {
                 throw new BadRequestException("Faculty registration requires an address");
             }
             if (!Boolean.TRUE.equals(request.declarationAccepted())) {
@@ -85,7 +88,6 @@ public class AuthService {
                         "Faculty registration requires accepting the declaration (declarationAccepted must be true)");
             }
             aadhaarHash = sha256Hex(request.aadhaarNumber().trim());
-            address = request.address().trim();
             declarationAccepted = true;
         }
 
@@ -101,7 +103,19 @@ public class AuthService {
                 .semester(request.semester())
                 .aadhaarNumber(aadhaarHash)
                 .address(address)
+                // Optional profile details shown on the profile pages; all
+                // nullable so existing sign-up flows keep working unchanged.
+                .gender(blankToNull(request.gender()))
+                .enrollmentNumber(blankToNull(request.enrollmentNumber()))
+                .department(blankToNull(request.department()))
+                .qualification(blankToNull(request.qualification()))
+                .experience(blankToNull(request.experience()))
                 .declarationAccepted(declarationAccepted)
+                // New faculty accounts stay locked until an administrator
+                // approves them from the Manage Faculty panel.
+                .registrationStatus(role == Role.FACULTY
+                        ? RegistrationStatus.PENDING
+                        : RegistrationStatus.APPROVED)
                 .emailVerified(false)
                 .verificationToken(TokenUtils.randomToken())
                 .enabled(true)
@@ -156,6 +170,17 @@ public class AuthService {
         }
         if (!user.isEnabled()) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Account is disabled");
+        }
+        // Registration moderation runs before anything else so a pending or
+        // rejected applicant gets an actionable message instead of a generic one.
+        RegistrationStatus status = user.registrationStatusOrDefault();
+        if (status == RegistrationStatus.PENDING) {
+            throw new ApiException(HttpStatus.FORBIDDEN,
+                    "Your faculty registration is pending approval. Please wait for an administrator to review it.");
+        }
+        if (status == RegistrationStatus.REJECTED) {
+            throw new ApiException(HttpStatus.FORBIDDEN,
+                    "Your registration was rejected by an administrator.");
         }
         if (properties.getSecurity().isRequireEmailVerification() && !user.isEmailVerified()) {
             throw new ApiException(HttpStatus.FORBIDDEN,
@@ -303,6 +328,29 @@ public class AuthService {
     }
 
     /**
+     * Admin "Manage Faculty": approve or reject a faculty registration. Only
+     * FACULTY accounts can go through this workflow; PENDING is never a value
+     * an admin can set (only the registration flow creates pending accounts).
+     */
+    @Transactional
+    public UserResponse setRegistrationStatus(Long userId, RegistrationStatus status,
+                                               Long requestedByUserId) {
+        if (status == null || status == RegistrationStatus.PENDING) {
+            throw new BadRequestException("status must be APPROVED or REJECTED");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+        if (user.getRole() != Role.FACULTY) {
+            throw new BadRequestException("Only faculty accounts can be approved or rejected");
+        }
+
+        user.setRegistrationStatus(status);
+        userRepository.save(user);
+        log.info("Faculty account {} set to {} (by {})", user.getEmail(), status, requestedByUserId);
+        return toUserResponse(user);
+    }
+
+    /**
      * Permanently removes an account and everything attached to it. Used both for
      * "delete my account" (self service) and for the admin Users panel.
      */
@@ -336,7 +384,11 @@ public class AuthService {
                 user.getId(), user.getName(), user.getEmail(), user.getPhone(),
                 user.getRole(), user.isEmailVerified(), user.isEnabled(),
                 user.isDeclarationAccepted(),
+                user.registrationStatusOrDefault(),
                 user.getCourse(), user.getBranch(), user.getYear(), user.getSemester(),
+                user.getAddress(),
+                user.getGender(), user.getEnrollmentNumber(),
+                user.getDepartment(), user.getQualification(), user.getExperience(),
                 user.getCreatedAt());
     }
 

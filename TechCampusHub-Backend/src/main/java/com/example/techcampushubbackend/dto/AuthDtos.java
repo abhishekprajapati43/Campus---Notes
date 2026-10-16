@@ -1,5 +1,6 @@
 package com.example.techcampushubbackend.dto;
 
+import com.example.techcampushubbackend.entity.RegistrationStatus;
 import com.example.techcampushubbackend.entity.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
@@ -60,6 +61,26 @@ public final class AuthDtos {
             /** FACULTY only: postal address captured at sign-up. */
             @Size(max = 500, message = "address must be at most 500 characters")
             String address,
+
+            /** Optional at sign-up: shown on the profile page (all roles). */
+            @Size(max = 20, message = "gender must be at most 20 characters")
+            String gender,
+
+            /** STUDENT only: roll / enrollment number captured at sign-up. */
+            @Size(max = 40, message = "enrollmentNumber must be at most 40 characters")
+            String enrollmentNumber,
+
+            /** FACULTY only: home department, e.g. "Computer Science". */
+            @Size(max = 120, message = "department must be at most 120 characters")
+            String department,
+
+            /** FACULTY only: highest qualification, e.g. "M.Tech". */
+            @Size(max = 120, message = "qualification must be at most 120 characters")
+            String qualification,
+
+            /** FACULTY only: teaching/industry experience, e.g. "5 years". */
+            @Size(max = 60, message = "experience must be at most 60 characters")
+            String experience,
 
             /** FACULTY only: must be true or registration is rejected. */
             Boolean declarationAccepted) {
@@ -144,10 +165,20 @@ public final class AuthDtos {
             boolean enabled,
             /** Faculty sign-up declaration; always false for students. */
             boolean declarationAccepted,
+            /** Registration moderation state; faculty start PENDING until approved. */
+            RegistrationStatus registrationStatus,
             String course,
             String branch,
             Integer year,
             Integer semester,
+            /** Postal address captured at sign-up (optional; faculty provide one). */
+            String address,
+            /** Optional profile details captured at sign-up (null when not provided). */
+            String gender,
+            String enrollmentNumber,
+            String department,
+            String qualification,
+            String experience,
             LocalDateTime createdAt) {
     }
 
@@ -155,5 +186,11 @@ public final class AuthDtos {
     public record UserEnabledRequest(
             @NotNull(message = "enabled is required")
             Boolean enabled) {
+    }
+
+    /** Admin "Manage Faculty": approve or reject a pending faculty sign-up. */
+    public record UserRegistrationStatusRequest(
+            @NotNull(message = "status is required")
+            RegistrationStatus status) {
     }
 }

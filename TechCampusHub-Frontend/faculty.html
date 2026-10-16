@@ -103,6 +103,71 @@
                             </div>
                         </section>
                         <!-- =================================================
+                 MY COURSES (sidebar hash: faculty.html#course)
+                 The launched-courses list lives here (not inside
+                 the Launch section) so each card can open the
+                 content uploaded for that course.
+            ================================================== -->
+                        <section id="facultyCourseSection" class="card
+                       p-5
+                       md:p-6
+                       mb-5">
+                            <div class="flex
+                           items-center
+                           gap-4
+                           mb-5">
+                                <div class="w-12
+                               h-12
+                               rounded-xl
+                               bg-blue-50
+                               text-blue-600
+                               flex
+                               items-center
+                               justify-center
+                               text-xl">
+                                    <i class="fa-solid
+                                   fa-layer-group"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-xl
+                                   font-extrabold">
+                                        My Courses
+                                    </h2>
+                                    <p class="text-sm
+                                   text-slate-500">
+                                        Courses you launched - open one to view its uploaded content.
+                                    </p>
+                                </div>
+                            </div>
+                            <p id="facultyCourseMessage" class="hidden
+                           mb-4
+                           rounded-xl
+                           px-4
+                           py-3
+                           text-sm"></p>
+                            <!-- =================================================
+                         MY LAUNCHED COURSES (moved out of #facultyLaunchSection)
+                    ================================================== -->
+                            <div class="mt-6
+                           pt-5
+                           border-t
+                           border-slate-200">
+                                <div class="mb-4">
+                                    <h3 class="text-lg
+                                   font-extrabold">
+                                        My courses
+                                    </h3>
+                                    <p class="text-sm
+                                   text-slate-500">
+                                        Courses you have launched
+                                    </p>
+                                </div>
+                                <div id="facultyCoursesList" class="grid
+                               md:grid-cols-2
+                               gap-4"></div>
+                            </div>
+                        </section>
+                        <!-- =================================================
                  LAUNCH COURSE
             ================================================== -->
                         <section id="facultyLaunchSection" class="card
@@ -294,30 +359,9 @@
                                     </button>
                                 </div>
                             </form>
-                            <!-- =================================================
-                     MY LAUNCHED COURSES
-                ================================================== -->
-                            <div class="mt-6
-                           pt-5
-                           border-t
-                           border-slate-200">
-                                <div class="mb-4">
-                                    <h3 class="text-lg
-                                   font-extrabold">
-                                        My courses
-                                    </h3>
-                                    <p class="text-sm
-                                   text-slate-500">
-                                        Courses you have launched
-                                    </p>
-                                </div>
-                                <div id="facultyCoursesList" class="grid
-                               md:grid-cols-2
-                               gap-4"></div>
-                            </div>
                         </section>
                         <!-- =================================================
-                 UPLOAD NOTES
+                 CONTENT UPLOAD (category selector + 4 forms)
             ================================================== -->
                         <section id="facultyUploadSection" class="card
                        p-5
@@ -325,31 +369,59 @@
                        mb-5">
                             <div class="flex
                            items-center
+                           justify-between
                            gap-4
                            mb-5">
-                                <div class="w-12
-                               h-12
-                               rounded-xl
-                               bg-blue-50
-                               text-blue-600
-                               flex
+                                <div class="flex
                                items-center
-                               justify-center
-                               text-xl">
-                                    <i class="fa-solid
+                               gap-4">
+                                    <div class="w-12
+                                   h-12
+                                   rounded-xl
+                                   bg-blue-50
+                                   text-blue-600
+                                   flex
+                                   items-center
+                                   justify-center
+                                   text-xl">
+                                        <i class="fa-solid
                                    fa-file-arrow-up"></i>
-                                </div>
-                                <div>
-                                    <h2 class="text-xl
+                                    </div>
+                                    <div>
+                                        <h2 class="text-xl
                                    font-extrabold">
-                                        Upload Notes
-                                    </h2>
-                                    <p class="text-sm
+                                            Content Upload
+                                        </h2>
+                                        <p id="facultyUploadSubtitle" class="text-sm
                                    text-slate-500">
-                                        Share a PDF with your students.
-                                    </p>
+                                            Share a PDF with your students.
+                                        </p>
+                                    </div>
                                 </div>
+                                <!-- Category picker (mirrors #adminUploadType on
+                                     the admin content panel). Every id below is
+                                     faculty-prefixed so it can never collide with
+                                     the admin page ids. -->
+                                <select id="facultyUploadCategory" class="input
+                               max-w-xs">
+                                    <option value="notes">
+                                        Notes
+                                    </option>
+                                    <option value="tnp">
+                                        TNP — Placement
+                                    </option>
+                                    <option value="pyq">
+                                        PYQ — Previous Papers
+                                    </option>
+                                    <option value="timetable">
+                                        Exam Timetable
+                                    </option>
+                                </select>
                             </div>
+                            <!-- =================================================
+                     NOTES PANEL (default category)
+                ================================================== -->
+                            <div id="facultyUploadNotesPanel">
                             <p id="uploadNoteMessage" class="hidden
                            mb-4
                            rounded-xl
@@ -548,9 +620,415 @@
                                     </button>
                                 </div>
                             </form>
+                            </div>
+                            <!-- =================================================
+                     TNP PANEL (hidden until #facultyUploadCategory = tnp)
+                ================================================== -->
+                            <div id="facultyUploadTnpPanel" class="hidden">
+                                <p id="facultyUploadTnpMessage" class="hidden
+                           mb-4
+                           rounded-xl
+                           px-4
+                           py-3
+                           text-sm"></p>
+                                <form id="facultyUploadTnpForm" class="grid
+                           md:grid-cols-2
+                           lg:grid-cols-3
+                           gap-4">
+                                    <div class="filter-group">
+                                        <label for="facultyTnpTopic" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            Subject / Topic area
+                                            <span class="text-red-500">
+                                                *
+                                            </span>
+                                        </label>
+                                        <input id="facultyTnpTopic"
+                                               class="input"
+                                               type="text"
+                                               maxlength="120"
+                                               placeholder="e.g. Aptitude & Reasoning"
+                                               required>
+                                    </div>
+                                    <div class="filter-group">
+                                        <label for="facultyTnpTitle" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            Title / Topic
+                                            <span class="font-normal
+                                                  text-slate-400">
+                                                (optional)
+                                            </span>
+                                        </label>
+                                        <input id="facultyTnpTitle"
+                                               class="input"
+                                               type="text"
+                                               maxlength="200"
+                                               placeholder="Title / Topic">
+                                    </div>
+                                    <div class="filter-group">
+                                        <label for="facultyTnpBundle" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            My courses
+                                            <span class="font-normal
+                                                  text-slate-400">
+                                                (optional bundle)
+                                            </span>
+                                        </label>
+                                        <select id="facultyTnpBundle" class="input">
+                                            <option value="">
+                                                Free — no bundle
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-group">
+                                        <label for="facultyTnpFile" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            Attach PDF
+                                            <span class="text-red-500">
+                                                *
+                                            </span>
+                                        </label>
+                                        <input id="facultyTnpFile"
+                                               class="input"
+                                               type="file"
+                                               accept="application/pdf"
+                                               required>
+                                        <p class="text-xs
+                                       text-slate-500
+                                       mt-2">
+                                            PDF only, up to 20 MB.
+                                        </p>
+                                    </div>
+                                    <div class="md:col-span-2
+                               lg:col-span-3">
+                                        <button id="facultyUploadTnpBtn" type="submit" class="bg-blue-600
+                                   hover:bg-blue-700
+                                   text-white
+                                   rounded-xl
+                                   font-bold
+                                   px-6
+                                   py-3
+                                   transition">
+                                            <i class="fa-solid fa-briefcase mr-2"></i>Upload TNP
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            <!-- =================================================
+                     PYQ PANEL (hidden until #facultyUploadCategory = pyq)
+                ================================================== -->
+                            <div id="facultyUploadPyqPanel" class="hidden">
+                                <p id="facultyUploadPyqMessage" class="hidden
+                           mb-4
+                           rounded-xl
+                           px-4
+                           py-3
+                           text-sm"></p>
+                                <form id="facultyUploadPyqForm" class="grid
+                           md:grid-cols-2
+                           lg:grid-cols-3
+                           gap-4">
+                                    <div class="filter-group">
+                                        <label for="facultyPyqSubject" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            Subject
+                                            <span class="text-red-500">
+                                                *
+                                            </span>
+                                        </label>
+                                        <input id="facultyPyqSubject"
+                                               class="input"
+                                               type="text"
+                                               maxlength="120"
+                                               placeholder="Subject"
+                                               required>
+                                    </div>
+                                    <div class="filter-group">
+                                        <label for="facultyPyqTitle" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            Title
+                                            <span class="font-normal
+                                                  text-slate-400">
+                                                (optional)
+                                            </span>
+                                        </label>
+                                        <input id="facultyPyqTitle"
+                                               class="input"
+                                               type="text"
+                                               maxlength="200"
+                                               placeholder="Title">
+                                    </div>
+                                    <div class="filter-group">
+                                        <label for="facultyPyqCourse" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            Course
+                                        </label>
+                                        <input id="facultyPyqCourse"
+                                               class="input"
+                                               type="text"
+                                               maxlength="60"
+                                               placeholder="e.g. MCA">
+                                    </div>
+                                    <div class="filter-group">
+                                        <label for="facultyPyqBranch" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            Branch
+                                        </label>
+                                        <input id="facultyPyqBranch"
+                                               class="input"
+                                               type="text"
+                                               maxlength="40"
+                                               placeholder="e.g. Computer Science">
+                                    </div>
+                                    <div class="filter-group">
+                                        <label for="facultyPyqSemester" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            Semester
+                                        </label>
+                                        <select id="facultyPyqSemester" class="input">
+                                            <option value="">
+                                                Select Semester
+                                            </option>
+                                            <option value="1">
+                                                Semester 1
+                                            </option>
+                                            <option value="2">
+                                                Semester 2
+                                            </option>
+                                            <option value="3">
+                                                Semester 3
+                                            </option>
+                                            <option value="4">
+                                                Semester 4
+                                            </option>
+                                            <option value="5">
+                                                Semester 5
+                                            </option>
+                                            <option value="6">
+                                                Semester 6
+                                            </option>
+                                            <option value="7">
+                                                Semester 7
+                                            </option>
+                                            <option value="8">
+                                                Semester 8
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-group">
+                                        <label for="facultyPyqExamYear" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            Exam Year
+                                        </label>
+                                        <input id="facultyPyqExamYear"
+                                               class="input"
+                                               type="number"
+                                               min="2000"
+                                               max="2100"
+                                               placeholder="e.g. 2024">
+                                    </div>
+                                    <div class="filter-group">
+                                        <label for="facultyPyqFile" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            Attach PDF
+                                            <span class="text-red-500">
+                                                *
+                                            </span>
+                                        </label>
+                                        <input id="facultyPyqFile"
+                                               class="input"
+                                               type="file"
+                                               accept="application/pdf"
+                                               required>
+                                        <p class="text-xs
+                                       text-slate-500
+                                       mt-2">
+                                            PDF only, up to 20 MB.
+                                        </p>
+                                    </div>
+                                    <div class="md:col-span-2
+                               lg:col-span-3">
+                                        <button id="facultyUploadPyqBtn" type="submit" class="bg-blue-600
+                                   hover:bg-blue-700
+                                   text-white
+                                   rounded-xl
+                                   font-bold
+                                   px-6
+                                   py-3
+                                   transition">
+                                            <i class="fa-solid fa-clock-rotate-left mr-2"></i>Upload PYQ
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            <!-- =================================================
+                     TIMETABLE PANEL (hidden until #facultyUploadCategory = timetable)
+                ================================================== -->
+                            <div id="facultyUploadTimetablePanel" class="hidden">
+                                <p id="facultyUploadTimetableMessage" class="hidden
+                           mb-4
+                           rounded-xl
+                           px-4
+                           py-3
+                           text-sm"></p>
+                                <form id="facultyUploadTimetableForm" class="grid
+                           md:grid-cols-2
+                           lg:grid-cols-3
+                           gap-4">
+                                    <div class="filter-group">
+                                        <label for="facultyTimetableCourse" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            Course
+                                            <span class="text-red-500">
+                                                *
+                                            </span>
+                                        </label>
+                                        <input id="facultyTimetableCourse"
+                                               class="input"
+                                               type="text"
+                                               maxlength="60"
+                                               placeholder="e.g. MCA"
+                                               required>
+                                    </div>
+                                    <div class="filter-group">
+                                        <label for="facultyTimetableSemester" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            Semester
+                                        </label>
+                                        <select id="facultyTimetableSemester" class="input">
+                                            <option value="">
+                                                Select Semester
+                                            </option>
+                                            <option value="1">
+                                                Semester 1
+                                            </option>
+                                            <option value="2">
+                                                Semester 2
+                                            </option>
+                                            <option value="3">
+                                                Semester 3
+                                            </option>
+                                            <option value="4">
+                                                Semester 4
+                                            </option>
+                                            <option value="5">
+                                                Semester 5
+                                            </option>
+                                            <option value="6">
+                                                Semester 6
+                                            </option>
+                                            <option value="7">
+                                                Semester 7
+                                            </option>
+                                            <option value="8">
+                                                Semester 8
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-group">
+                                        <label for="facultyTimetableExamYear" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            Exam Year
+                                        </label>
+                                        <input id="facultyTimetableExamYear"
+                                               class="input"
+                                               type="number"
+                                               min="2000"
+                                               max="2100"
+                                               placeholder="e.g. 2024">
+                                    </div>
+                                    <div class="filter-group">
+                                        <label for="facultyTimetableExamType" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            Exam Type
+                                            <span class="text-red-500">
+                                                *
+                                            </span>
+                                        </label>
+                                        <select id="facultyTimetableExamType" class="input" required>
+                                            <option value="" selected>
+                                                Select Exam Type
+                                            </option>
+                                            <option value="Semester Exam">
+                                                Semester Exam
+                                            </option>
+                                            <option value="Practical">
+                                                Practical
+                                            </option>
+                                            <option value="Placement Exam">
+                                                Placement Exam
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-group">
+                                        <label for="facultyTimetableFile" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                            Attach file
+                                            <span class="text-red-500">
+                                                *
+                                            </span>
+                                        </label>
+                                        <input id="facultyTimetableFile"
+                                               class="input"
+                                               type="file"
+                                               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                               required>
+                                        <p class="text-xs
+                                       text-slate-500
+                                       mt-2">
+                                            PDF preferred, up to 20 MB.
+                                        </p>
+                                    </div>
+                                    <div class="md:col-span-2
+                               lg:col-span-3">
+                                        <button id="facultyUploadTimetableBtn" type="submit" class="bg-blue-600
+                                   hover:bg-blue-700
+                                   text-white
+                                   rounded-xl
+                                   font-bold
+                                   px-6
+                                   py-3
+                                   transition">
+                                            <i class="fa-solid fa-calendar-days mr-2"></i>Upload Timetable
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </section>
                         <!-- =================================================
-                 MANAGE NOTES
+                 MANAGE CONTENT
             ================================================== -->
                         <section id="facultyManageSection" class="card
                        p-5
@@ -579,11 +1057,11 @@
                                     <div>
                                         <h2 class="text-xl
                                        font-extrabold">
-                                            Manage Notes
+                                            Manage Content
                                         </h2>
                                         <p class="text-sm
                                        text-slate-500">
-                                            View or edit the notes you uploaded.
+                                            View or edit the content you uploaded.
                                         </p>
                                     </div>
                                 </div>
@@ -598,6 +1076,46 @@
                            px-4
                            py-3
                            text-sm"></p>
+                            <!-- Category filter pills (default: notes).
+                                 Active pill = blue bg + white text, the same
+                                 pill treatment used across the app. -->
+                            <div class="flex
+                           flex-wrap
+                           items-center
+                           gap-2
+                           mb-4">
+                                <button type="button"
+                                        data-faculty-manage-category="notes"
+                                        class="faculty-manage-pill px-4 py-2 rounded-xl
+                                               text-sm font-bold border transition
+                                               bg-blue-600 text-white border-blue-600">
+                                    <i class="fa-solid fa-file-lines mr-2"></i>Notes
+                                </button>
+                                <button type="button"
+                                        data-faculty-manage-category="tnp"
+                                        class="faculty-manage-pill px-4 py-2 rounded-xl
+                                               text-sm font-bold border transition
+                                               bg-white text-slate-600 border-slate-200
+                                               hover:bg-slate-50">
+                                    <i class="fa-solid fa-briefcase mr-2"></i>TNP
+                                </button>
+                                <button type="button"
+                                        data-faculty-manage-category="pyq"
+                                        class="faculty-manage-pill px-4 py-2 rounded-xl
+                                               text-sm font-bold border transition
+                                               bg-white text-slate-600 border-slate-200
+                                               hover:bg-slate-50">
+                                    <i class="fa-solid fa-clock-rotate-left mr-2"></i>PYQ
+                                </button>
+                                <button type="button"
+                                        data-faculty-manage-category="timetable"
+                                        class="faculty-manage-pill px-4 py-2 rounded-xl
+                                               text-sm font-bold border transition
+                                               bg-white text-slate-600 border-slate-200
+                                               hover:bg-slate-50">
+                                    <i class="fa-solid fa-calendar-days mr-2"></i>Timetable
+                                </button>
+                            </div>
                             <div id="facultyNotesList" class="grid
                            md:grid-cols-2
                            xl:grid-cols-3
@@ -607,9 +1125,11 @@
                 </main>
             </div>
         <!-- =====================================================
-         FACULTY EDIT NOTE MODAL
+         FACULTY EDIT CONTENT MODAL
          Own modal: the shared #editResourceModal posts to admin
          endpoints, so faculty editing never reuses it.
+         One modal serves all four categories — #facultyEditCategory
+         picks the field groups and the PUT route.
     ====================================================== -->
         <div id="facultyEditModal" class="hidden fixed inset-0 z-[110] bg-slate-950/50 items-center justify-center p-4">
             <div class="bg-white rounded-2xl
@@ -626,7 +1146,7 @@
                            font-semibold">
                             Faculty
                         </p>
-                        <h3 class="text-2xl
+                        <h3 id="facultyEditHeading" class="text-2xl
                            font-extrabold">
                             Edit Note
                         </h3>
@@ -643,31 +1163,113 @@
                 <!-- FORM -->
                 <form id="facultyEditForm" class="space-y-4">
                     <input id="facultyEditNoteId" type="hidden">
+                    <input id="facultyEditCategory" type="hidden" value="notes">
                     <p id="facultyEditMessage" class="hidden
                        rounded-xl
                        px-4
                        py-3
                        text-sm"></p>
-                    <!-- SUBJECT + TITLE -->
+                    <!-- CATEGORY FIELDS
+                         Each group is toggled per #facultyEditCategory:
+                         notes → subject/title/description/file,
+                         tnp    → subject (topic)/title/description/file,
+                         pyq    → subject/title/course/branch/semester/examYear/description/file,
+                         timetable → course/semester/examType/examYear/title/file -->
                     <div class="grid md:grid-cols-2
                        gap-4">
-                        <div class="edit-field-group">
-                            <label for="facultyEditSubject" class="block text-sm
+                        <div id="facultyEditGroupSubject" class="edit-field-group">
+                            <label for="facultyEditSubject" id="facultyEditSubjectLabel" class="block text-sm
                                font-semibold mb-2">
                                 Subject
                             </label>
                             <input id="facultyEditSubject" class="input" type="text" maxlength="120">
                         </div>
-                        <div class="edit-field-group">
+                        <div id="facultyEditGroupTitle" class="edit-field-group">
                             <label for="facultyEditTitle" class="block text-sm
                                font-semibold mb-2">
                                 Title / Topic
                             </label>
                             <input id="facultyEditTitle" class="input" type="text" maxlength="200">
                         </div>
+                        <div id="facultyEditGroupCourse" class="edit-field-group hidden">
+                            <label for="facultyEditCourse" class="block text-sm
+                               font-semibold mb-2">
+                                Course
+                            </label>
+                            <input id="facultyEditCourse" class="input" type="text" maxlength="60">
+                        </div>
+                        <div id="facultyEditGroupBranch" class="edit-field-group hidden">
+                            <label for="facultyEditBranch" class="block text-sm
+                               font-semibold mb-2">
+                                Branch
+                            </label>
+                            <input id="facultyEditBranch" class="input" type="text" maxlength="40">
+                        </div>
+                        <div id="facultyEditGroupSemester" class="edit-field-group hidden">
+                            <label for="facultyEditSemester" class="block text-sm
+                               font-semibold mb-2">
+                                Semester
+                            </label>
+                            <select id="facultyEditSemester" class="input">
+                                <option value="">
+                                    Select Semester
+                                </option>
+                                <option value="1">
+                                    Semester 1
+                                </option>
+                                <option value="2">
+                                    Semester 2
+                                </option>
+                                <option value="3">
+                                    Semester 3
+                                </option>
+                                <option value="4">
+                                    Semester 4
+                                </option>
+                                <option value="5">
+                                    Semester 5
+                                </option>
+                                <option value="6">
+                                    Semester 6
+                                </option>
+                                <option value="7">
+                                    Semester 7
+                                </option>
+                                <option value="8">
+                                    Semester 8
+                                </option>
+                            </select>
+                        </div>
+                        <div id="facultyEditGroupExamYear" class="edit-field-group hidden">
+                            <label for="facultyEditExamYear" class="block text-sm
+                               font-semibold mb-2">
+                                Exam Year
+                            </label>
+                            <input id="facultyEditExamYear" class="input" type="number" min="2000" max="2100">
+                        </div>
+                        <div id="facultyEditGroupExamType" class="edit-field-group hidden">
+                            <label for="facultyEditExamType" class="block text-sm
+                               font-semibold mb-2">
+                                Exam Type
+                            </label>
+                            <select id="facultyEditExamType" class="input">
+                                <option value="">
+                                    Select Exam Type
+                                </option>
+                                <option value="Semester Exam">
+                                    Semester Exam
+                                </option>
+                                <option value="Practical">
+                                    Practical
+                                </option>
+                                <option value="Placement Exam">
+                                    Placement Exam
+                                </option>
+                            </select>
+                        </div>
                     </div>
-                    <!-- DESCRIPTION -->
-                    <div class="edit-field-group">
+                    <!-- DESCRIPTION (notes / tnp / pyq only) -->
+                    <div id="facultyEditGroupDescription" class="edit-field-group">
                         <label for="facultyEditDescription" class="block text-sm
                            font-semibold mb-2">
                             Description
@@ -675,7 +1277,7 @@
                         <textarea id="facultyEditDescription" class="input" rows="4" maxlength="600"></textarea>
                     </div>
                     <!-- REPLACE PDF -->
-                    <div class="edit-field-group">
+                    <div id="facultyEditGroupFile" class="edit-field-group">
                         <label for="facultyEditFile" class="block text-sm
                            font-semibold mb-2">
                             Replace PDF
@@ -715,6 +1317,52 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+        <!-- =====================================================
+         FACULTY COURSE CONTENT MODAL
+         Read-only viewer opened from the "View content" button on
+         a course card: GET /api/faculty/courses/{id}/content and
+         lists the notes / TNP / PYQ / timetable records attached
+         to that course. No edit or delete affordances here -
+         removal stays behind the admin endpoints.
+    ====================================================== -->
+        <div id="facultyCourseContentModal" class="hidden fixed inset-0 z-[110] bg-slate-950/50 items-center justify-center p-4">
+            <div class="bg-white rounded-2xl
+                   w-full max-w-3xl
+                   p-6 shadow-2xl
+                   max-h-[90vh]
+                   overflow-hidden
+                   flex flex-col">
+                <!-- HEADER -->
+                <div class="flex items-center
+                       justify-between mb-5 shrink-0">
+                    <div>
+                        <p class="text-sm
+                           text-blue-600
+                           font-semibold">
+                            Faculty
+                        </p>
+                        <h3 id="facultyCourseContentTitle" class="text-2xl
+                           font-extrabold">
+                            Course Content
+                        </h3>
+                    </div>
+                    <button id="facultyCourseContentClose" type="button" aria-label="Close" class="w-10 h-10
+                       rounded-xl
+                       bg-slate-100
+                       hover:bg-slate-200
+                       flex items-center
+                       justify-center">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <!-- SCROLLABLE CONTENT AREA (filled by
+                     openCourseContent() in js/faculty.js) -->
+                <div id="facultyCourseContentBody" class="space-y-5
+                     max-h-[70vh]
+                     overflow-y-auto
+                     pr-1"></div>
             </div>
         </div>
         <script src="./js/env.js"></script>

@@ -62,4 +62,11 @@ public class Pyq extends Auditable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id")
     private Course courseBundle;
+
+    /**
+     * users.id of the faculty/admin uploader (soft ref, no FK - mirrors notes).
+     * NULL for content created through the legacy admin path.
+     */
+    @Column(name = "created_by")
+    private Long createdBy;
 }

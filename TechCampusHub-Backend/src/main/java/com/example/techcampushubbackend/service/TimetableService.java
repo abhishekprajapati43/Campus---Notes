@@ -10,6 +10,7 @@ import com.example.techcampushubbackend.repository.CourseRepository;
 import com.example.techcampushubbackend.repository.TimetableRepository;
 import com.example.techcampushubbackend.utils.CurrentUserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +45,34 @@ public class TimetableService {
                 .toList();
     }
 
+    /**
+     * Faculty workspace listing - only the caller's own timetables; admins see
+     * everything (including legacy rows with no recorded owner).
+     */
+    @Transactional(readOnly = true)
+    public List<TimetableResponse> listOwn() {
+        User user = currentUserService.requireUser();
+        return timetableRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(t -> user.getRole() == Role.ADMIN
+                        || (t.getCreatedBy() != null
+                            && t.getCreatedBy().equals(user.getId())))
+                .map(TimetableService::toResponse)
+                .toList();
+    }
+
+    /** Every timetable linked to a course bundle (ownership checked by the caller). */
+    @Transactional(readOnly = true)
+    public List<TimetableResponse> listByCourse(Long courseId) {
+        if (courseId == null) {
+            return List.of();
+        }
+        return timetableRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(t -> t.getCourseBundle() != null
+                        && courseId.equals(t.getCourseBundle().getId()))
+                .map(TimetableService::toResponse)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public TimetableResponse getVisible(Long id) {
         User user = currentUserService.requireUser();
@@ -56,6 +85,16 @@ public class TimetableService {
 
     @Transactional
     public TimetableResponse create(TimetableRequest request) {
+        return doCreate(request, null);
+    }
+
+    /** Faculty/admin create that stamps the uploader's user id as the owner. */
+    @Transactional
+    public TimetableResponse createAsOwner(TimetableRequest request, Long ownerId) {
+        return doCreate(request, ownerId);
+    }
+
+    private TimetableResponse doCreate(TimetableRequest request, Long ownerId) {
         Timetable timetable = Timetable.builder()
                 .title(resolveTitle(request.title(), examLabel(request), request.course()))
                 .course(request.course())
@@ -68,8 +107,26 @@ public class TimetableService {
                 .storagePath(request.storagePath())
                 .fileName(request.fileName())
                 .courseBundle(loadBundle(request.courseId()))
+                .createdBy(ownerId)
                 .build();
         return toResponse(timetableRepository.save(timetable));
+    }
+
+    /**
+     * Faculty workspace update: a faculty member may only edit a timetable they
+     * own ({@code createdBy} == caller id); admins may edit any. Attempting to
+     * edit someone else's schedule raises Spring's AccessDeniedException → 403.
+     */
+    @Transactional
+    public TimetableResponse updateOwned(Long id, TimetableRequest request) {
+        User user = currentUserService.requireUser();
+        Timetable timetable = require(id);
+        if (user.getRole() != Role.ADMIN
+                && (timetable.getCreatedBy() == null
+                    || !timetable.getCreatedBy().equals(user.getId()))) {
+            throw new AccessDeniedException("You can only edit timetables you uploaded");
+        }
+        return update(id, request);
     }
 
     @Transactional

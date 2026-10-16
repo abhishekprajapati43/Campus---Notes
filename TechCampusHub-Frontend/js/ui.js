@@ -547,6 +547,33 @@ function setTextContent(id, value) {
 }
 
 //
+// Renders the backend registration timestamp as a short
+// human-readable date ("17 Oct 2026"); missing or
+// unreadable values fall back to "-".
+//
+
+function formatRegistrationDate(value) {
+    if (!value) {
+        return "-";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return "-";
+    }
+
+    return date.toLocaleDateString(
+        "en-IN",
+        {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+        }
+    );
+}
+
+//
 // Profile rows that are shown for students and
 // hidden for administrators in the sidebar.
 //
@@ -605,8 +632,30 @@ export function updateStudentProfileUI(
         student.phone ||
         "";
 
+    const gender =
+        student.gender ||
+        "";
+
+    const address =
+        student.address ||
+        "";
+
+    const department =
+        student.department ||
+        "";
+
+    const qualification =
+        student.qualification ||
+        "";
+
+    const experience =
+        student.experience ||
+        "";
+
+    // Roll number from the backend when present; older
+    // stored sessions fall back to the legacy id value.
     const enrollment =
-        student.id ?? "";
+        (student.enrollment_number || student.id) ?? "";
 
 
     // -------------------------------------------------
@@ -694,6 +743,79 @@ export function updateStudentProfileUI(
             ? `Semester ${semester}`
             : "-";
     }
+
+    setTextContent(
+        "studentProfilePagePhone",
+        phone || "-"
+    );
+
+    setTextContent(
+        "studentProfilePageGender",
+        gender || "-"
+    );
+
+    setTextContent(
+        "studentProfilePageAddress",
+        address || "-"
+    );
+
+    setTextContent(
+        "studentProfilePageRegistered",
+        formatRegistrationDate(student.created_at)
+    );
+
+    setTextContent(
+        "studentProfilePageEnrollment",
+        enrollment || "-"
+    );
+
+    setTextContent(
+        "studentProfilePageDepartment",
+        department || "-"
+    );
+
+    setTextContent(
+        "studentProfilePageQualification",
+        qualification || "-"
+    );
+
+    setTextContent(
+        "studentProfilePageExperience",
+        experience || "-"
+    );
+
+    //
+    // Role specific cards: students only see the academic
+    // details, faculty only see the staff details. The
+    // profile page is not normally reachable for admins,
+    // so they fall back to the student layout.
+    //
+
+    applyProfileRoleCards(isFaculty);
+}
+
+//
+// Shows/hides the "data-profile-role" cards on the
+// profile page from one flag: faculty keep only the staff
+// details, everyone else keeps the academic layout.
+//
+
+function applyProfileRoleCards(isFaculty) {
+    document
+        .querySelectorAll("[data-profile-role]")
+        .forEach(card => {
+            const cardRole =
+                card.getAttribute("data-profile-role");
+
+            const visible = isFaculty
+                ? cardRole === "faculty"
+                : cardRole === "student";
+
+            card.classList.toggle(
+                "hidden",
+                !visible
+            );
+        });
 }
 
 // =====================================================
@@ -731,6 +853,10 @@ export function updateAdminProfileUI(
     SIDEBAR_STUDENT_ROWS.forEach(
         rowId => $(rowId)?.classList.add("hidden")
     );
+
+    // The profile page (when reached by an admin) keeps the
+    // student card layout; no staff cards are shown.
+    applyProfileRoleCards(false);
 }
 
 // =====================================================
@@ -767,48 +893,122 @@ export function updateAdminNavVisibility() {
 
 
 //
-// Faculty get their own workspace entry; the regular
-// student dashboard links are removed while a faculty
-// account is signed in and restored for everyone else.
+// The sidebar partial is shared by every page, so one
+// single pass decides each link's final visibility from
+// the signed-in role. Computing every item together keeps
+// the admin, faculty and student branches from fighting
+// over the same nodes when the role changes on a page.
+//
+// - Students keep the full learning link set.
+// - Faculty keep Dashboard, their own workspace quick-link
+//   group (Course / Launch Course / Content Upload /
+//   Manage Content) and the Profile block; the generic
+//   student entries and the plain Faculty entry are gone.
+// - Administrators keep Dashboard, Courses, Payment
+//   History, Admin Panel and Logout but lose the
+//   Notifications / Favorites / Certificates / Feedback
+//   entries and the whole Profile block.
 //
 // Every lookup is null-guarded because these ids only
 // exist on pages that render the shared sidebar.
 //
 
-export function updateFacultyNavVisibility() {
-    const isFaculty = currentUserRole === "faculty";
+//
+// Community/engagement links that administrators and
+// faculty never see (students always do).
+//
 
-    const facultyNavBtn = $("facultyNavBtn");
+const ADMIN_HIDDEN_NAV_LINKS = [
+    "notificationsBtn",
+    "favoritesBtn",
+    "certificatesBtn",
+    "feedbackBtn"
+];
 
-    if (facultyNavBtn) {
-        facultyNavBtn.classList.toggle(
-            "hidden",
-            !isFaculty
+//
+// Extra student links faculty accounts do not use; the
+// faculty workspace group replaces them.
+//
+
+const FACULTY_HIDDEN_NAV_LINKS = [
+    "coursesBtn",
+    "paymentHistoryBtn",
+    ...ADMIN_HIDDEN_NAV_LINKS
+];
+
+export function updateSidebarNavForRole() {
+    const admin = isAdminRole();
+
+    const faculty = currentUserRole === "faculty";
+
+    // Always start from the full student set so every role
+    // switch ends in a deterministic state.
+    [
+        "dashboardHomeBtn",
+        ...FACULTY_HIDDEN_NAV_LINKS
+    ].forEach(id => $(id)?.classList.remove("hidden"));
+
+    $("sidebarProfileSection")?.classList.remove("hidden");
+
+    if (faculty) {
+        FACULTY_HIDDEN_NAV_LINKS.forEach(
+            id => $(id)?.classList.add("hidden")
         );
     }
 
-    if (isFaculty) {
-        [
-            "dashboardHomeBtn",
-            "favoritesBtn",
-            "coursesBtn",
-            "paymentHistoryBtn",
-            "certificatesBtn",
-            "feedbackBtn"
-        ].forEach(id => $(id)?.classList.add("hidden"));
+    if (admin) {
+        ADMIN_HIDDEN_NAV_LINKS.forEach(
+            id => $(id)?.classList.add("hidden")
+        );
 
+        // The Profile block itself (accordion included)
+        // disappears for administrators.
+        $("sidebarProfileSection")?.classList.add("hidden");
+    }
+
+    // The quick-link group only exists for faculty; the
+    // generic Faculty entry stays hidden for every role
+    // now that the group carries the workspace links.
+    $("facultyNavGroup")?.classList.toggle(
+        "hidden",
+        !faculty
+    );
+
+    $("facultyNavBtn")?.classList.add("hidden");
+}
+
+//
+// Kept as the historical export name: existing call sites
+// still reach for it, and it now resolves to the single
+// role pass above.
+//
+
+export function updateFacultyNavVisibility() {
+    updateSidebarNavForRole();
+}
+
+// =====================================================
+// Telegram nav visibility
+// =====================================================
+
+//
+// The community link is a student-only entry point:
+// faculty and administrator accounts never see it.
+// The lookup is null-guarded because the link only
+// exists on pages that render the shared sidebar.
+//
+
+export function updateTelegramNavVisibility() {
+    const link = $("telegramJoinLink");
+
+    if (!link) {
         return;
     }
 
-    // Students and administrators keep the regular links.
-    [
-        "dashboardHomeBtn",
-        "favoritesBtn",
-        "coursesBtn",
-        "paymentHistoryBtn",
-        "certificatesBtn",
-        "feedbackBtn"
-    ].forEach(id => $(id)?.classList.remove("hidden"));
+    const isStaff =
+        currentUserRole === "faculty" || isAdminRole();
+
+    link.classList.toggle("hidden", isStaff);
 }
 
 
@@ -1313,7 +1513,9 @@ export function applyRoleUI() {
 
         hideAdminPanel();
 
-        updateFacultyNavVisibility();
+        updateSidebarNavForRole();
+
+        updateTelegramNavVisibility();
 
     } else {
 
@@ -1340,9 +1542,12 @@ updateAllSearchSubjects();
 
     updateAdminNavVisibility();
 
-    // Restore/hide the faculty entry for every role so the
-    // toggles always end in a consistent state.
-    updateFacultyNavVisibility();
+    // Recompute every sidebar link from the active role so
+    // the toggles always end in a consistent state.
+    updateSidebarNavForRole();
+
+    // Re-evaluate the student-only Telegram entry too.
+    updateTelegramNavVisibility();
 }
 
 
@@ -2085,9 +2290,11 @@ if (getSignupMode()){
 
         if (submitButton) {
 
+            // Pages may override the login label
+            // (faculty-login.html shows "Sign In").
             submitButton.textContent =
 
-                "Login";
+                submitButton.dataset.loginLabel || "Login";
 
         }
 

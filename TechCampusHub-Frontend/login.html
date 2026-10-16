@@ -372,6 +372,86 @@
                                         </select>
                                     </div>
                                 </div>
+                                <!-- Mobile Number -->
+                                <div>
+                                    <label class="block
+                                       text-sm
+                                       font-semibold
+                                       mb-2">
+                                        Mobile Number
+                                    </label>
+                                    <input
+                                        id="regStudentPhone"
+                                        autocomplete="tel"
+                                        class="input"
+                                        type="tel"
+                                        inputmode="numeric"
+                                        maxlength="10"
+                                        pattern="[0-9]{10}"
+                                        placeholder="10-digit mobile number (optional)"
+                                    >
+                                </div>
+                                <!-- Gender / Roll Number -->
+                                <div class="grid
+                                   sm:grid-cols-2
+                                   gap-4">
+                                    <div>
+                                        <label class="block
+                                           text-sm
+                                           font-semibold
+                                           mb-2">
+                                            Gender
+                                        </label>
+                                        <select id="regStudentGender" class="input">
+                                            <option value>
+                                                Select Gender
+                                            </option>
+                                            <option value="Male">
+                                                Male
+                                            </option>
+                                            <option value="Female">
+                                                Female
+                                            </option>
+                                            <option value="Other">
+                                                Other
+                                            </option>
+                                            <option value="Prefer not to say">
+                                                Prefer not to say
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block
+                                           text-sm
+                                           font-semibold
+                                           mb-2">
+                                            Roll / Enrollment Number
+                                        </label>
+                                        <input
+                                            id="regEnrollment"
+                                            class="input"
+                                            type="text"
+                                            maxlength="40"
+                                            placeholder="Roll / Enrollment number (optional)"
+                                        >
+                                    </div>
+                                </div>
+                                <!-- Address -->
+                                <div>
+                                    <label class="block
+                                       text-sm
+                                       font-semibold
+                                       mb-2">
+                                        Address
+                                    </label>
+                                    <textarea
+                                        id="regStudentAddress"
+                                        class="input"
+                                        rows="2"
+                                        maxlength="500"
+                                        placeholder="Address (optional)"
+                                    ></textarea>
+                                </div>
                             </div>
                             <!-- =================================================
                          FACULTY SIGNUP FIELDS
@@ -413,6 +493,99 @@
                                         pattern="[0-9]{12}"
                                         placeholder="12-digit Aadhaar number"
                                     >
+                                </div>
+                                <!-- Gender / Department -->
+                                <div class="grid
+                                   sm:grid-cols-2
+                                   gap-4">
+                                    <div>
+                                        <label class="block
+                                           text-sm
+                                           font-semibold
+                                           mb-2">
+                                            Gender
+                                        </label>
+                                        <select id="regFacultyGender" class="input">
+                                            <option value>
+                                                Select Gender
+                                            </option>
+                                            <option value="Male">
+                                                Male
+                                            </option>
+                                            <option value="Female">
+                                                Female
+                                            </option>
+                                            <option value="Other">
+                                                Other
+                                            </option>
+                                            <option value="Prefer not to say">
+                                                Prefer not to say
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block
+                                           text-sm
+                                           font-semibold
+                                           mb-2">
+                                            Department
+                                        </label>
+                                        <input
+                                            id="regDepartment"
+                                            class="input"
+                                            type="text"
+                                            maxlength="120"
+                                            placeholder="e.g. Computer Science"
+                                        >
+                                    </div>
+                                </div>
+                                <!-- Qualification / Experience -->
+                                <div class="grid
+                                   sm:grid-cols-2
+                                   gap-4">
+                                    <div>
+                                        <label class="block
+                                           text-sm
+                                           font-semibold
+                                           mb-2">
+                                            Qualification
+                                        </label>
+                                        <input
+                                            id="regQualification"
+                                            class="input"
+                                            type="text"
+                                            maxlength="120"
+                                            placeholder="e.g. M.Tech"
+                                        >
+                                    </div>
+                                    <div>
+                                        <label class="block
+                                           text-sm
+                                           font-semibold
+                                           mb-2">
+                                            Experience
+                                        </label>
+                                        <select id="regExperience" class="input">
+                                            <option value>
+                                                Select Experience
+                                            </option>
+                                            <option value="<1 year">
+                                                &lt;1 year
+                                            </option>
+                                            <option value="1-3 years">
+                                                1-3 years
+                                            </option>
+                                            <option value="3-5 years">
+                                                3-5 years
+                                            </option>
+                                            <option value="5-10 years">
+                                                5-10 years
+                                            </option>
+                                            <option value="10+ years">
+                                                10+ years
+                                            </option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <!-- Complete Address -->
                                 <div>
@@ -554,6 +727,19 @@
            transition">
                         Don't have an account?
                     </div>
+                    <!-- FACULTY LOGIN LINK -->
+                    <p class="text-center
+                  text-sm
+                  text-slate-500
+                  mt-3">
+                        Faculty?
+                        <a href="./faculty-login.html" class="font-bold
+                           text-navy
+                           hover:text-blue-600
+                           transition">
+                            Faculty Login
+                        </a>
+                    </p>
                 </div>
             </div>
         </section>

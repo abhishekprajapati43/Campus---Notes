@@ -21,7 +21,18 @@ CREATE TABLE IF NOT EXISTS users (
     role                  VARCHAR(20)   NOT NULL CHECK (role IN ('ADMIN', 'FACULTY', 'STUDENT')),
     aadhaar_number        VARCHAR(64),                     -- SHA-256 hash of the 12-digit Aadhaar (never exposed)
     address               TEXT,                            -- faculty postal address
+    gender                VARCHAR(20),                     -- optional, shown on profile pages
+    enrollment_number     VARCHAR(40),                     -- student roll / enrollment number
+    department            VARCHAR(120),                    -- faculty home department
+    qualification         VARCHAR(120),                    -- faculty highest qualification
+    experience            VARCHAR(60),                     -- faculty teaching/industry experience
+    course                VARCHAR(60),                     -- student academic profile (e.g. MCA)
+    branch                VARCHAR(60),                     -- student branch/specialisation
+    "year"                INTEGER,                         -- quoted: YEAR is reserved
+    semester              INTEGER,
     declaration_accepted  BOOLEAN       NOT NULL DEFAULT FALSE,
+    registration_status   VARCHAR(20)   NOT NULL DEFAULT 'APPROVED'
+                          CHECK (registration_status IN ('PENDING', 'APPROVED', 'REJECTED')),
     email_verified        BOOLEAN       NOT NULL DEFAULT FALSE,
     verification_token    VARCHAR(64),
     reset_token           VARCHAR(64),
@@ -82,9 +93,12 @@ CREATE TABLE IF NOT EXISTS notes (
     title       VARCHAR(200)  NOT NULL,
     subject     VARCHAR(120),
     course      VARCHAR(60),
+    branch      VARCHAR(40),
+    "year"      INTEGER,
     semester    INTEGER       NOT NULL DEFAULT 0,
     description VARCHAR(600),
     file_url    VARCHAR(600)  NOT NULL,                  -- Cloudinary URL
+    storage_path VARCHAR(300),                           -- Cloudinary public id (for deletion)
     course_id   BIGINT        REFERENCES courses (id) ON DELETE SET NULL,
     created_by  BIGINT,                                  -- users.id (soft ref: faculty/admin uploader)
     created_at  TIMESTAMP     NOT NULL DEFAULT NOW(),
@@ -100,11 +114,14 @@ CREATE TABLE IF NOT EXISTS pyqs (
     title       VARCHAR(200)  NOT NULL,
     subject     VARCHAR(120),
     course      VARCHAR(60),
+    branch      VARCHAR(40),
     semester    INTEGER       NOT NULL DEFAULT 0,
     exam_year   INTEGER,
     description VARCHAR(600),
     file_url    VARCHAR(600)  NOT NULL,                  -- Cloudinary URL
+    storage_path VARCHAR(300),                           -- Cloudinary public id (for deletion)
     course_id   BIGINT        REFERENCES courses (id) ON DELETE SET NULL,
+    created_by  BIGINT,                                  -- users.id (soft ref: faculty/admin uploader)
     created_at  TIMESTAMP     NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMP
 );
@@ -119,7 +136,9 @@ CREATE TABLE IF NOT EXISTS tnp_notes (
     topic       VARCHAR(120),
     description VARCHAR(600),
     file_url    VARCHAR(600)  NOT NULL,                  -- Cloudinary URL
+    storage_path VARCHAR(300),                           -- Cloudinary public id (for deletion)
     course_id   BIGINT        REFERENCES courses (id) ON DELETE SET NULL,
+    created_by  BIGINT,                                  -- users.id (soft ref: faculty/admin uploader)
     created_at  TIMESTAMP     NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMP
 );
@@ -132,10 +151,15 @@ CREATE TABLE IF NOT EXISTS timetables (
     title          VARCHAR(200) NOT NULL,
     course         VARCHAR(60),
     semester       INTEGER      NOT NULL DEFAULT 0,
+    exam_type      VARCHAR(60),                          -- e.g. "Mid Sem", "End Sem"
+    exam_year      INTEGER,                              -- exam-session year, e.g. 2026
     day_of_week    VARCHAR(40),
     effective_from DATE,
     file_url       VARCHAR(600) NOT NULL,                -- Cloudinary URL
+    storage_path   VARCHAR(300),                         -- Cloudinary public id (for deletion)
+    file_name      VARCHAR(255),                         -- original upload file name
     course_id      BIGINT       REFERENCES courses (id) ON DELETE SET NULL,
+    created_by     BIGINT,                               -- users.id (soft ref: faculty/admin uploader)
     created_at     TIMESTAMP    NOT NULL DEFAULT NOW(),
     updated_at     TIMESTAMP
 );

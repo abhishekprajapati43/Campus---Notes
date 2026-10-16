@@ -9,6 +9,9 @@ erDiagram
     USERS ||--o{ CERTIFICATES     : "is issued"
     USERS ||--o{ PURCHASES        : "reviews (admin)"
     USERS ||--o{ NOTES            : "uploads (faculty)"
+    USERS ||--o{ PYQS             : "uploads (faculty)"
+    USERS ||--o{ TNP_NOTES        : "uploads (faculty)"
+    USERS ||--o{ TIMETABLES       : "uploads (faculty)"
     USERS ||--o{ COURSES          : "creates (faculty)"
 
     COURSES ||--o{ PURCHASES      : "sold as"
@@ -28,7 +31,17 @@ erDiagram
         varchar role "ADMIN | FACULTY | STUDENT"
         varchar aadhaar_number "SHA-256 hash, 64 chars - never exposed"
         text address "faculty postal address"
+        varchar gender "optional - profile page"
+        varchar enrollment_number "student roll / enrollment number"
+        varchar department "faculty home department"
+        varchar qualification "faculty highest qualification"
+        varchar experience "faculty teaching/industry experience"
+        varchar course "student academic profile"
+        varchar branch "student branch/specialisation"
+        int "year"
+        int semester
         boolean declaration_accepted "faculty sign-up consent"
+        varchar registration_status "PENDING|APPROVED|REJECTED - faculty start PENDING"
         boolean email_verified
         varchar verification_token
         varchar reset_token
@@ -89,6 +102,7 @@ erDiagram
         int exam_year
         varchar file_url "Cloudinary"
         bigint course_id FK "NULL = free"
+        bigint created_by "users.id - faculty/admin uploader (soft ref)"
         timestamp created_at
     }
 
@@ -99,6 +113,7 @@ erDiagram
         varchar description
         varchar file_url "Cloudinary"
         bigint course_id FK "NULL = free"
+        bigint created_by "users.id - faculty/admin uploader (soft ref)"
         timestamp created_at
     }
 
@@ -107,10 +122,14 @@ erDiagram
         varchar title
         varchar course
         int semester
+        varchar exam_type "e.g. Mid Sem"
+        int exam_year
         varchar day_of_week
         date effective_from
         varchar file_url "Cloudinary"
+        varchar file_name "original upload name"
         bigint course_id FK "NULL = free"
+        bigint created_by "users.id - faculty/admin uploader (soft ref)"
         timestamp created_at
     }
 
@@ -160,7 +179,8 @@ erDiagram
 | `purchases.course_id` → `courses` | Which course was bought |
 | `purchases.reviewed_by` → `users` | Which admin approved/rejected it |
 | `notes.course_id` (nullable) | `NULL` = free note; set = only buyers of that course (plus admins/faculty) can read it. Same rule for `pyqs`, `tnp_notes`, `timetables` |
-| `notes.created_by`, `courses.created_by` (nullable) | `users.id` of the faculty/admin who uploaded it; used for faculty ownership (`GET/PUT /api/faculty/...`) and admin moderation. `NULL` = legacy/admin-seeded content |
+| `notes.created_by`, `courses.created_by`, `pyqs.created_by`, `tnp_notes.created_by`, `timetables.created_by` (nullable) | `users.id` of the faculty/admin who uploaded it; used for faculty ownership (`GET/PUT /api/faculty/...`) and admin moderation. `NULL` = legacy/admin-seeded content |
+| `users.registration_status` | Registration moderation: self-registered faculty are created `PENDING` and cannot log in until an admin moves them to `APPROVED` (Manage Faculty panel). `REJECTED` keeps the application on file but blocks access. Students and seeded admins are always `APPROVED` |
 | `notifications.user_id` (nullable) | `NULL` = broadcast to everyone; set = direct message |
 | `favorites.item_type + item_id` | Polymorphic pointer: one table can favorite any content type; uniqueness is `(user_id, item_type, item_id)` |
 | `certificates.user_id` (nullable) | Set = issued to that student; `NULL` = reusable template |

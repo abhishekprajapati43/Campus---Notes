@@ -161,9 +161,11 @@ function updateAuthRoleUI() {
     }
 
     if (authSubmitBtn) {
+        // Pages may override the login label
+        // (faculty-login.html shows "Sign In").
         authSubmitBtn.textContent = isSignupMode
             ? "Create Account"
-            : "Login";
+            : (authSubmitBtn.dataset.loginLabel || "Login");
     }
 
     if (forgotPasswordContainer) {
@@ -305,6 +307,18 @@ async function handleAuthSubmit(event) {
             const semester =
                 $("regSemester")?.value || "";
 
+            const studentPhone =
+                $("regStudentPhone")?.value?.trim() || "";
+
+            const studentAddress =
+                $("regStudentAddress")?.value?.trim() || "";
+
+            const studentGender =
+                $("regStudentGender")?.value?.trim() || "";
+
+            const enrollmentNumber =
+                $("regEnrollment")?.value?.trim() || "";
+
             if (
                 !name ||
                 !course ||
@@ -330,7 +344,11 @@ async function handleAuthSubmit(event) {
                 course,
                 branch,
                 year,
-                semester
+                semester,
+                phone: studentPhone,
+                address: studentAddress,
+                gender: studentGender,
+                enrollmentNumber
             });
 
             if (error) {
@@ -338,7 +356,9 @@ async function handleAuthSubmit(event) {
             }
 
             // -------------------------------------------------
-            // Email confirmation required
+            // Email confirmation required — the backend's own
+            // copy (role-aware: verification link for students,
+            // pending approval for faculty) wins when present.
             // -------------------------------------------------
 
             if (
@@ -346,7 +366,8 @@ async function handleAuthSubmit(event) {
                 !data?.session
             ) {
                 showAuthMessage(
-                    "Account created successfully. Please verify your email, then login.",
+                    data?.message ||
+                        "Account created successfully. Please verify your email, then login.",
                     "success"
                 );
 
@@ -367,11 +388,14 @@ async function handleAuthSubmit(event) {
             }
 
             // -------------------------------------------------
-            // Signup successful but no session
+            // Signup successful but no session — registration
+            // never returns a token, so the server's confirmation
+            // copy is shown as-is (no auto-login).
             // -------------------------------------------------
 
             showAuthMessage(
-                "Account created successfully. Please login.",
+                data?.message ||
+                    "Account created successfully. Please login.",
                 "success"
             );
 
@@ -401,6 +425,26 @@ async function handleAuthSubmit(event) {
         if (!data?.user) {
             throw new Error(
                 "Login failed. Please try again."
+            );
+        }
+
+        // =================================================
+        // FACULTY-ONLY LOGIN PAGE
+        // faculty-login.html rejects every non-faculty
+        // account here, BEFORE initializeAuthenticatedUser()
+        // fires the role-based redirect to another page.
+        // =================================================
+
+        if (
+            document.body?.dataset?.authScope === "faculty"
+            && data.user.role !== "faculty"
+        ) {
+            await logoutUser();
+
+            throw new Error(
+                data.user.role === "admin"
+                    ? "Administrator account detected. Please use the Administrator Login."
+                    : "This sign-in is for faculty members only. Students should use the Student Login."
             );
         }
 
@@ -443,7 +487,7 @@ async function handleAuthSubmit(event) {
             submitButton.textContent =
                 isSignupMode
                     ? "Create Account"
-                    : "Login";
+                    : (submitButton.dataset.loginLabel || "Login");
         }
     }
 }
@@ -486,14 +530,22 @@ const STUDENT_SIGNUP_FIELD_IDS = [
     "regCourse",
     "regBranch",
     "regYear",
-    "regSemester"
+    "regSemester",
+    "regStudentPhone",
+    "regStudentAddress",
+    "regStudentGender",
+    "regEnrollment"
 ];
 
 const FACULTY_SIGNUP_FIELD_IDS = [
     "regPhone",
     "regAadhaar",
     "regAddress",
-    "regConfirmPassword"
+    "regConfirmPassword",
+    "regFacultyGender",
+    "regDepartment",
+    "regQualification",
+    "regExperience"
 ];
 
 function clearSignupFields(fieldIds) {
@@ -640,6 +692,18 @@ async function handleDeclarationSubmit() {
     const address =
         $("regAddress")?.value?.trim() || "";
 
+    const gender =
+        $("regFacultyGender")?.value?.trim() || "";
+
+    const department =
+        $("regDepartment")?.value?.trim() || "";
+
+    const qualification =
+        $("regQualification")?.value?.trim() || "";
+
+    const experience =
+        $("regExperience")?.value?.trim() || "";
+
     try {
         if (submitButton) {
             submitButton.disabled = true;
@@ -659,7 +723,11 @@ async function handleDeclarationSubmit() {
             name,
             phone,
             aadhaarNumber,
-            address
+            address,
+            gender,
+            department,
+            qualification,
+            experience
         });
 
         if (error) {
@@ -669,8 +737,9 @@ async function handleDeclarationSubmit() {
         closeDeclarationModal();
 
         // -------------------------------------------------
-        // Email confirmation required — registration never
-        // returns a token, so no auto-login happens here.
+        // Registration never returns a token, so no auto-login
+        // happens here. The backend's role-aware copy ("pending
+        // approval" for faculty) is shown when it is present;
         // resetAuthForm() clears #authMessage, so the
         // confirmation is shown after the form reset.
         // -------------------------------------------------
@@ -680,7 +749,8 @@ async function handleDeclarationSubmit() {
         updateAuthRoleUI();
 
         showAuthMessage(
-            "Account created successfully. Please verify your email, then login.",
+            data?.message ||
+                "Account created successfully. Please verify your email, then login.",
             "success"
         );
 
@@ -2650,6 +2720,35 @@ export function setupEvents() {
             "updateAuthModeUI could not be executed:",
             error
         );
+    }
+
+    // =================================================
+    // DEEP LINKS
+    // login.html?mode=signup        -> open on signup
+    // login.html?mode=signup&role=faculty
+    //                               -> faculty signup
+    //                               (used by the
+    //  "Request Access" link on
+    //  faculty-login.html)
+    // =================================================
+
+    if ($("authForm")) {
+        const authParams =
+            new URLSearchParams(window.location.search);
+
+        if (authParams.get("mode") === "signup") {
+            setSignupMode(true);
+
+            setSignupRole(
+                authParams.get("role") === "faculty"
+                    ? "faculty"
+                    : "student"
+            );
+
+            resetAuthForm();
+            updateAuthRoleUI();
+            updateRegistrationFields();
+        }
     }
 
     // =================================================

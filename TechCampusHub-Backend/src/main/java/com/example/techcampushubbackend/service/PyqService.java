@@ -10,6 +10,7 @@ import com.example.techcampushubbackend.repository.CourseRepository;
 import com.example.techcampushubbackend.repository.PyqRepository;
 import com.example.techcampushubbackend.utils.CurrentUserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +45,34 @@ public class PyqService {
                 .toList();
     }
 
+    /**
+     * Faculty workspace listing - only the caller's own PYQs; admins see
+     * everything (including legacy rows with no recorded owner).
+     */
+    @Transactional(readOnly = true)
+    public List<PyqResponse> listOwn() {
+        User user = currentUserService.requireUser();
+        return pyqRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(pyq -> user.getRole() == Role.ADMIN
+                        || (pyq.getCreatedBy() != null
+                            && pyq.getCreatedBy().equals(user.getId())))
+                .map(PyqService::toResponse)
+                .toList();
+    }
+
+    /** Every PYQ linked to a course bundle (ownership checked by the caller). */
+    @Transactional(readOnly = true)
+    public List<PyqResponse> listByCourse(Long courseId) {
+        if (courseId == null) {
+            return List.of();
+        }
+        return pyqRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(pyq -> pyq.getCourseBundle() != null
+                        && courseId.equals(pyq.getCourseBundle().getId()))
+                .map(PyqService::toResponse)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public PyqResponse getVisible(Long id) {
         User user = currentUserService.requireUser();
@@ -56,6 +85,16 @@ public class PyqService {
 
     @Transactional
     public PyqResponse create(PyqRequest request) {
+        return doCreate(request, null);
+    }
+
+    /** Faculty/admin create that stamps the uploader's user id as the owner. */
+    @Transactional
+    public PyqResponse createAsOwner(PyqRequest request, Long ownerId) {
+        return doCreate(request, ownerId);
+    }
+
+    private PyqResponse doCreate(PyqRequest request, Long ownerId) {
         Pyq pyq = Pyq.builder()
                 .title(resolveTitle(request.title(), request.subject(), request.course()))
                 .subject(request.subject())
@@ -67,8 +106,25 @@ public class PyqService {
                 .fileUrl(requireFileUrl(request.fileUrl()))
                 .storagePath(request.storagePath())
                 .courseBundle(loadBundle(request.courseId()))
+                .createdBy(ownerId)
                 .build();
         return toResponse(pyqRepository.save(pyq));
+    }
+
+    /**
+     * Faculty workspace update: a faculty member may only edit a PYQ they own
+     * ({@code createdBy} == caller id); admins may edit any. Attempting to
+     * edit someone else's paper raises Spring's AccessDeniedException → 403.
+     */
+    @Transactional
+    public PyqResponse updateOwned(Long id, PyqRequest request) {
+        User user = currentUserService.requireUser();
+        Pyq pyq = require(id);
+        if (user.getRole() != Role.ADMIN
+                && (pyq.getCreatedBy() == null || !pyq.getCreatedBy().equals(user.getId()))) {
+            throw new AccessDeniedException("You can only edit PYQs you uploaded");
+        }
+        return update(id, request);
     }
 
     @Transactional

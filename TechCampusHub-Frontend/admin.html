@@ -59,6 +59,50 @@
                    max-w-[1500px]
                    mx-auto">
                         <!-- =================================================
+                 WELCOME
+            ================================================== -->
+                        <section class="card
+                       p-5
+                       md:p-6
+                       mb-5
+                       flex
+                       flex-col
+                       items-center
+                       text-center
+                       gap-5">
+                            <div class="flex
+                           items-center
+                           gap-4">
+                                <div class="w-14
+                               h-14
+                               rounded-2xl
+                               bg-blue-50
+                               flex
+                               items-center
+                               justify-center
+                               text-blue-700
+                               text-2xl">
+                                    <i class="fa-solid
+                                   fa-user-shield"></i>
+                                </div>
+                                <div>
+                                    <p class="text-slate-500
+                                   text-sm">
+                                        Admin Dashboard
+                                    </p>
+                                    <h2 id="adminWelcomeName" class="text-2xl
+                                   md:text-3xl
+                                   font-extrabold">
+                                        Admin!
+                                    </h2>
+                                    <p class="text-slate-500
+                                   mt-1">
+                                        Manage content, users and platform settings.
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+                        <!-- =================================================
                  ADMIN PANEL
             ================================================== -->
                         <section id="adminPanel" class="
@@ -78,6 +122,9 @@
                                 </button>
                                 <button type="button" data-admin-tab="users" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
                                     <i class="fa-solid fa-users mr-2"></i>Users
+                                </button>
+                                <button type="button" data-admin-tab="faculty" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
+                                    <i class="fa-solid fa-user-check mr-2"></i><span id="facultyTabLabel">Manage Faculty</span>
                                 </button>
                                 <button type="button" data-admin-tab="payments" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
                                     <i class="fa-solid fa-indian-rupee-sign mr-2"></i>Payments
@@ -104,16 +151,32 @@
                            md:justify-between
                            gap-4
                            mb-5">
-                                <div>
-                                    <h2 class="text-xl
+                                <div class="flex
+                           items-center
+                           gap-4">
+                                    <div class="w-12
+                               h-12
+                               rounded-xl
+                               bg-blue-50
+                               text-blue-600
+                               flex
+                               items-center
+                               justify-center
+                               text-xl">
+                                        <i class="fa-solid
+                                   fa-cloud-arrow-up"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-xl
                                    font-extrabold">
-                                        Administrator Panel
-                                    </h2>
-                                    <p class="text-sm
+                                            Administrator Panel
+                                        </h2>
+                                        <p class="text-sm
                                    text-slate-500">
-                                        Upload and manage
-                                college resources
-                                    </p>
+                                            Upload and manage
+                                    college resources
+                                        </p>
+                                    </div>
                                 </div>
                                 <select id="adminUploadType" class="input
                                max-w-xs">
@@ -306,17 +369,33 @@
            pt-6
            border-t
            border-slate-200">
-                                <div class="mb-4">
-                                    <h3 class="text-lg
+                                <div class="flex
+               items-center
+               gap-4
+               mb-4">
+                                    <div class="w-12
+                   h-12
+                   rounded-xl
+                   bg-slate-100
+                   text-slate-600
+                   flex
+                   items-center
+                   justify-center
+                   text-xl">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-xl
                    font-extrabold
                    text-slate-900">
-                                        Community Settings
-                                    </h3>
-                                    <p class="text-sm
+                                            Community Settings
+                                        </h3>
+                                        <p class="text-sm
                    text-slate-500
                    mt-1">
-                                        Update the Telegram link for students.
-                                    </p>
+                                            Update the Telegram link for students.
+                                        </p>
+                                    </div>
                                 </div>
                                 <div class="grid
                md:grid-cols-[1fr_auto]
@@ -365,17 +444,33 @@
                             <div data-admin-panel="payments" class="hidden mt-8
            pt-6
            border-t border-slate-200">
-                                <div class="mb-4">
-                                    <h3 class="text-lg
+                                <div class="flex
+               items-center
+               gap-4
+               mb-4">
+                                    <div class="w-12
+                   h-12
+                   rounded-xl
+                   bg-teal-50
+                   text-teal-600
+                   flex
+                   items-center
+                   justify-center
+                   text-xl">
+                                        <i class="fa-solid fa-indian-rupee-sign"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-xl
                    font-extrabold
                    text-slate-900">
-                                        Payment Settings
-                                    </h3>
-                                    <p class="text-sm
+                                            Payment Settings
+                                        </h3>
+                                        <p class="text-sm
                    text-slate-500
                    mt-1">
-                                        UPI ID shown to students during course checkout.
-                                    </p>
+                                            UPI ID shown to students during course checkout.
+                                        </p>
+                                    </div>
                                 </div>
                                 <div class="grid
                md:grid-cols-[1fr_auto]
@@ -418,18 +513,19 @@
            pt-6
            border-t border-slate-200">
                                 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                                    <div>
-                                        <h3 class="text-lg
-                   font-extrabold
-                   text-slate-900">
-                                            Payment Approvals
-                                        </h3>
-                                        <p class="text-sm
-                   text-slate-500
-                   mt-1">
-                                            Review UPI transaction references and unlock courses.
-                                            <span id="purchaseModeNote" class="text-amber-600 font-semibold"></span>
-                                        </p>
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-xl shrink-0">
+                                            <i class="fa-solid fa-indian-rupee-sign"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-xl font-extrabold text-slate-900">
+                                                Payment Approvals
+                                            </h3>
+                                            <p class="text-sm text-slate-500 mt-1">
+                                                Review UPI transaction references and unlock courses.
+                                                <span id="purchaseModeNote" class="text-amber-600 font-semibold"></span>
+                                            </p>
+                                        </div>
                                     </div>
                                     <button id="refreshPurchasesBtn" type="button" class="border
                    border-slate-200
@@ -456,13 +552,18 @@
 ================================================== -->
                             <div data-admin-panel="courses" class="hidden mt-8 pt-6 border-t border-slate-200">
                                 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                                    <div>
-                                        <h3 class="text-lg font-extrabold text-slate-900">
-                                            Course Management
-                                        </h3>
-                                        <p class="text-sm text-slate-500 mt-1">
-                                            Launch, edit or delete courses — update price and validity.
-                                        </p>
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0">
+                                            <i class="fa-solid fa-graduation-cap"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-xl font-extrabold text-slate-900">
+                                                Course Management
+                                            </h3>
+                                            <p class="text-sm text-slate-500 mt-1">
+                                                Launch, edit or delete courses — update price and validity.
+                                            </p>
+                                        </div>
                                     </div>
                                     <button id="refreshCoursesBtn" type="button" class="border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-5 py-2.5 rounded-xl transition">
                                         <i class="fa-solid fa-arrows-rotate mr-2"></i>
@@ -498,13 +599,18 @@
 ================================================== -->
                             <div data-admin-panel="users" class="hidden mt-8 pt-6 border-t border-slate-200">
                                 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                                    <div>
-                                        <h3 class="text-lg font-extrabold text-slate-900">
-                                            Users
-                                        </h3>
-                                        <p class="text-sm text-slate-500 mt-1">
-                                            Every registered account — students, faculty and admins — with role and premium access.
-                                        </p>
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center text-xl shrink-0">
+                                            <i class="fa-solid fa-users"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-xl font-extrabold text-slate-900">
+                                                Users
+                                            </h3>
+                                            <p class="text-sm text-slate-500 mt-1">
+                                                Every registered account — students, faculty and admins — with role and premium access.
+                                            </p>
+                                        </div>
                                     </div>
                                     <button id="refreshUsersBtn" type="button" class="border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-5 py-2.5 rounded-xl transition">
                                         <i class="fa-solid fa-arrows-rotate mr-2"></i>
@@ -518,17 +624,44 @@
                                 </div>
                             </div>
                             <!-- =================================================
+     MANAGE FACULTY
+================================================== -->
+                            <div data-admin-panel="faculty" class="hidden mt-8 pt-6 border-t border-slate-200">
+                                <div class="flex items-center gap-4 mb-5">
+                                    <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+                                        <i class="fa-solid fa-user-check"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-xl font-extrabold">
+                                            Manage Faculty
+                                        </h3>
+                                        <p class="text-sm text-slate-500 mt-1">
+                                            Approve or reject faculty registrations.
+                                        </p>
+                                    </div>
+                                </div>
+                                <p id="facultyAdminMessage" aria-live="polite" class="text-sm min-h-5 mb-3"></p>
+                                <div id="adminFacultyList" class="space-y-3">
+                                    <!-- Rendered by js/admin-users.js -->
+                                </div>
+                            </div>
+                            <!-- =================================================
      NOTIFICATION MANAGEMENT
 ================================================== -->
                             <div data-admin-panel="notifications" class="hidden mt-8 pt-6 border-t border-slate-200">
                                 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                                    <div>
-                                        <h3 class="text-lg font-extrabold text-slate-900">
-                                            Notification Management
-                                        </h3>
-                                        <p class="text-sm text-slate-500 mt-1">
-                                            Send notifications to all users, premium users or free users.
-                                        </p>
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shrink-0">
+                                            <i class="fa-regular fa-bell"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-xl font-extrabold text-slate-900">
+                                                Notification Management
+                                            </h3>
+                                            <p class="text-sm text-slate-500 mt-1">
+                                                Send notifications to all users, premium users or free users.
+                                            </p>
+                                        </div>
                                     </div>
                                     <button id="refreshNotificationsBtn" type="button" class="border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-5 py-2.5 rounded-xl transition">
                                         <i class="fa-solid fa-arrows-rotate mr-2"></i>
@@ -566,13 +699,18 @@
 ================================================== -->
                             <div data-admin-panel="certificates" class="hidden mt-8 pt-6 border-t border-slate-200">
                                 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                                    <div>
-                                        <h3 class="text-lg font-extrabold text-slate-900">
-                                            Certificate Links
-                                        </h3>
-                                        <p class="text-sm text-slate-500 mt-1">
-                                            Add, edit or delete the links students use to get certificates.
-                                        </p>
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl shrink-0">
+                                            <i class="fa-solid fa-certificate"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-xl font-extrabold text-slate-900">
+                                                Certificate Links
+                                            </h3>
+                                            <p class="text-sm text-slate-500 mt-1">
+                                                Add, edit or delete the links students use to get certificates.
+                                            </p>
+                                        </div>
                                     </div>
                                     <button id="refreshCertificatesBtn" type="button" class="border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-5 py-2.5 rounded-xl transition">
                                         <i class="fa-solid fa-arrows-rotate mr-2"></i>
@@ -601,13 +739,18 @@
 ================================================== -->
                             <div data-admin-panel="feedback" class="hidden mt-8 pt-6 border-t border-slate-200">
                                 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                                    <div>
-                                        <h3 class="text-lg font-extrabold text-slate-900">
-                                            Feedback & Ratings
-                                        </h3>
-                                        <p class="text-sm text-slate-500 mt-1">
-                                            Read student feedback and remove anything you don’t want.
-                                        </p>
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center text-xl shrink-0">
+                                            <i class="fa-solid fa-star"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="text-xl font-extrabold text-slate-900">
+                                                Feedback & Ratings
+                                            </h3>
+                                            <p class="text-sm text-slate-500 mt-1">
+                                                Read student feedback and remove anything you don’t want.
+                                            </p>
+                                        </div>
                                     </div>
                                     <button id="refreshFeedbackBtn" type="button" class="border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-5 py-2.5 rounded-xl transition">
                                         <i class="fa-solid fa-arrows-rotate mr-2"></i>
@@ -623,13 +766,18 @@
      AI CHATBOT SETTINGS
 ================================================== -->
                             <div data-admin-panel="settings" class="hidden mt-8 pt-6 border-t border-slate-200">
-                                <div class="mb-4">
-                                    <h3 class="text-lg font-extrabold text-slate-900">
-                                        AI Chatbot (Gemini)
-                                    </h3>
-                                    <p class="text-sm text-slate-500 mt-1">
-                                        Link opened by the “Open Gemini” button on student dashboards.
-                                    </p>
+                                <div class="flex items-center gap-4 mb-4">
+                                    <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-xl shrink-0">
+                                        <i class="fa-solid fa-gear"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-xl font-extrabold text-slate-900">
+                                            AI Chatbot (Gemini)
+                                        </h3>
+                                        <p class="text-sm text-slate-500 mt-1">
+                                            Link opened by the “Open Gemini” button on student dashboards.
+                                        </p>
+                                    </div>
                                 </div>
                                 <div class="grid md:grid-cols-[1fr_auto] gap-3 items-end">
                                     <div>

@@ -1,5 +1,9 @@
 package com.example.techcampushubbackend.dto;
 
+import com.example.techcampushubbackend.dto.ContentDtos.NoteResponse;
+import com.example.techcampushubbackend.dto.ContentDtos.PyqResponse;
+import com.example.techcampushubbackend.dto.ContentDtos.TimetableResponse;
+import com.example.techcampushubbackend.dto.ContentDtos.TnpNoteResponse;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -73,5 +77,19 @@ public final class CourseDtos {
             /** Total number of reviews left on this course. */
             long ratingCount,
             LocalDateTime createdAt) {
+    }
+
+    /**
+     * Faculty "Course" detail: one course plus every piece of content linked to
+     * it (all four upload categories), so a faculty member can open a course
+     * they launched and see its uploaded material in one call. Ownership of the
+     * course itself is enforced before this payload is built.
+     */
+    public record CourseContentResponse(
+            CourseResponse course,
+            List<NoteResponse> notes,
+            List<TnpNoteResponse> tnpNotes,
+            List<PyqResponse> pyqs,
+            List<TimetableResponse> timetables) {
     }
 }

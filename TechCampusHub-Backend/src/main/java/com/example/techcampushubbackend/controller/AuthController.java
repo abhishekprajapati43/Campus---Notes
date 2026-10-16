@@ -10,6 +10,7 @@ import com.example.techcampushubbackend.dto.AuthDtos.ResetPasswordRequest;
 import com.example.techcampushubbackend.dto.AuthDtos.UpdateProfileRequest;
 import com.example.techcampushubbackend.dto.AuthDtos.UserResponse;
 import com.example.techcampushubbackend.dto.AuthDtos.VerifyEmailRequest;
+import com.example.techcampushubbackend.entity.RegistrationStatus;
 import com.example.techcampushubbackend.security.AuthenticatedUser;
 import com.example.techcampushubbackend.service.AuthService;
 import com.example.techcampushubbackend.utils.CurrentUserService;
@@ -42,13 +43,18 @@ public class AuthController {
 
     @Operation(summary = "Register a new student or faculty account",
             description = "role defaults to STUDENT; FACULTY requires phone, aadhaarNumber, "
-                    + "address and declarationAccepted=true. ADMIN can never be self-registered.")
+                    + "address and declarationAccepted=true and lands as PENDING until an "
+                    + "admin approves it. ADMIN can never be self-registered.")
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> register(
             @Valid @RequestBody RegisterRequest request) {
+        UserResponse user = authService.register(request);
+        String message = user.registrationStatus() == RegistrationStatus.PENDING
+                ? "Account created. Your registration is pending approval by an administrator - "
+                        + "you will be able to log in once it is approved."
+                : "Account created. Check your email for the verification link.";
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Account created. Check your email for the verification link.",
-                        authService.register(request)));
+                .body(ApiResponse.ok(message, user));
     }
 
     @Operation(summary = "Login and receive a JWT")

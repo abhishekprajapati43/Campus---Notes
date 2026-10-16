@@ -10,6 +10,7 @@ import com.example.techcampushubbackend.repository.CourseRepository;
 import com.example.techcampushubbackend.repository.TnpNoteRepository;
 import com.example.techcampushubbackend.utils.CurrentUserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +45,34 @@ public class TnpNoteService {
                 .toList();
     }
 
+    /**
+     * Faculty workspace listing - only the caller's own TNP notes; admins see
+     * everything (including legacy rows with no recorded owner).
+     */
+    @Transactional(readOnly = true)
+    public List<TnpNoteResponse> listOwn() {
+        User user = currentUserService.requireUser();
+        return tnpNoteRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(note -> user.getRole() == Role.ADMIN
+                        || (note.getCreatedBy() != null
+                            && note.getCreatedBy().equals(user.getId())))
+                .map(TnpNoteService::toResponse)
+                .toList();
+    }
+
+    /** Every TNP note linked to a course bundle (ownership checked by the caller). */
+    @Transactional(readOnly = true)
+    public List<TnpNoteResponse> listByCourse(Long courseId) {
+        if (courseId == null) {
+            return List.of();
+        }
+        return tnpNoteRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(note -> note.getCourseBundle() != null
+                        && courseId.equals(note.getCourseBundle().getId()))
+                .map(TnpNoteService::toResponse)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public TnpNoteResponse getVisible(Long id) {
         User user = currentUserService.requireUser();
@@ -56,6 +85,16 @@ public class TnpNoteService {
 
     @Transactional
     public TnpNoteResponse create(TnpNoteRequest request) {
+        return doCreate(request, null);
+    }
+
+    /** Faculty/admin create that stamps the uploader's user id as the owner. */
+    @Transactional
+    public TnpNoteResponse createAsOwner(TnpNoteRequest request, Long ownerId) {
+        return doCreate(request, ownerId);
+    }
+
+    private TnpNoteResponse doCreate(TnpNoteRequest request, Long ownerId) {
         TnpNote note = TnpNote.builder()
                 .title(resolveTitle(request.title(), request.topic()))
                 .topic(request.topic())
@@ -63,8 +102,25 @@ public class TnpNoteService {
                 .fileUrl(requireFileUrl(request.fileUrl()))
                 .storagePath(request.storagePath())
                 .courseBundle(loadBundle(request.courseId()))
+                .createdBy(ownerId)
                 .build();
         return toResponse(tnpNoteRepository.save(note));
+    }
+
+    /**
+     * Faculty workspace update: a faculty member may only edit a TNP note they
+     * own ({@code createdBy} == caller id); admins may edit any. Attempting to
+     * edit someone else's note raises Spring's AccessDeniedException → 403.
+     */
+    @Transactional
+    public TnpNoteResponse updateOwned(Long id, TnpNoteRequest request) {
+        User user = currentUserService.requireUser();
+        TnpNote note = require(id);
+        if (user.getRole() != Role.ADMIN
+                && (note.getCreatedBy() == null || !note.getCreatedBy().equals(user.getId()))) {
+            throw new AccessDeniedException("You can only edit TNP notes you uploaded");
+        }
+        return update(id, request);
     }
 
     @Transactional

@@ -21,6 +21,7 @@
 
 import {
     apiPost,
+    apiFetchEnvelope,
     getAuthToken,
     getStoredUser,
     setAuthToken,
@@ -51,6 +52,47 @@ function buildSession(user) {
 }
 
 // =====================================================
+// Registration helper
+// =====================================================
+//
+// POST /api/auth/register answers with the raw user DTO plus a
+// role-aware copy in `$.message` ("pending approval" for
+// faculty, "check your email for the verification link" for
+// students). The full envelope is read here so that message can
+// be shown to the user; register never issues a JWT, so no
+// session is opened and nobody is auto-logged-in.
+// =====================================================
+
+async function postRegistration(body) {
+    const envelope = await apiFetchEnvelope(
+        "/api/auth/register",
+        {
+            method: "POST",
+            body,
+            auth: false
+        }
+    );
+
+    const user = normalizeUser(envelope?.data?.user);
+
+    setAuthToken(envelope?.data?.token || null);
+    setStoredUser(user);
+
+    emitAuthState("SIGNED_IN", buildSession(user));
+
+    return {
+        data: {
+            user,
+            session: buildSession(user),
+            // Server copy shown on the success path; callers fall
+            // back to their own text when the backend omits it.
+            message: envelope?.message || null
+        },
+        error: null
+    };
+}
+
+// =====================================================
 // Student Signup
 // =====================================================
 
@@ -61,37 +103,28 @@ export async function signUpStudent({
     course,
     branch,
     year,
-    semester
+    semester,
+    phone,
+    address,
+    gender,
+    enrollmentNumber
 }) {
     try {
-        const data = await apiPost(
-            "/api/auth/register",
-            {
-                name: String(name || "").trim(),
-                email: String(email || "").trim(),
-                password,
-                course: String(course || "").trim(),
-                branch: String(branch || "").trim(),
-                year: Number(year) || null,
-                semester: Number(semester) || null
-            },
-            false
-        );
+        const result = await postRegistration({
+            name: String(name || "").trim(),
+            email: String(email || "").trim(),
+            password,
+            course: String(course || "").trim(),
+            branch: String(branch || "").trim(),
+            year: Number(year) || null,
+            semester: Number(semester) || null,
+            phone: String(phone || "").trim(),
+            address: String(address || "").trim(),
+            gender: String(gender || "").trim(),
+            enrollmentNumber: String(enrollmentNumber || "").trim()
+        });
 
-        const user = normalizeUser(data?.user);
-
-        setAuthToken(data?.token || null);
-        setStoredUser(user);
-
-        emitAuthState("SIGNED_IN", buildSession(user));
-
-        return {
-            data: {
-                user,
-                session: buildSession(user)
-            },
-            error: null
-        };
+        return result;
     } catch (error) {
         console.error("Sign up error:", error);
 
@@ -112,38 +145,29 @@ export async function signUpFaculty({
     name,
     phone,
     aadhaarNumber,
-    address
+    address,
+    gender,
+    department,
+    qualification,
+    experience
 }) {
     try {
-        const data = await apiPost(
-            "/api/auth/register",
-            {
-                name: String(name || "").trim(),
-                email: String(email || "").trim(),
-                password,
-                role: "faculty",
-                phone: String(phone || "").trim(),
-                aadhaarNumber: String(aadhaarNumber || "").trim(),
-                address: String(address || "").trim(),
-                declarationAccepted: true
-            },
-            false
-        );
+        const result = await postRegistration({
+            name: String(name || "").trim(),
+            email: String(email || "").trim(),
+            password,
+            role: "faculty",
+            phone: String(phone || "").trim(),
+            aadhaarNumber: String(aadhaarNumber || "").trim(),
+            address: String(address || "").trim(),
+            gender: String(gender || "").trim(),
+            department: String(department || "").trim(),
+            qualification: String(qualification || "").trim(),
+            experience: String(experience || "").trim(),
+            declarationAccepted: true
+        });
 
-        const user = normalizeUser(data?.user);
-
-        setAuthToken(data?.token || null);
-        setStoredUser(user);
-
-        emitAuthState("SIGNED_IN", buildSession(user));
-
-        return {
-            data: {
-                user,
-                session: buildSession(user)
-            },
-            error: null
-        };
+        return result;
     } catch (error) {
         console.error("Faculty sign up error:", error);
 

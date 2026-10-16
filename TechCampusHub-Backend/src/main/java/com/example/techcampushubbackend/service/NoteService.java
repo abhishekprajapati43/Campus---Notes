@@ -72,6 +72,23 @@ public class NoteService {
                 .toList();
     }
 
+    /**
+     * Every note linked to a course bundle, used by the faculty "Course"
+     * detail view. Course ownership is checked by the caller - this only
+     * filters by bundle id.
+     */
+    @Transactional(readOnly = true)
+    public List<NoteResponse> listByCourse(Long courseId) {
+        if (courseId == null) {
+            return List.of();
+        }
+        return noteRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(note -> note.getCourseBundle() != null
+                        && courseId.equals(note.getCourseBundle().getId()))
+                .map(NoteService::toResponse)
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public NoteResponse getVisible(Long id) {
         User user = currentUserService.requireUser();

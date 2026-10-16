@@ -82,6 +82,24 @@ export function clearAuth() {
 // =====================================================
 
 export async function apiFetch(path, options = {}) {
+    const payload = await apiFetchEnvelope(path, options);
+
+    return payload ? payload.data : null;
+}
+
+// =====================================================
+// apiFetchEnvelope — same request, whole envelope
+// =====================================================
+//
+// Same request, auth and error handling as apiFetch, but it
+// resolves with the FULL { success, message, data } envelope so
+// callers can show the server's human-readable copy — e.g. the
+// role-aware registration confirmation from
+// POST /api/auth/register or the moderation confirmation from
+// PATCH /api/admin/users/{id}/registration-status.
+// =====================================================
+
+export async function apiFetchEnvelope(path, options = {}) {
     const {
         method = "GET",
         body,
@@ -137,7 +155,7 @@ export async function apiFetch(path, options = {}) {
         throw failure;
     }
 
-    return payload ? payload.data : null;
+    return payload;
 }
 
 // =====================================================
@@ -158,6 +176,15 @@ export function apiPut(path, body, auth = true) {
 
 export function apiPatch(path, body, auth = true) {
     return apiFetch(path, { method: "PATCH", body, auth });
+}
+
+/**
+ * PATCH variant that resolves with the full envelope instead of
+ * just `data` — for endpoints whose `message` must be echoed to
+ * the user (faculty approve/reject).
+ */
+export function apiPatchEnvelope(path, body, auth = true) {
+    return apiFetchEnvelope(path, { method: "PATCH", body, auth });
 }
 
 export function apiDelete(path, auth = true) {
@@ -357,6 +384,28 @@ export function normalizeUser(user) {
         enabled: user.enabled !== false,
         // Faculty sign-up declaration (always false for students).
         declaration_accepted: user.declarationAccepted === true,
+        // Moderation state of the registration ("PENDING" while an
+        // admin still has to review a faculty sign-up). Legacy or
+        // partial payloads may only carry the snake_case key, and
+        // anything without a status predates moderation -> APPROVED.
+        registration_status:
+            user.registrationStatus ||
+            user.registration_status ||
+            "APPROVED",
+        // Optional registration details. They are null when the
+        // payload predates these fields (older stored sessions),
+        // so lookups stay tolerant instead of throwing.
+        address: user.address ?? null,
+        gender: user.gender ?? null,
+        // Roll number for students; camelCase on the backend,
+        // snake_case on older payloads.
+        enrollment_number:
+            user.enrollmentNumber ??
+            user.enrollment_number ??
+            null,
+        department: user.department ?? null,
+        qualification: user.qualification ?? null,
+        experience: user.experience ?? null,
         created_at: user.createdAt
     };
 }
@@ -602,6 +651,20 @@ export function settingsToRequest(row = {}) {
  */
 export function setUserEnabled(userId, enabled) {
     return apiPatch(`/api/admin/users/${userId}/enabled`, { enabled });
+}
+
+/**
+ * Admin: moderate a faculty sign-up — status is "APPROVED" or
+ * "REJECTED" (the backend answers 400 for any other value and
+ * for non-faculty targets). Rejecting also kills the account's
+ * live JWT server-side.
+ *
+ * Resolves with the full envelope so the caller can show the
+ * server's confirmation copy ("Faculty member approved" /
+ * "Faculty application rejected").
+ */
+export function setUserRegistrationStatus(userId, status) {
+    return apiPatchEnvelope(`/api/admin/users/${userId}/registration-status`, { status });
 }
 
 /** Admin: permanently delete an account and all of its data. */

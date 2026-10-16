@@ -10,6 +10,7 @@ import com.example.techcampushubbackend.repository.CourseRepository;
 import com.example.techcampushubbackend.repository.FeedbackRepository;
 import com.example.techcampushubbackend.utils.CurrentUserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,6 +58,23 @@ public class CourseService {
     @Transactional(readOnly = true)
     public CourseResponse get(Long id) {
         return toResponse(require(id), ratingFor(id));
+    }
+
+    /**
+     * Ownership-checked lookup used by the faculty "Course" detail view: a
+     * faculty member may only open a course they launched (admins may open any).
+     * Non-owners get Spring's AccessDeniedException -> 403; missing ids -> 404.
+     */
+    @Transactional(readOnly = true)
+    public CourseResponse getOwned(Long id) {
+        User user = currentUserService.requireUser();
+        Course course = require(id);
+        if (user.getRole() != Role.ADMIN
+                && (course.getCreatedBy() == null
+                    || !course.getCreatedBy().equals(user.getId()))) {
+            throw new AccessDeniedException("You can only view content for your own courses");
+        }
+        return toResponse(course, ratingFor(id));
     }
 
     /** One batched query for the catalog's rating badges (no N+1). */

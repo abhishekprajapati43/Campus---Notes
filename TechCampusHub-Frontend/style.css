@@ -186,16 +186,18 @@
 
         /*
          * Admin panel tabs (admin.html)
+         * Crisp active state: white pill, soft shadow, blue-700 text.
          */
         .admin-tab-btn.active {
-            background: #2563eb;
-            color: #fff;
-            box-shadow: 0 6px 16px rgba(37, 99, 235, .28);
+            background: #fff;
+            color: #1d4ed8;
+            font-weight: 700;
+            box-shadow: 0 6px 16px rgba(15, 39, 74, .12);
         }
 
         .admin-tab-btn.active:hover {
-            background: #1d4ed8;
-            color: #fff;
+            background: #fff;
+            color: #1d4ed8;
         }
 
         @media (max-width: 900px) {

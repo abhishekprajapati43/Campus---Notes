@@ -2,7 +2,9 @@ package com.example.techcampushubbackend.controller;
 
 import com.example.techcampushubbackend.dto.ApiResponse;
 import com.example.techcampushubbackend.dto.AuthDtos.UserEnabledRequest;
+import com.example.techcampushubbackend.dto.AuthDtos.UserRegistrationStatusRequest;
 import com.example.techcampushubbackend.dto.AuthDtos.UserResponse;
+import com.example.techcampushubbackend.entity.RegistrationStatus;
 import com.example.techcampushubbackend.service.AuthService;
 import com.example.techcampushubbackend.utils.CurrentUserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,6 +54,22 @@ public class AdminUserController {
         return ResponseEntity.ok(ApiResponse.ok(
                 authService.setUserEnabled(id, request.enabled(),
                         currentUserService.requireUser().getId())));
+    }
+
+    @Operation(summary = "Approve or reject a faculty registration (admin)",
+            description = "Pending faculty cannot log in until status=APPROVED; "
+                    + "REJECTED keeps the application on file but blocks access. "
+                    + "Only FACULTY accounts are accepted.")
+    @PatchMapping("/{id}/registration-status")
+    public ResponseEntity<ApiResponse<UserResponse>> setRegistrationStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody UserRegistrationStatusRequest request) {
+        UserResponse user = authService.setRegistrationStatus(id, request.status(),
+                currentUserService.requireUser().getId());
+        String message = request.status() == RegistrationStatus.APPROVED
+                ? "Faculty member approved"
+                : "Faculty application rejected";
+        return ResponseEntity.ok(ApiResponse.ok(message, user));
     }
 
     @Operation(summary = "Delete a student account and all of its data (admin)",

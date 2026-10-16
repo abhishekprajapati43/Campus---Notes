@@ -1,5 +1,6 @@
 package com.example.techcampushubbackend.utils;
 
+import com.example.techcampushubbackend.entity.RegistrationStatus;
 import com.example.techcampushubbackend.entity.User;
 import com.example.techcampushubbackend.exception.ApiException;
 import com.example.techcampushubbackend.repository.UserRepository;
@@ -49,6 +50,17 @@ public class CurrentUserService {
         // still technically valid.
         if (!user.isEnabled()) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Your account has been suspended");
+        }
+        // Pending/rejected registrations cannot use an already-issued token
+        // either - approval is a hard gate on every faculty-scoped request.
+        RegistrationStatus status = user.registrationStatusOrDefault();
+        if (status == RegistrationStatus.PENDING) {
+            throw new ApiException(HttpStatus.FORBIDDEN,
+                    "Your faculty registration is pending approval");
+        }
+        if (status == RegistrationStatus.REJECTED) {
+            throw new ApiException(HttpStatus.FORBIDDEN,
+                    "Your registration was rejected by an administrator");
         }
         return user;
     }

@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -61,7 +62,19 @@ class FacultyAuthorizationIntegrationTest {
                                  "address":"Dept of CSE, TechCampus Hub","declarationAccepted":true}
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.data.role").value("FACULTY"));
+                .andExpect(jsonPath("$.data.role").value("FACULTY"))
+                .andExpect(jsonPath("$.data.registrationStatus").value("PENDING"));
+
+        // A pending faculty sign-up cannot log in - the approval gate fires first.
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"faculty.one@example.com","password":"Faculty@123"}
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value(containsString("pending approval")));
+        approveFaculty("faculty.one@example.com");
+
         facultyToken = login("faculty.one@example.com", "Faculty@123");
 
         // Faculty #2 - used as "another user" for ownership checks.
@@ -73,7 +86,9 @@ class FacultyAuthorizationIntegrationTest {
                                  "aadhaarNumber":"123456789013",
                                  "address":"Dept of ECE, TechCampus Hub","declarationAccepted":true}
                                 """))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.registrationStatus").value("PENDING"));
+        approveFaculty("faculty.two@example.com");
         otherFacultyToken = login("faculty.two@example.com", "Faculty@123");
 
         // Plain student for the negative-path tests.
@@ -84,7 +99,9 @@ class FacultyAuthorizationIntegrationTest {
                                  "password":"Student@123"}
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.data.role").value("STUDENT"));
+                .andExpect(jsonPath("$.data.role").value("STUDENT"))
+                // Students are never gated by the approval workflow.
+                .andExpect(jsonPath("$.data.registrationStatus").value("APPROVED"));
         studentToken = login("faculty.student@example.com", "Student@123");
     }
 
@@ -98,6 +115,32 @@ class FacultyAuthorizationIntegrationTest {
                 .andReturn();
         JsonNode node = objectMapper.readTree(result.getResponse().getContentAsString());
         return node.path("data").path("token").asString();
+    }
+
+    /** Resolves a user id through the admin Users panel listing. */
+    private long userIdByEmail(String email) throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/admin/users")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode data = objectMapper.readTree(result.getResponse().getContentAsString())
+                .path("data");
+        for (JsonNode user : data) {
+            if (email.equals(user.path("email").asString())) {
+                return user.path("id").asLong();
+            }
+        }
+        throw new IllegalStateException("No such user: " + email);
+    }
+
+    /** Admin approval action from the Manage Faculty panel. */
+    private void approveFaculty(String email) throws Exception {
+        mockMvc.perform(patch("/api/admin/users/" + userIdByEmail(email) + "/registration-status")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"APPROVED\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.registrationStatus").value("APPROVED"));
     }
 
     /** Creates a note through the faculty workspace and returns its id. */
@@ -524,5 +567,480 @@ class FacultyAuthorizationIntegrationTest {
         mockMvc.perform(delete("/api/admin/files?publicId=some-public-id")
                         .header("Authorization", "Bearer " + facultyToken))
                 .andExpect(status().isForbidden());
+    }
+
+    // --------------------------------------------------- registration approval
+
+    /** Registers a fresh faculty sign-up; always lands as PENDING. */
+    private void registerPendingFaculty(String email) throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Pending Faculty","email":"%s",
+                                 "password":"Faculty@123","phone":"9876543900","role":"FACULTY",
+                                 "aadhaarNumber":"123456789099","address":"Block B, TechCampus",
+                                 "declarationAccepted":true}
+                                """.formatted(email)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.registrationStatus").value("PENDING"));
+    }
+
+    @Test
+    void rejectedFacultyCannotLoginAndExistingTokensStopWorking() throws Exception {
+        registerPendingFaculty("faculty.reject@example.com");
+        approveFaculty("faculty.reject@example.com");
+        String token = login("faculty.reject@example.com", "Faculty@123");
+
+        // Sanity: the approved account works.
+        mockMvc.perform(get("/api/faculty/notes")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        // The admin rejects the application.
+        mockMvc.perform(patch("/api/admin/users/" + userIdByEmail("faculty.reject@example.com")
+                                + "/registration-status")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"REJECTED\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Faculty application rejected"))
+                .andExpect(jsonPath("$.data.registrationStatus").value("REJECTED"));
+
+        // Login is refused with an actionable message...
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"faculty.reject@example.com","password":"Faculty@123"}
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value(containsString("rejected")));
+
+        // ...and the already-issued JWT stops working immediately.
+        mockMvc.perform(get("/api/faculty/notes")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void onlyAdminsCanApproveOrRejectFaculty() throws Exception {
+        registerPendingFaculty("faculty.selfapprove@example.com");
+        long id = userIdByEmail("faculty.selfapprove@example.com");
+
+        // Another faculty member may not approve themselves.
+        mockMvc.perform(patch("/api/admin/users/" + id + "/registration-status")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"APPROVED\"}"))
+                .andExpect(status().isForbidden());
+
+        // Neither may a student.
+        mockMvc.perform(patch("/api/admin/users/" + id + "/registration-status")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"APPROVED\"}"))
+                .andExpect(status().isForbidden());
+
+        // Unknown account -> 404 for the admin.
+        mockMvc.perform(patch("/api/admin/users/999999/registration-status")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"APPROVED\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void registrationStatusOnlyAcceptsApproveOrRejectForFaculty() throws Exception {
+        registerPendingFaculty("faculty.badstatus@example.com");
+        long facultyId = userIdByEmail("faculty.badstatus@example.com");
+
+        // PENDING is never an admin-settable value.
+        mockMvc.perform(patch("/api/admin/users/" + facultyId + "/registration-status")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"PENDING\"}"))
+                .andExpect(status().isBadRequest());
+
+        // Unknown enum values fail deserialization with 400.
+        mockMvc.perform(patch("/api/admin/users/" + facultyId + "/registration-status")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"MAYBE\"}"))
+                .andExpect(status().isBadRequest());
+
+        // Students never pass through the faculty approval workflow.
+        long studentId = userIdByEmail("faculty.student@example.com");
+        mockMvc.perform(patch("/api/admin/users/" + studentId + "/registration-status")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"APPROVED\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsString("faculty")));
+    }
+
+    // ------------------------------------- faculty TNP / PYQ / timetable upload
+
+    private long createFacultyTnp(String token, String title) throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/faculty/tnp-notes")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"%s","topic":"Aptitude",
+                                 "fileUrl":"https://res.cloudinary.com/demo/raw/upload/tnp.pdf"}
+                                """.formatted(title)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        return objectMapper.readTree(result.getResponse().getContentAsString())
+                .path("data").path("id").asLong();
+    }
+
+    private long createFacultyPyq(String token, String title) throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/faculty/pyqs")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"%s","subject":"Maths","course":"MCA","semester":2,
+                                 "examYear":2025,
+                                 "fileUrl":"https://res.cloudinary.com/demo/raw/upload/pyq.pdf"}
+                                """.formatted(title)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        return objectMapper.readTree(result.getResponse().getContentAsString())
+                .path("data").path("id").asLong();
+    }
+
+    private long createFacultyTimetable(String token, String title) throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/faculty/timetables")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"%s","course":"MCA","semester":2,"examType":"Mid Sem",
+                                 "examYear":2026,
+                                 "fileUrl":"https://res.cloudinary.com/demo/raw/upload/tt.pdf"}
+                                """.formatted(title)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        return objectMapper.readTree(result.getResponse().getContentAsString())
+                .path("data").path("id").asLong();
+    }
+
+    @Test
+    void facultyCanCreateListAndUpdateOwnCategoryContent() throws Exception {
+        long tnpId = createFacultyTnp(facultyToken, "My TNP");
+        long pyqId = createFacultyPyq(facultyToken, "My PYQ");
+        long timetableId = createFacultyTimetable(facultyToken, "My Timetable");
+
+        // Admin-path content is not part of a faculty member's own list.
+        long adminTnpId = objectMapper.readTree(
+                        mockMvc.perform(post("/api/admin/tnp-notes")
+                                        .header("Authorization", "Bearer " + adminToken)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content("""
+                                                {"title":"Admin TNP",
+                                                 "fileUrl":"https://res.cloudinary.com/demo/raw/upload/a.pdf"}
+                                                """))
+                                .andExpect(status().isCreated())
+                                .andReturn().getResponse().getContentAsString())
+                .path("data").path("id").asLong();
+
+        mockMvc.perform(get("/api/faculty/tnp-notes")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].id", hasItem((int) tnpId)))
+                .andExpect(jsonPath("$.data[*].id", not(hasItem((int) adminTnpId))));
+
+        mockMvc.perform(get("/api/faculty/pyqs")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].id", hasItem((int) pyqId)));
+
+        mockMvc.perform(get("/api/faculty/timetables")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].id", hasItem((int) timetableId)));
+
+        // Updates of own content succeed.
+        mockMvc.perform(put("/api/faculty/tnp-notes/" + tnpId)
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"My TNP (edited)",
+                                 "fileUrl":"https://res.cloudinary.com/demo/raw/upload/tnp.pdf"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("My TNP (edited)"));
+
+        mockMvc.perform(put("/api/faculty/pyqs/" + pyqId)
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"My PYQ (edited)",
+                                 "fileUrl":"https://res.cloudinary.com/demo/raw/upload/pyq.pdf"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("My PYQ (edited)"));
+
+        mockMvc.perform(put("/api/faculty/timetables/" + timetableId)
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"My Timetable (edited)",
+                                 "fileUrl":"https://res.cloudinary.com/demo/raw/upload/tt.pdf"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("My Timetable (edited)"));
+    }
+
+    @Test
+    void facultyCannotEditCategoryContentTheyDoNotOwn() throws Exception {
+        long foreignTnp = createFacultyTnp(otherFacultyToken, "Other TNP");
+        long foreignPyq = createFacultyPyq(otherFacultyToken, "Other PYQ");
+        long foreignTimetable = createFacultyTimetable(otherFacultyToken, "Other Timetable");
+
+        mockMvc.perform(put("/api/faculty/tnp-notes/" + foreignTnp)
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Hijacked",
+                                 "fileUrl":"https://res.cloudinary.com/demo/raw/upload/x.pdf"}
+                                """))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(put("/api/faculty/pyqs/" + foreignPyq)
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Hijacked",
+                                 "fileUrl":"https://res.cloudinary.com/demo/raw/upload/x.pdf"}
+                                """))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(put("/api/faculty/timetables/" + foreignTimetable)
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Hijacked",
+                                 "fileUrl":"https://res.cloudinary.com/demo/raw/upload/x.pdf"}
+                                """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void facultyCannotDeleteCategoryContent() throws Exception {
+        long tnpId = createFacultyTnp(facultyToken, "Undeletable TNP");
+        long pyqId = createFacultyPyq(facultyToken, "Undeletable PYQ");
+        long timetableId = createFacultyTimetable(facultyToken, "Undeletable Timetable");
+
+        // No DELETE route exists under /api/faculty/** at all - the paths only
+        // answer PUT, so Spring replies 405 Method Not Allowed.
+        mockMvc.perform(delete("/api/faculty/tnp-notes/" + tnpId)
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isMethodNotAllowed());
+        mockMvc.perform(delete("/api/faculty/pyqs/" + pyqId)
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isMethodNotAllowed());
+        mockMvc.perform(delete("/api/faculty/timetables/" + timetableId)
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isMethodNotAllowed());
+
+        // The admin-only delete paths stay closed to faculty.
+        mockMvc.perform(delete("/api/admin/tnp-notes/" + tnpId)
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/admin/pyqs/" + pyqId)
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/admin/timetables/" + timetableId)
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isForbidden());
+
+        // Everything is still there.
+        mockMvc.perform(get("/api/faculty/tnp-notes")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].id", hasItem((int) tnpId)));
+        mockMvc.perform(get("/api/faculty/pyqs")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].id", hasItem((int) pyqId)));
+        mockMvc.perform(get("/api/faculty/timetables")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].id", hasItem((int) timetableId)));
+
+        // And the admin keeps exclusive delete rights.
+        mockMvc.perform(delete("/api/admin/tnp-notes/" + tnpId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/api/admin/pyqs/" + pyqId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk());
+        mockMvc.perform(delete("/api/admin/timetables/" + timetableId)
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void studentCannotUseFacultyCategoryEndpoints() throws Exception {
+        mockMvc.perform(post("/api/faculty/tnp-notes")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Student TNP",
+                                 "fileUrl":"https://res.cloudinary.com/demo/raw/upload/x.pdf"}
+                                """))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/faculty/pyqs")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Student PYQ",
+                                 "fileUrl":"https://res.cloudinary.com/demo/raw/upload/x.pdf"}
+                                """))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/faculty/timetables")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Student Timetable",
+                                 "fileUrl":"https://res.cloudinary.com/demo/raw/upload/x.pdf"}
+                                """))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/faculty/pyqs")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isForbidden());
+    }
+
+    // --------------------------------------------- profile fields at sign-up
+
+    @Test
+    void registrationProfileFieldsRoundTripThroughAuthMe() throws Exception {
+        // Student: gender + roll/enrollment number + phone/address are optional
+        // at sign-up but must come back from the JWT-protected profile fetch.
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Profile Field Student","email":"profile.fields.student@example.com",
+                                 "password":"Student@123","phone":"9123456780",
+                                 "address":"12, Knowledge Park, Pune","gender":"Female",
+                                 "enrollmentNumber":"ENR-2026-042"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.gender").value("Female"))
+                .andExpect(jsonPath("$.data.enrollmentNumber").value("ENR-2026-042"))
+                .andExpect(jsonPath("$.data.address").value("12, Knowledge Park, Pune"));
+
+        String profileStudentToken = login("profile.fields.student@example.com", "Student@123");
+        mockMvc.perform(get("/api/auth/me")
+                        .header("Authorization", "Bearer " + profileStudentToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.gender").value("Female"))
+                .andExpect(jsonPath("$.data.enrollmentNumber").value("ENR-2026-042"))
+                .andExpect(jsonPath("$.data.phone").value("9123456780"))
+                .andExpect(jsonPath("$.data.address").value("12, Knowledge Park, Pune"));
+
+        // Faculty: department/qualification/experience/gender as shown on the
+        // faculty profile page.
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Profile Field Faculty","email":"profile.fields.faculty@example.com",
+                                 "password":"Faculty@123","phone":"9876543219","role":"FACULTY",
+                                 "aadhaarNumber":"123456789015",
+                                 "address":"Dept of IT, TechCampus Hub","declarationAccepted":true,
+                                 "gender":"Male","department":"Information Technology",
+                                 "qualification":"M.Tech","experience":"5 years"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.department").value("Information Technology"))
+                .andExpect(jsonPath("$.data.qualification").value("M.Tech"))
+                .andExpect(jsonPath("$.data.experience").value("5 years"));
+        approveFaculty("profile.fields.faculty@example.com");
+
+        String profileFacultyToken = login("profile.fields.faculty@example.com", "Faculty@123");
+        mockMvc.perform(get("/api/auth/me")
+                        .header("Authorization", "Bearer " + profileFacultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.department").value("Information Technology"))
+                .andExpect(jsonPath("$.data.qualification").value("M.Tech"))
+                .andExpect(jsonPath("$.data.experience").value("5 years"))
+                .andExpect(jsonPath("$.data.gender").value("Male"))
+                .andExpect(jsonPath("$.data.address").value("Dept of IT, TechCampus Hub"))
+                // Registration date drives the "Registration Date" profile row.
+                .andExpect(jsonPath("$.data.createdAt").isNotEmpty());
+    }
+
+    // --------------------------------------------------- course content view
+
+    /** Creates content of any category linked to a course bundle; returns its id. */
+    private long createContentForCourse(String token, String path, String title, long courseId)
+            throws Exception {
+        MvcResult result = mockMvc.perform(post(path)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"%s","courseId":%d,
+                                 "fileUrl":"https://res.cloudinary.com/demo/raw/upload/bundle.pdf"}
+                                """.formatted(title, courseId)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        return objectMapper.readTree(result.getResponse().getContentAsString())
+                .path("data").path("id").asLong();
+    }
+
+    @Test
+    void facultyCanOpenOwnCourseWithAllUploadedContent() throws Exception {
+        MvcResult courseResult = mockMvc.perform(post("/api/faculty/courses")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Content Bundle Course","priceInr":99.00,"validityDays":60}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long courseId = objectMapper.readTree(courseResult.getResponse().getContentAsString())
+                .path("data").path("id").asLong();
+
+        long noteId = createContentForCourse(facultyToken, "/api/faculty/notes",
+                "Bundle Note", courseId);
+        long tnpId = createContentForCourse(facultyToken, "/api/faculty/tnp-notes",
+                "Bundle TNP", courseId);
+        long pyqId = createContentForCourse(facultyToken, "/api/faculty/pyqs",
+                "Bundle PYQ", courseId);
+        long timetableId = createContentForCourse(facultyToken, "/api/faculty/timetables",
+                "Bundle Timetable", courseId);
+
+        // The owner opens the course and sees every upload category together.
+        mockMvc.perform(get("/api/faculty/courses/" + courseId + "/content")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.course.id").value((int) courseId))
+                .andExpect(jsonPath("$.data.notes[*].id", hasItem((int) noteId)))
+                .andExpect(jsonPath("$.data.tnpNotes[*].id", hasItem((int) tnpId)))
+                .andExpect(jsonPath("$.data.pyqs[*].id", hasItem((int) pyqId)))
+                .andExpect(jsonPath("$.data.timetables[*].id", hasItem((int) timetableId)));
+
+        // Another faculty member may not open someone else's course (403)...
+        mockMvc.perform(get("/api/faculty/courses/" + courseId + "/content")
+                        .header("Authorization", "Bearer " + otherFacultyToken))
+                .andExpect(status().isForbidden());
+
+        // ...students are excluded at the controller level...
+        mockMvc.perform(get("/api/faculty/courses/" + courseId + "/content")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isForbidden());
+
+        // ...admins can audit any course's content...
+        mockMvc.perform(get("/api/faculty/courses/" + courseId + "/content")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.notes[*].id", hasItem((int) noteId)));
+
+        // ...and an unknown id is a 404 even for its own owner.
+        mockMvc.perform(get("/api/faculty/courses/999999/content")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isNotFound());
     }
 }
