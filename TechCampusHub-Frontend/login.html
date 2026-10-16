@@ -256,6 +256,34 @@
                     <form id="authForm" class="space-y-4">
                         <!-- SIGNUP FIELDS -->
                         <div id="signupFields" class="hidden space-y-4">
+                            <!-- SIGNUP ROLE TABS -->
+                            <div
+                                id="signupRoleTabs"
+                                role="tablist"
+                                aria-label="Account type"
+                                class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl"
+                            >
+                                <button
+                                    id="roleTabStudent"
+                                    type="button"
+                                    role="tab"
+                                    data-signup-role="student"
+                                    aria-selected="true"
+                                    class="py-2.5 rounded-lg text-sm font-bold transition bg-blue-600 text-white"
+                                >
+                                    Student
+                                </button>
+                                <button
+                                    id="roleTabFaculty"
+                                    type="button"
+                                    role="tab"
+                                    data-signup-role="faculty"
+                                    aria-selected="false"
+                                    class="py-2.5 rounded-lg text-sm font-bold transition text-slate-600 hover:text-slate-900"
+                                >
+                                    Faculty
+                                </button>
+                            </div>
                             <!-- Name -->
                             <div>
                                 <label class="block
@@ -272,72 +300,151 @@
                                     placeholder="Enter your full name"
                                 >
                             </div>
-                            <!-- Course / Branch -->
-                            <div class="grid
-                               sm:grid-cols-2
-                               gap-4">
-                                <div>
-                                    <label class="block
-                                       text-sm
-                                       font-semibold
-                                       mb-2">
-                                        Course
-                                    </label>
-                                    <select id="regCourse" class="input">
-                                        <option value>
-                                            Select Course
-                                        </option>
-                                        <option value="MCA">
-                                            MCA
-                                        </option>
-                                        <option value="B.Tech">
-                                            B.Tech
-                                        </option>
-                                    </select>
+                            <!-- =================================================
+                         STUDENT SIGNUP FIELDS
+                    ================================================== -->
+                            <div id="studentSignupFields" class="space-y-4">
+                                <!-- Course / Branch -->
+                                <div class="grid
+                                   sm:grid-cols-2
+                                   gap-4">
+                                    <div>
+                                        <label class="block
+                                           text-sm
+                                           font-semibold
+                                           mb-2">
+                                            Course
+                                        </label>
+                                        <select id="regCourse" class="input">
+                                            <option value>
+                                                Select Course
+                                            </option>
+                                            <option value="MCA">
+                                                MCA
+                                            </option>
+                                            <option value="B.Tech">
+                                                B.Tech
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block
+                                           text-sm
+                                           font-semibold
+                                           mb-2">
+                                            Branch
+                                        </label>
+                                        <select id="regBranch" class="input">
+                                            <option value>
+                                                Select Branch
+                                            </option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block
-                                       text-sm
-                                       font-semibold
-                                       mb-2">
-                                        Branch
-                                    </label>
-                                    <select id="regBranch" class="input">
-                                        <option value>
-                                            Select Branch
-                                        </option>
-                                    </select>
+                                <!-- Year / Semester -->
+                                <div class="grid
+                                   sm:grid-cols-2
+                                   gap-4">
+                                    <div>
+                                        <label class="block
+                                           text-sm
+                                           font-semibold
+                                           mb-2">
+                                            Year
+                                        </label>
+                                        <select id="regYear" class="input">
+                                            <option value>
+                                                Select Year
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block
+                                           text-sm
+                                           font-semibold
+                                           mb-2">
+                                            Semester
+                                        </label>
+                                        <select id="regSemester" class="input">
+                                            <option value>
+                                                Select Semester
+                                            </option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
-                            <!-- Year / Semester -->
-                            <div class="grid
-                               sm:grid-cols-2
-                               gap-4">
+                            <!-- =================================================
+                         FACULTY SIGNUP FIELDS
+                    ================================================== -->
+                            <div id="facultySignupFields" class="hidden space-y-4">
+                                <!-- Mobile Number -->
                                 <div>
                                     <label class="block
                                        text-sm
                                        font-semibold
                                        mb-2">
-                                        Year
+                                        Mobile Number
                                     </label>
-                                    <select id="regYear" class="input">
-                                        <option value>
-                                            Select Year
-                                        </option>
-                                    </select>
+                                    <input
+                                        id="regPhone"
+                                        autocomplete="tel"
+                                        class="input"
+                                        type="tel"
+                                        inputmode="numeric"
+                                        maxlength="10"
+                                        pattern="[0-9]{10}"
+                                        placeholder="10-digit mobile number"
+                                    >
                                 </div>
+                                <!-- Aadhaar Number -->
                                 <div>
                                     <label class="block
                                        text-sm
                                        font-semibold
                                        mb-2">
-                                        Semester
+                                        Aadhaar Number
                                     </label>
-                                    <select id="regSemester" class="input">
-                                        <option value>
-                                            Select Semester
-                                        </option>
-                                    </select>
+                                    <input
+                                        id="regAadhaar"
+                                        class="input"
+                                        type="text"
+                                        inputmode="numeric"
+                                        maxlength="12"
+                                        pattern="[0-9]{12}"
+                                        placeholder="12-digit Aadhaar number"
+                                    >
+                                </div>
+                                <!-- Complete Address -->
+                                <div>
+                                    <label class="block
+                                       text-sm
+                                       font-semibold
+                                       mb-2">
+                                        Complete Address
+                                    </label>
+                                    <textarea
+                                        id="regAddress"
+                                        class="input"
+                                        rows="3"
+                                        maxlength="500"
+                                        placeholder="Complete address"
+                                    ></textarea>
+                                </div>
+                                <!-- Confirm Password -->
+                                <div>
+                                    <label class="block
+                                       text-sm
+                                       font-semibold
+                                       mb-2">
+                                        Confirm Password
+                                    </label>
+                                    <input
+                                        id="regConfirmPassword"
+                                        autocomplete="new-password"
+                                        class="input"
+                                        type="password"
+                                        placeholder="Re-enter your password"
+                                    >
                                 </div>
                             </div>
                         </div>
@@ -639,6 +746,138 @@
                    text-center
                    min-h-5
                    mt-4"></p>
+            </div>
+        </div>
+        <!-- =========================================================
+     FACULTY DECLARATION MODAL
+========================================================= -->
+        <div id="declarationModal" class="hidden
+           fixed
+           inset-0
+           z-[210]
+           bg-slate-950/60
+           admin-modal
+           flex
+           items-center
+           justify-center
+           p-4">
+            <div class="bg-white
+               rounded-3xl
+               w-full
+               max-w-lg
+               max-h-[90vh]
+               overflow-y-auto
+               p-7
+               shadow-2xl
+               relative">
+                <!-- HEADER -->
+                <div class="text-center mb-6">
+                    <div class="w-14
+                       h-14
+                       mx-auto
+                       rounded-2xl
+                       bg-blue-50
+                       text-blue-600
+                       flex
+                       items-center
+                       justify-center
+                       text-xl">
+                        <i class="fa-solid fa-file-signature"></i>
+                    </div>
+                    <h2 class="text-2xl
+                       font-extrabold
+                       text-slate-900
+                       mt-4">
+                        Faculty Declaration
+                    </h2>
+                    <p class="text-sm
+                       text-slate-500
+                       mt-2">
+                        Please read the guidelines carefully
+                        before submitting your registration.
+                    </p>
+                </div>
+                <!-- =================================================
+             GUIDELINES
+        ================================================== -->
+                <div class="space-y-3
+                   text-sm
+                   text-slate-600
+                   leading-6
+                   bg-slate-50
+                   rounded-2xl
+                   p-5">
+                    <p>
+                        Upload only original content that you
+                        have created and have the right to
+                        publish.
+                    </p>
+                    <p>
+                        Do not upload material that infringes
+                        any copyright, licence or third-party
+                        right.
+                    </p>
+                    <p>
+                        Provide accurate titles, course details
+                        and metadata for every upload so
+                        students can find the right resources.
+                    </p>
+                    <p>
+                        Administrators may remove content that
+                        is inappropriate, inaccurate or violates
+                        these guidelines.
+                    </p>
+                </div>
+                <!-- AGREEMENT -->
+                <label class="flex items-start gap-3 mt-6
+                   cursor-pointer">
+                    <input
+                        id="declarationAgreeCheckbox"
+                        type="checkbox"
+                        class="mt-1
+                           w-4
+                           h-4
+                           shrink-0
+                           accent-blue-600">
+                    <span class="text-sm
+                       font-semibold
+                       text-slate-700">
+                        I agree to the declaration
+                    </span>
+                </label>
+                <!-- ACTIONS -->
+                <div class="grid
+                   grid-cols-2
+                   gap-3
+                   mt-6">
+                    <button id="declarationCancelBtn" type="button" class="border
+                       border-slate-200
+                       hover:bg-slate-50
+                       text-slate-700
+                       font-bold
+                       py-3
+                       rounded-xl
+                       transition">
+                        Cancel
+                    </button>
+                    <button id="declarationSubmitBtn" type="button" disabled class="bg-blue-600
+                       hover:bg-blue-700
+                       disabled:opacity-50
+                       disabled:cursor-not-allowed
+                       text-white
+                       font-bold
+                       py-3
+                       rounded-xl
+                       transition">
+                        Submit
+                    </button>
+                </div>
+                <!-- MESSAGE -->
+                <p id="declarationMessage" aria-live="polite" class="text-sm
+                   text-center
+                   min-h-5
+                   mt-4
+                   text-red-600"></p>
             </div>
         </div>
         <script src="./js/env.js"></script>

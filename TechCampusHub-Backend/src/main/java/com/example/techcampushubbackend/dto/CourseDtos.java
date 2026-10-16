@@ -33,6 +33,10 @@ public final class CourseDtos {
             @DecimalMin(value = "0", message = "priceInr must be >= 0")
             BigDecimal priceInr,
 
+            /** Optional discount anchor; null = no discount shown. */
+            @DecimalMin(value = "0", message = "mrpInr must be >= 0")
+            BigDecimal mrpInr,
+
             String thumbnailUrl,
 
             @Min(value = 1, message = "validityDays must be >= 1")
@@ -56,6 +60,8 @@ public final class CourseDtos {
             String category,
             String description,
             BigDecimal priceInr,
+            /** Discount anchor price; null = no discount shown. */
+            BigDecimal mrpInr,
             String thumbnailUrl,
             int validityDays,
             String slug,

@@ -21,9 +21,15 @@ export let currentStudent = null;
 
 
 
-// Current user's role: "student" or "admin"
+// Current user's role: "student, faculty or admin"
 
 export let currentUserRole = null;
+
+
+
+// Role chosen on the signup form: "student" or "faculty"
+
+export let signupRole = "student";
 
 
 
@@ -48,6 +54,32 @@ export function getSignupMode() {
 export function setSignupMode(value) {
 
     isSignupMode = Boolean(value);
+
+}
+
+
+
+
+
+// -----------------------------------------------------
+
+// Signup Role (Student / Faculty tabs)
+
+// -----------------------------------------------------
+
+
+
+export function getSignupRole() {
+
+    return signupRole;
+
+}
+
+
+
+export function setSignupRole(value) {
+
+    signupRole = value === "faculty" ? "faculty" : "student";
 
 }
 
@@ -106,5 +138,7 @@ export function clearUserState() {
     currentUserRole = null;
 
     isSignupMode = false;
+
+    signupRole = "student";
 
 }

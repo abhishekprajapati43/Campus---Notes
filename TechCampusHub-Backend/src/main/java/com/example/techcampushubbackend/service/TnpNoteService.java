@@ -97,7 +97,9 @@ public class TnpNoteService {
     }
 
     private boolean canAccess(TnpNote note, User user) {
-        if (note.getCourseBundle() == null || user.getRole() == Role.ADMIN) {
+        // ADMIN and FACULTY staff read all content regardless of purchases.
+        if (note.getCourseBundle() == null
+                || user.getRole() == Role.ADMIN || user.getRole() == Role.FACULTY) {
             return true;
         }
         return purchaseService.hasActiveAccess(user.getId(), note.getCourseBundle().getId());

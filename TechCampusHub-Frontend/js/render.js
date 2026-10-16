@@ -754,6 +754,114 @@ function metaBadge(
 
 // =====================================================
 
+// Uploader Attribution Badge
+
+// =====================================================
+
+//
+
+// Admin-only: note cards show who uploaded the note. The fields are
+
+// populated solely by GET /api/admin/notes, so student/faculty cards
+
+// (where created_by_name is null) render exactly as before.
+
+// =====================================================
+
+
+
+function uploaderBadge(note) {
+
+    if (!isAdmin() || !note.created_by_name) {
+
+        return "";
+
+    }
+
+    const role = String(note.created_by_role || "").toLowerCase();
+
+    const rolePill =
+
+        role === "faculty"
+
+            ? `
+
+                <span
+
+                    class="inline-flex items-center gap-1
+
+                           rounded-full px-2.5 py-1
+
+                           bg-violet-100 text-violet-700"
+
+                >
+
+                    Faculty
+
+                </span>
+
+              `
+
+            : role === "admin"
+
+                ? `
+
+                    <span
+
+                        class="inline-flex items-center gap-1
+
+                               rounded-full px-2.5 py-1
+
+                               bg-slate-100 text-slate-600"
+
+                    >
+
+                        Admin
+
+                    </span>
+
+                  `
+
+                : "";
+
+    return `
+
+        <span
+
+            class="inline-flex items-center gap-1
+
+                   rounded-full px-2.5 py-1
+
+                   bg-gray-100 text-gray-600"
+
+        >
+
+            <span class="font-medium">
+
+                Uploaded by
+
+            </span>
+
+            <span>
+
+                ${escapeHtml(note.created_by_name)}
+
+            </span>
+
+        </span>
+
+        ${rolePill}
+
+    `;
+
+}
+
+
+
+
+
+// =====================================================
+
 // Render Notes Card
 
 // =====================================================
@@ -824,7 +932,10 @@ async function renderNoteCard(note) {
                 courseTitleFor(note.course_id),
                 "bg-amber-50 text-amber-700"
               )]
-            : [])
+            : []),
+
+        // "" for non-admin payloads, so those cards are unchanged.
+        uploaderBadge(note)
 
     ].join("");
 

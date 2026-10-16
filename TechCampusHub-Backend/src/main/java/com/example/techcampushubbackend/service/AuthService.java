@@ -62,16 +62,46 @@ public class AuthService {
             throw new ConflictException("An account with this email already exists");
         }
 
+        Role role = resolveRegistrationRole(request.role());
+        String phone = blankToNull(request.phone());
+        String aadhaarHash = null;
+        String address = null;
+        boolean declarationAccepted = false;
+
+        if (role == Role.FACULTY) {
+            // Defense in depth beyond the DTO constraints: every faculty-only
+            // requirement is re-checked here so no code path can bypass it.
+            if (phone == null || !phone.matches("\\d{10}")) {
+                throw new BadRequestException("Faculty registration requires a 10-digit phone number");
+            }
+            if (request.aadhaarNumber() == null || !request.aadhaarNumber().trim().matches("\\d{12}")) {
+                throw new BadRequestException("Faculty registration requires a 12-digit aadhaarNumber");
+            }
+            if (request.address() == null || request.address().isBlank()) {
+                throw new BadRequestException("Faculty registration requires an address");
+            }
+            if (!Boolean.TRUE.equals(request.declarationAccepted())) {
+                throw new BadRequestException(
+                        "Faculty registration requires accepting the declaration (declarationAccepted must be true)");
+            }
+            aadhaarHash = sha256Hex(request.aadhaarNumber().trim());
+            address = request.address().trim();
+            declarationAccepted = true;
+        }
+
         User user = User.builder()
                 .name(request.name().trim())
                 .email(email)
                 .password(passwordEncoder.encode(request.password()))
-                .phone(blankToNull(request.phone()))
-                .role(Role.STUDENT)
+                .phone(phone)
+                .role(role)
                 .course(blankToNull(request.course()))
                 .branch(blankToNull(request.branch()))
                 .year(request.year())
                 .semester(request.semester())
+                .aadhaarNumber(aadhaarHash)
+                .address(address)
+                .declarationAccepted(declarationAccepted)
                 .emailVerified(false)
                 .verificationToken(TokenUtils.randomToken())
                 .enabled(true)
@@ -80,8 +110,38 @@ public class AuthService {
 
         emailService.sendVerificationEmail(user.getEmail(), user.getName(),
                 user.getVerificationToken());
-        log.info("Registered student {}", email);
+        log.info("Registered {} account {}", role, email);
         return toUserResponse(user);
+    }
+
+    /**
+     * Self-registration may only ever produce STUDENT or FACULTY. Anything else
+     * (notably ADMIN) is rejected - admins are seeded, never registered.
+     */
+    private static Role resolveRegistrationRole(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return Role.STUDENT;
+        }
+        String normalized = raw.trim().toUpperCase(java.util.Locale.ROOT);
+        if (Role.STUDENT.name().equals(normalized) || Role.FACULTY.name().equals(normalized)) {
+            return Role.valueOf(normalized);
+        }
+        throw new BadRequestException("role must be student or faculty");
+    }
+
+    /**
+     * SHA-256 hex hash (lowercase, 64 chars) of the raw Aadhaar number. Only the
+     * digest is persisted - the raw value never leaves this method, is never
+     * logged and is never returned by any endpoint.
+     */
+    private static String sha256Hex(String raw) {
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            return java.util.HexFormat.of()
+                    .formatHex(digest.digest(raw.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } catch (java.security.NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 digest unavailable", ex);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -275,6 +335,7 @@ public class AuthService {
         return new UserResponse(
                 user.getId(), user.getName(), user.getEmail(), user.getPhone(),
                 user.getRole(), user.isEmailVerified(), user.isEnabled(),
+                user.isDeclarationAccepted(),
                 user.getCourse(), user.getBranch(), user.getYear(), user.getSemester(),
                 user.getCreatedAt());
     }

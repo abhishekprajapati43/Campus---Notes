@@ -1,0 +1,162 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-label="Student studying at a desk with a laptop, notes and a stack of books">
+    <!-- =====================================================
+     TechCampus_Hub hero illustration
+     Hand-crafted isometric-style scene: student, desk, laptop
+     with a notes app, book stack, floating note/checklist
+     cards and a graduation cap. Brand palette only, no text
+     and no external assets.
+    ====================================================== -->
+    <defs>
+        <linearGradient id="heroBg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#f5f8fc"/>
+            <stop offset="1" stop-color="#e4eefb"/>
+        </linearGradient>
+        <radialGradient id="heroGlow" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stop-color="#2563eb" stop-opacity="0.16"/>
+            <stop offset="1" stop-color="#2563eb" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="heroBlue" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3b82f6"/>
+            <stop offset="1" stop-color="#2563eb"/>
+        </linearGradient>
+        <linearGradient id="heroNavy" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#1b3f7a"/>
+            <stop offset="1" stop-color="#102a56"/>
+        </linearGradient>
+        <linearGradient id="heroScreen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset="1" stop-color="#eaf2fd"/>
+        </linearGradient>
+        <linearGradient id="heroAmber" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#fbbf24"/>
+            <stop offset="1" stop-color="#f59e0b"/>
+        </linearGradient>
+        <filter id="heroShadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#102a56" flood-opacity="0.14"/>
+        </filter>
+        <filter id="heroShadowSoft" x="-40%" y="-40%" width="180%" height="180%">
+            <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#102a56" flood-opacity="0.12"/>
+        </filter>
+        <clipPath id="heroScreenClip">
+            <rect x="276" y="250" width="88" height="68" rx="5"/>
+        </clipPath>
+    </defs>
+
+    <!-- Background -->
+    <rect width="640" height="480" rx="28" fill="url(#heroBg)"/>
+    <circle cx="560" cy="70" r="150" fill="url(#heroGlow)"/>
+    <circle cx="80" cy="420" r="150" fill="url(#heroGlow)"/>
+
+    <!-- Ambient sparkles -->
+    <circle cx="238" cy="86" r="4" fill="#2563eb" opacity="0.35"/>
+    <circle cx="604" cy="312" r="5" fill="#2563eb" opacity="0.22"/>
+    <circle cx="414" cy="52" r="3.5" fill="#f59e0b" opacity="0.55"/>
+    <circle cx="46" cy="96" r="3" fill="#2563eb" opacity="0.25"/>
+    <path d="M560 344 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z" fill="#2563eb" opacity="0.28"/>
+    <path d="M52 296 l2.5 6 6 2.5 -6 2.5 -2.5 6 -2.5 -6 -6 -2.5 6 -2.5 z" fill="#f59e0b" opacity="0.5"/>
+
+    <!-- Graduation cap (floating, top-left) -->
+    <g transform="rotate(-8 132 88)" filter="url(#heroShadowSoft)">
+        <path d="M100 84 L100 106 C100 116 164 116 164 106 L164 84 L132 98 Z" fill="#16346b"/>
+        <path d="M132 46 L196 72 L132 98 L68 72 Z" fill="url(#heroNavy)"/>
+        <path d="M196 72 L196 100" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" fill="none"/>
+        <circle cx="196" cy="106" r="6" fill="#f59e0b"/>
+    </g>
+
+    <!-- Floating PDF note card (left) -->
+    <g transform="rotate(-6 130 196)" filter="url(#heroShadow)">
+        <rect x="64" y="150" width="136" height="94" rx="16" fill="#ffffff"/>
+        <rect x="80" y="166" width="44" height="58" rx="7" fill="#2563eb"/>
+        <path d="M108 166 L124 182 L108 182 Z" fill="#1d4ed8"/>
+        <rect x="88" y="188" width="28" height="4" rx="2" fill="#ffffff" opacity="0.85"/>
+        <rect x="88" y="198" width="20" height="4" rx="2" fill="#bfdbfe" opacity="0.9"/>
+        <rect x="88" y="208" width="24" height="4" rx="2" fill="#bfdbfe" opacity="0.9"/>
+        <rect x="136" y="176" width="48" height="7" rx="3.5" fill="#c3d2e8"/>
+        <rect x="136" y="190" width="36" height="7" rx="3.5" fill="#dbe4ef"/>
+        <g transform="translate(152 216) scale(1.15)">
+            <path d="M0 -10 L2.245 -3.09 L9.511 -3.09 L3.633 1.181 L5.878 8.09 L0 3.82 L-5.878 8.09 L-3.633 1.181 L-9.511 -3.09 L-2.245 -3.09 Z" fill="#f59e0b"/>
+        </g>
+    </g>
+
+    <!-- Floating checklist card (top-right) -->
+    <g transform="rotate(4 535 132)" filter="url(#heroShadow)">
+        <rect x="460" y="80" width="150" height="104" rx="16" fill="#ffffff"/>
+        <circle cx="486" cy="106" r="12" fill="#eff6ff"/>
+        <rect x="481" y="99" width="10" height="14" rx="2" fill="#2563eb"/>
+        <rect x="504" y="101" width="64" height="7" rx="3.5" fill="#1e3a6e" opacity="0.85"/>
+        <circle cx="484" cy="132" r="9" fill="#10b981"/>
+        <path d="M480 132 l2.8 2.9 5.2 -5.8" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="502" y="128.5" width="84" height="7" rx="3.5" fill="#c3d2e8"/>
+        <circle cx="484" cy="156" r="9" fill="#2563eb"/>
+        <path d="M480 156 l2.8 2.9 5.2 -5.8" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="502" y="152.5" width="64" height="7" rx="3.5" fill="#dbe4ef"/>
+    </g>
+
+    <!-- Floating star badge (right) -->
+    <g transform="rotate(10 584 262)" filter="url(#heroShadowSoft)">
+        <rect x="554" y="232" width="60" height="60" rx="20" fill="url(#heroAmber)"/>
+        <g transform="translate(584 262) scale(1.6)">
+            <path d="M0 -10 L2.245 -3.09 L9.511 -3.09 L3.633 1.181 L5.878 8.09 L0 3.82 L-5.878 8.09 L-3.633 1.181 L-9.511 -3.09 L-2.245 -3.09 Z" fill="#ffffff"/>
+        </g>
+    </g>
+
+    <!-- Floor shadow -->
+    <ellipse cx="322" cy="428" rx="236" ry="20" fill="#102a56" opacity="0.08"/>
+
+    <!-- Student -->
+    <rect x="308" y="232" width="24" height="18" rx="8" fill="#e8b08b"/>
+    <path d="M272 284 C264 306 274 320 292 324" stroke="#2563eb" stroke-width="20" stroke-linecap="round" fill="none"/>
+    <path d="M368 284 C376 306 366 320 348 324" stroke="#2563eb" stroke-width="20" stroke-linecap="round" fill="none"/>
+    <path d="M320 244 C286 244 262 264 256 296 L250 340 L390 340 L384 296 C378 264 354 244 320 244 Z" fill="url(#heroBlue)"/>
+    <path d="M312 252 L310 266" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    <path d="M328 252 L330 266" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    <circle cx="310" cy="268" r="2.5" fill="#ffffff"/>
+    <circle cx="330" cy="268" r="2.5" fill="#ffffff"/>
+    <circle cx="320" cy="208" r="36" fill="#f2c19e"/>
+    <path d="M284 210 C278 172 296 158 320 158 C344 158 362 172 356 210 C350 188 338 180 320 180 C302 180 290 188 284 210 Z" fill="#22375f"/>
+    <circle cx="308" cy="212" r="3.5" fill="#102a56"/>
+    <circle cx="332" cy="212" r="3.5" fill="#102a56"/>
+    <path d="M311 224 Q320 232 329 224" stroke="#102a56" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+
+    <!-- Desk -->
+    <rect x="164" y="354" width="16" height="72" rx="8" fill="#16346b"/>
+    <rect x="460" y="354" width="16" height="72" rx="8" fill="#16346b"/>
+    <rect x="128" y="330" width="384" height="16" rx="8" fill="url(#heroNavy)"/>
+    <rect x="136" y="344" width="368" height="10" rx="5" fill="#0c2148"/>
+
+    <!-- Laptop with notes app -->
+    <rect x="270" y="244" width="100" height="80" rx="9" fill="url(#heroNavy)"/>
+    <rect x="276" y="250" width="88" height="68" rx="5" fill="url(#heroScreen)"/>
+    <g clip-path="url(#heroScreenClip)">
+        <rect x="276" y="250" width="20" height="68" fill="#2563eb"/>
+        <circle cx="286" cy="262" r="2.5" fill="#ffffff" opacity="0.85"/>
+        <circle cx="286" cy="274" r="2.5" fill="#ffffff" opacity="0.6"/>
+        <circle cx="286" cy="286" r="2.5" fill="#ffffff" opacity="0.6"/>
+        <rect x="302" y="256" width="46" height="7" rx="3.5" fill="#1e3a6e" opacity="0.85"/>
+        <rect x="302" y="270" width="54" height="5" rx="2.5" fill="#c3d2e8"/>
+        <rect x="302" y="280" width="40" height="5" rx="2.5" fill="#dbe4ef"/>
+        <circle cx="305" cy="295" r="5" fill="#10b981"/>
+        <path d="M302.8 295 l1.6 1.7 3 -3.4" stroke="#ffffff" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="314" y="292.5" width="42" height="5" rx="2.5" fill="#c3d2e8"/>
+        <circle cx="305" cy="308" r="5" fill="#10b981"/>
+        <path d="M302.8 308 l1.6 1.7 3 -3.4" stroke="#ffffff" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="314" y="305.5" width="32" height="5" rx="2.5" fill="#dbe4ef"/>
+    </g>
+    <rect x="262" y="322" width="116" height="12" rx="6" fill="#cbd5e1"/>
+    <rect x="262" y="330" width="116" height="4" rx="2" fill="#94a3b8"/>
+    <circle cx="294" cy="325" r="10" fill="#f2c19e"/>
+    <circle cx="346" cy="325" r="10" fill="#f2c19e"/>
+
+    <!-- Book stack on the desk -->
+    <rect x="424" y="316" width="96" height="14" rx="5" fill="#16346b"/>
+    <rect x="504" y="320" width="10" height="6" rx="3" fill="#f8fafc"/>
+    <g transform="rotate(-2 470 306)">
+        <rect x="430" y="302" width="86" height="14" rx="5" fill="#2563eb"/>
+        <rect x="504" y="306" width="8" height="6" rx="3" fill="#dbeafe"/>
+    </g>
+    <g transform="rotate(2 472 292)">
+        <rect x="436" y="290" width="78" height="13" rx="5" fill="url(#heroAmber)"/>
+        <rect x="502" y="293" width="8" height="7" rx="3.5" fill="#fef3c7"/>
+        <rect x="446" y="290" width="6" height="20" rx="2" fill="#10b981"/>
+    </g>
+</svg>

@@ -64,4 +64,8 @@ public class Note extends Auditable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id")
     private Course courseBundle;
+
+    /** User id of the faculty/admin who uploaded this note (soft reference to users.id). */
+    @Column(name = "created_by")
+    private Long createdBy;
 }

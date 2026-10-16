@@ -15,12 +15,15 @@ import {
 import {
     setSignupMode,
     isSignupMode,
+    setSignupRole,
+    getSignupRole,
     currentUserRole
 } from "./state.js";
 
 import {
     signIn,
     signUpStudent,
+    signUpFaculty,
     resetPassword,
     onAuthStateChange
 } from "./auth.js";
@@ -28,6 +31,7 @@ import {
 import {
     initializeAuthenticatedUser,
     updateAuthModeUI,
+    syncSignupRoleUI,
     showAuthMessage,
     resetAuthForm,
     logoutUser,
@@ -126,7 +130,6 @@ function getErrorMessage(error) {
 // =====================================================
 
 function updateAuthRoleUI() {
-    const authHeading = $("authHeading");
     const authMessage = $("authMessage");
     const signupFields = $("signupFields");
     const toggleAuthMode = $("toggleAuthMode");
@@ -134,14 +137,13 @@ function updateAuthRoleUI() {
     const forgotPasswordContainer = $("forgotPasswordContainer");
 
     // -------------------------------------------------
-    // Main auth screen = Student
+    // Main auth screen = Student (or Faculty while the
+    // signup role tabs say so). Heading, subtitle and
+    // the role field groups live in syncSignupRoleUI()
+    // so updateAuthModeUI() can never overwrite them.
     // -------------------------------------------------
 
-    if (authHeading) {
-        authHeading.textContent = isSignupMode
-            ? "Create Student Account"
-            : "Welcome Back";
-    }
+    syncSignupRoleUI();
 
     if (signupFields) {
         signupFields.classList.toggle(
@@ -156,14 +158,6 @@ function updateAuthRoleUI() {
         toggleAuthMode.textContent = isSignupMode
             ? "Already have an account? Login"
             : "Don't have an account? Sign up";
-    }
-
-    const authSubtitle = $("authSubtitle");
-
-    if (authSubtitle) {
-        authSubtitle.textContent = isSignupMode
-            ? "Create your account to unlock notes, papers and timetables."
-            : "Sign in to access your personalized learning resources.";
     }
 
     if (authSubmitBtn) {
@@ -224,6 +218,78 @@ async function handleAuthSubmit(event) {
         // =================================================
 
         if (isSignupMode) {
+            // =================================================
+            // FACULTY SIGNUP
+            // Validation only — the API is NOT called here.
+            // On success the Declaration Form modal opens and
+            // its final submit performs the registration.
+            // =================================================
+
+            if (getSignupRole() === "faculty") {
+                const name =
+                    $("regName")?.value?.trim() || "";
+
+                const phone =
+                    $("regPhone")?.value?.trim() || "";
+
+                const aadhaarNumber =
+                    $("regAadhaar")?.value?.trim() || "";
+
+                const address =
+                    $("regAddress")?.value?.trim() || "";
+
+                const confirmPassword =
+                    $("regConfirmPassword")?.value || "";
+
+                if (!name) {
+                    showAuthMessage(
+                        "Please enter your full name.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                if (!/^\d{10}$/.test(phone)) {
+                    showAuthMessage(
+                        "Please enter a valid 10-digit mobile number.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                if (!/^\d{12}$/.test(aadhaarNumber)) {
+                    showAuthMessage(
+                        "Please enter a valid 12-digit Aadhaar number.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                if (!address) {
+                    showAuthMessage(
+                        "Please enter your complete address.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                if (confirmPassword !== password) {
+                    showAuthMessage(
+                        "Passwords do not match. Please re-enter the password.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                openDeclarationModal();
+
+                return;
+            }
             const name =
                 $("regName")?.value?.trim() || "";
 
@@ -396,12 +462,254 @@ function handleAuthModeToggle(event) {
         newSignupMode
     );
 
+    // Modes always come back on the Student tab.
+    setSignupRole("student");
+
     resetAuthForm();
 
     updateAuthRoleUI();
 
     if (newSignupMode) {
         updateRegistrationFields();
+    }
+}
+
+// =====================================================
+// SIGNUP ROLE TABS (Student / Faculty)
+// =====================================================
+
+// Field ids that belong to only one of the two signup
+// forms. Switching tabs clears the other form so a
+// hidden input can never fail HTML5 validation.
+
+const STUDENT_SIGNUP_FIELD_IDS = [
+    "regCourse",
+    "regBranch",
+    "regYear",
+    "regSemester"
+];
+
+const FACULTY_SIGNUP_FIELD_IDS = [
+    "regPhone",
+    "regAadhaar",
+    "regAddress",
+    "regConfirmPassword"
+];
+
+function clearSignupFields(fieldIds) {
+    fieldIds.forEach(id => {
+        const field = $(id);
+
+        if (field) {
+            field.value = "";
+        }
+    });
+}
+
+function handleSignupRoleTab(event) {
+    const role =
+        event.currentTarget?.dataset?.signupRole === "faculty"
+            ? "faculty"
+            : "student";
+
+    setSignupRole(role);
+
+    // -------------------------------------------------
+    // Drop stale validation feedback
+    // -------------------------------------------------
+
+    const message = $("authMessage");
+
+    if (message) {
+        message.textContent = "";
+        message.classList.add("hidden");
+    }
+
+    // -------------------------------------------------
+    // Reset the fields that belong to the other role
+    // -------------------------------------------------
+
+    clearSignupFields(
+        role === "faculty"
+            ? STUDENT_SIGNUP_FIELD_IDS
+            : FACULTY_SIGNUP_FIELD_IDS
+    );
+
+    // -------------------------------------------------
+    // Refresh heading, subtitle, tabs and field groups
+    // through both existing auth UI refresh functions
+    // -------------------------------------------------
+
+    updateAuthRoleUI();
+    updateAuthModeUI();
+}
+
+// =====================================================
+// FACULTY DECLARATION MODAL
+// =====================================================
+
+function openDeclarationModal() {
+    const modal =
+        $("declarationModal");
+
+    const checkbox =
+        $("declarationAgreeCheckbox");
+
+    const submitButton =
+        $("declarationSubmitBtn");
+
+    const message =
+        $("declarationMessage");
+
+    if (modal) {
+        modal.classList.remove("hidden");
+    }
+
+    if (checkbox) {
+        checkbox.checked = false;
+    }
+
+    // Final submit stays disabled until the user agrees.
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = "Submit";
+    }
+
+    if (message) {
+        message.textContent = "";
+    }
+}
+
+function closeDeclarationModal() {
+    const modal =
+        $("declarationModal");
+
+    if (modal) {
+        modal.classList.add("hidden");
+    }
+}
+
+function handleDeclarationAgreement(event) {
+    const submitButton =
+        $("declarationSubmitBtn");
+
+    if (submitButton) {
+        submitButton.disabled =
+            !event.currentTarget?.checked;
+    }
+}
+
+async function handleDeclarationSubmit() {
+    const checkbox =
+        $("declarationAgreeCheckbox");
+
+    const submitButton =
+        $("declarationSubmitBtn");
+
+    const message =
+        $("declarationMessage");
+
+    // -------------------------------------------------
+    // Consent is mandatory before any API call
+    // -------------------------------------------------
+
+    if (!checkbox?.checked) {
+        if (message) {
+            message.textContent =
+                "Please agree to the declaration to continue.";
+        }
+
+        return;
+    }
+
+    const email =
+        $("authEmail")?.value?.trim() || "";
+
+    const password =
+        $("authPassword")?.value || "";
+
+    const name =
+        $("regName")?.value?.trim() || "";
+
+    const phone =
+        $("regPhone")?.value?.trim() || "";
+
+    const aadhaarNumber =
+        $("regAadhaar")?.value?.trim() || "";
+
+    const address =
+        $("regAddress")?.value?.trim() || "";
+
+    try {
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = "Submitting...";
+        }
+
+        if (message) {
+            message.textContent = "";
+        }
+
+        const {
+            data,
+            error
+        } = await signUpFaculty({
+            email,
+            password,
+            name,
+            phone,
+            aadhaarNumber,
+            address
+        });
+
+        if (error) {
+            throw error;
+        }
+
+        closeDeclarationModal();
+
+        // -------------------------------------------------
+        // Email confirmation required — registration never
+        // returns a token, so no auto-login happens here.
+        // resetAuthForm() clears #authMessage, so the
+        // confirmation is shown after the form reset.
+        // -------------------------------------------------
+
+        setSignupMode(false);
+        resetAuthForm();
+        updateAuthRoleUI();
+
+        showAuthMessage(
+            "Account created successfully. Please verify your email, then login.",
+            "success"
+        );
+
+    } catch (error) {
+        console.error(
+            "Faculty registration error:",
+            error
+        );
+
+        const errorMessage =
+            getErrorMessage(error);
+
+        showAuthMessage(
+            errorMessage,
+            "error"
+        );
+
+        // The modal covers #authMessage, so repeat it here.
+        if (message) {
+            message.textContent = errorMessage;
+        }
+
+    } finally {
+        if (submitButton) {
+            submitButton.disabled =
+                !checkbox?.checked;
+
+            submitButton.textContent = "Submit";
+        }
     }
 }
 
@@ -1015,6 +1323,13 @@ function setupModalKeyboardShortcuts() {
                 return;
             }
 
+            const declarationModal = $("declarationModal");
+
+            if (declarationModal && !declarationModal.classList.contains("hidden")) {
+                closeDeclarationModal();
+                return;
+            }
+
             const editModal = $("editResourceModal");
 
             if (editModal && !editModal.classList.contains("hidden")) {
@@ -1530,6 +1845,39 @@ function setupRegistrationEvents() {
     course?.addEventListener(
         "change",
         handleRegistrationCourseChange
+    );
+
+    // -------------------------------------------------
+    // Student / Faculty signup role tabs
+    // -------------------------------------------------
+
+    $("roleTabStudent")?.addEventListener(
+        "click",
+        handleSignupRoleTab
+    );
+
+    $("roleTabFaculty")?.addEventListener(
+        "click",
+        handleSignupRoleTab
+    );
+
+    // -------------------------------------------------
+    // Faculty declaration modal
+    // -------------------------------------------------
+
+    $("declarationAgreeCheckbox")?.addEventListener(
+        "change",
+        handleDeclarationAgreement
+    );
+
+    $("declarationCancelBtn")?.addEventListener(
+        "click",
+        closeDeclarationModal
+    );
+
+    $("declarationSubmitBtn")?.addEventListener(
+        "click",
+        handleDeclarationSubmit
     );
 }
 

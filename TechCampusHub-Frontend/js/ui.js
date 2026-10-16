@@ -75,6 +75,8 @@ import {
 
     setSignupMode,
 
+    getSignupRole,
+
     currentStudent,
 
     currentUserRole,
@@ -556,6 +558,17 @@ const SIDEBAR_STUDENT_ROWS = [
     "sidebarProfilePhoneRow"
 ];
 
+//
+// Sidebar profile rows that faculty accounts do not
+// have (no enrollment number, branch or semester).
+//
+
+const SIDEBAR_FACULTY_HIDDEN_ROWS = [
+    "sidebarProfileEnrollmentRow",
+    "sidebarProfileBranchRow",
+    "sidebarProfileSemesterRow"
+];
+
 export function updateStudentProfileUI(
     student = currentStudent
 ) {
@@ -564,9 +577,13 @@ export function updateStudentProfileUI(
         return;
     }
 
+    const isFaculty =
+        currentUserRole === "faculty" ||
+        String(student.role || "").toLowerCase() === "faculty";
+
     const name =
         student.name ||
-        "Student";
+        (isFaculty ? "Faculty" : "Student");
 
     const email =
         student.email ||
@@ -601,6 +618,12 @@ export function updateStudentProfileUI(
         name
     );
 
+    // Sidebar heading text ("Student Profile" / "Faculty Profile").
+    setTextContent(
+        "sidebarProfileTitle",
+        isFaculty ? "Faculty Profile" : "Student Profile"
+    );
+
     setTextContent(
         "sidebarProfileEnrollment",
         enrollment || "-"
@@ -632,6 +655,13 @@ export function updateStudentProfileUI(
     SIDEBAR_STUDENT_ROWS.forEach(
         rowId => $(rowId)?.classList.remove("hidden")
     );
+
+    // Faculty keep name/email/phone only.
+    if (isFaculty) {
+        SIDEBAR_FACULTY_HIDDEN_ROWS.forEach(
+            rowId => $(rowId)?.classList.add("hidden")
+        );
+    }
 
 
     // -------------------------------------------------
@@ -722,6 +752,63 @@ export function updateAdminNavVisibility() {
         "hidden",
         !isAdminRole()
     );
+}
+
+
+
+
+
+// =====================================================
+
+// Faculty nav visibility
+
+// =====================================================
+
+
+
+//
+// Faculty get their own workspace entry; the regular
+// student dashboard links are removed while a faculty
+// account is signed in and restored for everyone else.
+//
+// Every lookup is null-guarded because these ids only
+// exist on pages that render the shared sidebar.
+//
+
+export function updateFacultyNavVisibility() {
+    const isFaculty = currentUserRole === "faculty";
+
+    const facultyNavBtn = $("facultyNavBtn");
+
+    if (facultyNavBtn) {
+        facultyNavBtn.classList.toggle(
+            "hidden",
+            !isFaculty
+        );
+    }
+
+    if (isFaculty) {
+        [
+            "dashboardHomeBtn",
+            "favoritesBtn",
+            "coursesBtn",
+            "paymentHistoryBtn",
+            "certificatesBtn",
+            "feedbackBtn"
+        ].forEach(id => $(id)?.classList.add("hidden"));
+
+        return;
+    }
+
+    // Students and administrators keep the regular links.
+    [
+        "dashboardHomeBtn",
+        "favoritesBtn",
+        "coursesBtn",
+        "paymentHistoryBtn",
+        "certificatesBtn",
+        "feedbackBtn"
+    ].forEach(id => $(id)?.classList.remove("hidden"));
 }
 
 
@@ -1155,22 +1242,46 @@ export function updateUploadPanel() {
 export function applyRoleUI() {
     const page = currentPage();
 
+    const admin = isAdminRole();
+
+    const faculty = currentUserRole === "faculty";
+
     // Login page: after a successful login go to the right home.
     if (page === "auth") {
-        window.location.replace(
-            isAdminRole() ? "./admin.html" : "./dashboard.html"
-        );
+        if (admin) {
+            window.location.replace("./admin.html");
+        } else if (faculty) {
+            window.location.replace("./faculty.html");
+        } else {
+            window.location.replace("./dashboard.html");
+        }
         return;
     }
 
     // The admin area is only for admins.
-    if (page === "admin" && !isAdminRole()) {
-        window.location.replace("./dashboard.html");
+    if (page === "admin" && !admin) {
+        window.location.replace(
+            faculty ? "./faculty.html" : "./dashboard.html"
+        );
+        return;
+    }
+
+    // The faculty area is only for faculty.
+    if (page === "faculty" && !faculty) {
+        window.location.replace(
+            admin ? "./admin.html" : "./dashboard.html"
+        );
+        return;
+    }
+
+    // Faculty always work inside their dedicated dashboard.
+    if (page === "dashboard" && faculty) {
+        window.location.replace("./faculty.html");
         return;
     }
 
 
-    if (isAdminRole()) {
+    if (admin) {
 
         updateAdminProfileUI(
 
@@ -1187,6 +1298,22 @@ export function applyRoleUI() {
         showAdminPanel();
 
 
+
+    } else if (faculty) {
+
+        // Faculty share the student shell for the shared UI
+        // but keep their own navigation set.
+        updateStudentProfileUI(
+
+            currentStudent
+
+        );
+
+        showDashboard();
+
+        hideAdminPanel();
+
+        updateFacultyNavVisibility();
 
     } else {
 
@@ -1212,6 +1339,10 @@ updateSearchUI();
 updateAllSearchSubjects();
 
     updateAdminNavVisibility();
+
+    // Restore/hide the faculty entry for every role so the
+    // toggles always end in a consistent state.
+    updateFacultyNavVisibility();
 }
 
 
@@ -1653,7 +1784,7 @@ export async function initializeAuthenticatedUser(user = null) {
 
             ? "admin"
 
-            : "student";
+            : (student.role === "faculty" ? "faculty" : "student");
 
 
 
@@ -1788,6 +1919,94 @@ return {
 
 
 // =====================================================
+// SIGNUP ROLE UI
+// Shared by updateAuthRoleUI (events.js) and
+// updateAuthModeUI below so both always agree on the
+// heading and on which signup field group is visible.
+// =====================================================
+
+//
+// Segmented Student/Faculty tab state:
+// active tab = solid blue, inactive = slate text.
+//
+
+function setRoleTabState(button, active) {
+    if (!button) {
+        return;
+    }
+
+    button.classList.toggle("bg-blue-600", active);
+    button.classList.toggle("text-white", active);
+    button.classList.toggle("text-slate-600", !active);
+    button.classList.toggle("hover:text-slate-900", !active);
+
+    button.setAttribute(
+        "aria-selected",
+        active ? "true" : "false"
+    );
+}
+
+//
+// Everything that depends on the chosen signup role:
+// heading, subtitle, the Student/Faculty field groups
+// and the role tab active states. Safe to call in
+// login mode (renders the student defaults).
+//
+
+export function syncSignupRoleUI() {
+    const signup = getSignupMode();
+
+    const isFaculty = signup && getSignupRole() === "faculty";
+
+    const heading = $("authHeading");
+
+    if (heading) {
+        heading.textContent = signup
+            ? (isFaculty
+                ? "Create Faculty Account"
+                : "Create Student Account")
+            : "Welcome Back";
+    }
+
+    const authSubtitle = $("authSubtitle");
+
+    if (authSubtitle) {
+        authSubtitle.textContent = signup
+            ? (isFaculty
+                ? "Register as faculty to publish courses and upload notes."
+                : "Create your account to unlock notes, papers and timetables.")
+            : "Sign in to access your personalized learning resources.";
+    }
+
+    // -------------------------------------------------
+    // Student / Faculty field groups (inside #signupFields)
+    // -------------------------------------------------
+
+    const studentSignupFields = $("studentSignupFields");
+
+    const facultySignupFields = $("facultySignupFields");
+
+    if (isFaculty) {
+        showElement(facultySignupFields);
+        hideElement(studentSignupFields);
+    } else {
+        showElement(studentSignupFields);
+        hideElement(facultySignupFields);
+    }
+
+    // -------------------------------------------------
+    // Segmented role tabs
+    // -------------------------------------------------
+
+    setRoleTabState($("roleTabStudent"), !isFaculty);
+    setRoleTabState($("roleTabFaculty"), isFaculty);
+}
+
+
+
+
+
+// =====================================================
 
 // Auth Mode UI
 
@@ -1797,13 +2016,8 @@ return {
 
 export function updateAuthModeUI() {
 
-
-
-    const heading =
-
-        $("authHeading");
-
-
+    // Heading, subtitle and Student/Faculty field groups.
+    syncSignupRoleUI();
 
     const submitButton =
 
@@ -1830,16 +2044,6 @@ export function updateAuthModeUI() {
         
 
 if (getSignupMode()){
-
-        if (heading) {
-
-            heading.textContent =
-
-                "Create Student Account";
-
-        }
-
-
 
         if (submitButton) {
 
@@ -1878,16 +2082,6 @@ if (getSignupMode()){
 
 
     } else {
-
-        if (heading) {
-
-            heading.textContent =
-
-                "Welcome Back";
-
-        }
-
-
 
         if (submitButton) {
 

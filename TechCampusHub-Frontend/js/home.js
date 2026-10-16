@@ -55,6 +55,33 @@ async function renderOverallRating() {
     }
 }
 
+/**
+ * Top-corner pill badge for a course card: an explicit badge
+ * when the data provides one, otherwise a rating-based
+ * "Best Seller" or a "New" tag for recently added courses.
+ */
+function courseCardBadgeHtml(course) {
+    const badgeBase = `absolute -top-3 right-4 rounded-full px-3 py-1
+                       text-[11px] font-extrabold shadow`;
+    const explicit = typeof course.badge === "string" ? course.badge.trim() : "";
+
+    if (explicit) {
+        return `<span class="${badgeBase} bg-blue-600 text-white">${escapeHtml(explicit)}</span>`;
+    }
+
+    if (Number(course.rating_avg) >= 4.5 && Number(course.rating_count) > 0) {
+        return `<span class="${badgeBase} bg-amber-500 text-white">Best Seller</span>`;
+    }
+
+    const createdAt = Date.parse(course.created_at || "");
+
+    if (createdAt && Date.now() - createdAt <= 21 * 24 * 60 * 60 * 1000) {
+        return `<span class="${badgeBase} bg-emerald-500 text-white">New</span>`;
+    }
+
+    return "";
+}
+
 async function renderCourseCatalog() {
     const grid = document.getElementById("homeCourseGrid");
     const empty = document.getElementById("homeCourseEmpty");
@@ -75,6 +102,35 @@ async function renderCourseCatalog() {
 
         grid.innerHTML = courses.map(course => {
             const price = formatPrice(course.price_inr);
+            const priceValue = Number(course.price_inr) || 0;
+            const mrp = Number(course.mrp_inr) || 0;
+
+            // Discount row only when a compare-at MRP is
+            // present and higher than the selling price.
+            const discountPercent = mrp > priceValue
+                ? Math.round(((mrp - priceValue) / mrp) * 100)
+                : 0;
+
+            const priceBlock = discountPercent > 0
+                ? `
+                    <div class="flex flex-wrap items-center gap-x-2">
+                        <p class="text-2xl font-extrabold text-slate-900">
+                            ${escapeHtml(price)}
+                        </p>
+                        <span class="rounded-full bg-amber-100 px-2 py-0.5
+                                     text-xs font-extrabold text-amber-700">
+                            ${discountPercent}% Off
+                        </span>
+                        <p class="w-full text-sm text-slate-400 line-through">
+                            ${escapeHtml(formatPrice(mrp))}
+                        </p>
+                    </div>
+                `
+                : `
+                    <p class="text-2xl font-extrabold text-slate-900">
+                        ${escapeHtml(price)}
+                    </p>
+                `;
 
             const highlights = (course.highlights || [])
                 .map(item => `
@@ -86,9 +142,10 @@ async function renderCourseCatalog() {
                 .join("");
 
             return `
-                <article class="course-tile card p-6 flex flex-col
+                <article class="course-tile card p-6 flex flex-col relative h-full
                                 bg-white rounded-3xl border border-slate-200
                                 shadow-soft hover:-translate-y-1 transition">
+                    ${courseCardBadgeHtml(course)}
                     <div class="flex items-start justify-between gap-3">
                         <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600
                                     flex items-center justify-center text-xl shrink-0">
@@ -110,9 +167,7 @@ async function renderCourseCatalog() {
                         ${highlights}
                     </ul>
                     <div class="mt-5 flex items-center justify-between gap-3">
-                        <p class="text-2xl font-extrabold text-slate-900">
-                            ${escapeHtml(price)}
-                        </p>
+                        ${priceBlock}
                         <a href="./courses.html"
                            class="course-cta inline-flex items-center gap-2 rounded-xl
                                   bg-blue-600 hover:bg-blue-700 text-white

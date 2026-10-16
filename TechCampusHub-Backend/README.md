@@ -6,7 +6,7 @@ Production-ready REST API for the TechCampus Hub learning portal.
 |---|---|
 | Framework | Java 25 · Spring Boot **4.1.1** (Spring MVC, Spring Security 7) |
 | Database | PostgreSQL + Spring Data JPA (Hibernate) |
-| Auth | Stateless **JWT** (HS256) · **BCrypt** password hashing · role-based access (`ADMIN`, `STUDENT`) |
+| Auth | Stateless **JWT** (HS256) · **BCrypt** password hashing · role-based access (`ADMIN`, `FACULTY`, `STUDENT`) |
 | Files | **Cloudinary** (only the secure URL is stored in PostgreSQL) |
 | Build | Maven (wrapper included) |
 | Docs | Swagger UI · Markdown docs in [`docs/`](docs/) |
@@ -14,7 +14,7 @@ Production-ready REST API for the TechCampus Hub learning portal.
 ## Features
 
 - **Auth:** register, login (JWT), e-mail verification, forgot/reset password, change password, profile update
-- **Roles:** `ADMIN` (everything under `/api/admin/**`) vs `STUDENT`; enforced in the filter chain *and* with `@PreAuthorize`
+- **Roles:** `ADMIN` (everything under `/api/admin/**`) · `FACULTY` (own-content workspace under `/api/faculty/**`: create/list/update notes & courses, upload files, **no deletes**) · `STUDENT`; enforced in the filter chain *and* with `@PreAuthorize`
 - **Admin:** CRUD courses / notes / PYQs / TNP notes / timetables / certificates, approve·reject purchases, extend course validity, send notifications, upload files to Cloudinary
 - **Student:** browse & purchase courses, view purchased courses, read notes/PYQs/TNP/timetables (bundle-gated content requires an active purchase), manage favorites, submit feedback, read notifications, view certificates
 - **Quality:** bean validation on every request body, global JSON error handler with correct HTTP status codes, CORS restricted to configured origins

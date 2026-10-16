@@ -8,7 +8,9 @@
 // =====================================================
 
 
-import { apiGet, normalizeNote, normalizePyq, normalizeTnp, normalizeTimetable, normalizeUser } from "./api.js";
+import { apiGet, getStoredUser, normalizeNote, normalizePyq, normalizeTnp, normalizeTimetable, normalizeUser } from "./api.js";
+
+import { currentUserRole } from "./state.js";
 
 
 
@@ -41,13 +43,57 @@ export let students = [];
 
 // =====================================================
 
+//
+
+// Admins load through GET /api/admin/notes — the ADMIN-only list that
+
+// returns every note (faculty uploads included) enriched with
+
+// createdByName/createdByRole. Students and faculty keep the plain
+
+// GET /api/notes payload, which never carries those fields.
+
+//
+
+// The role is resolved when loadNotes() runs, not at import time:
+
+// currentUserRole is only populated inside initializeAuthenticatedUser,
+
+// which runs after this module is already loaded. When state has not
+
+// been set yet we fall back to the persisted profile so an admin is
+
+// never dropped onto the student endpoint mid-session.
+
+// =====================================================
+
+
+
+function isAdminSession() {
+
+    if (currentUserRole !== null && currentUserRole !== undefined) {
+
+        return currentUserRole === "admin";
+
+    }
+
+    const stored = getStoredUser();
+
+    return String(stored?.role || "").toLowerCase() === "admin";
+
+}
+
 
 
 export async function loadNotes() {
 
     try {
 
-        const data = await apiGet("/api/notes");
+        const data = await apiGet(
+
+            isAdminSession() ? "/api/admin/notes" : "/api/notes"
+
+        );
 
 
 

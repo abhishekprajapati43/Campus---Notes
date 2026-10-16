@@ -43,6 +43,10 @@ public class Course extends Auditable {
     @Column(name = "price_inr", nullable = false, precision = 10, scale = 2)
     private BigDecimal priceInr;
 
+    /** Maximum retail price in INR; {@code null} = no discount shown on the card. */
+    @Column(name = "mrp_inr", precision = 10, scale = 2)
+    private BigDecimal mrpInr;
+
     /** Cloudinary thumbnail URL (only the URL is stored). */
     @Column(name = "thumbnail_url", length = 600)
     private String thumbnailUrl;
@@ -66,4 +70,8 @@ public class Course extends Auditable {
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private boolean active = true;
+
+    /** User id of the faculty/admin who launched this course (soft reference to users.id). */
+    @Column(name = "created_by")
+    private Long createdBy;
 }

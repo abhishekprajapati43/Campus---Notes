@@ -40,7 +40,9 @@ public class AuthController {
     private final AuthService authService;
     private final CurrentUserService currentUserService;
 
-    @Operation(summary = "Register a new student account")
+    @Operation(summary = "Register a new student or faculty account",
+            description = "role defaults to STUDENT; FACULTY requires phone, aadhaarNumber, "
+                    + "address and declarationAccepted=true. ADMIN can never be self-registered.")
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> register(
             @Valid @RequestBody RegisterRequest request) {

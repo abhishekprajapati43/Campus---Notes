@@ -187,6 +187,10 @@ export function normalizeNote(note) {
         storage_path: note.storagePath,
         course_id: note.courseId ?? null,
         course_title: note.courseTitle ?? null,
+        // Uploader attribution — only present on the admin list
+        // (GET /api/admin/notes); student payloads carry null.
+        created_by_name: note.createdByName ?? null,
+        created_by_role: note.createdByRole ?? null,
         created_at: note.createdAt
     };
 }
@@ -271,7 +275,7 @@ export function normalizeTimetable(timetable) {
     };
 }
 
-/** courses: price_inr / validity_days / sort_order / is_active. */
+/** courses: price_inr / mrp_inr / validity_days / sort_order / is_active. */
 export function normalizeCourse(course) {
     if (!course) {
         return null;
@@ -284,6 +288,10 @@ export function normalizeCourse(course) {
         category: course.category,
         description: course.description,
         price_inr: Number(course.priceInr) || 0,
+        // Compare-at (MRP) price. null when the course has no discount so
+        // the admin edit form shows a blank field instead of "0"; home.js
+        // reads it through Number(...) || 0 and hides the strike-through.
+        mrp_inr: course.mrpInr == null ? null : Number(course.mrpInr),
         thumbnail_url: course.thumbnailUrl,
         validity_days: course.validityDays,
         slug: course.slug,
@@ -347,6 +355,8 @@ export function normalizeUser(user) {
         email_verified: user.emailVerified,
         // False while an admin has suspended the account.
         enabled: user.enabled !== false,
+        // Faculty sign-up declaration (always false for students).
+        declaration_accepted: user.declarationAccepted === true,
         created_at: user.createdAt
     };
 }
@@ -559,6 +569,13 @@ export function courseToRequest(row = {}) {
         title: row.title,
         description: row.description,
         priceInr: row.price_inr,
+        // Blank/absent input means "no discount": send an explicit null
+        // (never "") so Jackson can bind it to the BigDecimal field.
+        mrpInr:
+            row.mrp_inr === "" || row.mrp_inr === undefined ||
+                row.mrp_inr === null
+                ? null
+                : Number(row.mrp_inr),
         validityDays: row.validity_days,
         slug: row.slug,
         highlights: row.highlights,

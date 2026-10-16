@@ -47,7 +47,22 @@ public final class AuthDtos {
 
             @Min(value = 1, message = "semester must be >= 1")
             @Max(value = 12, message = "semester must be <= 12")
-            Integer semester) {
+            Integer semester,
+
+            /** Optional: STUDENT (default) or FACULTY, case-insensitive. ADMIN is never self-registerable. */
+            @Size(max = 20, message = "role must be at most 20 characters")
+            String role,
+
+            /** FACULTY only: 12-digit Aadhaar number, stored as a SHA-256 hash and never returned. */
+            @Pattern(regexp = "^$|[0-9]{12}", message = "aadhaarNumber must be 12 digits")
+            String aadhaarNumber,
+
+            /** FACULTY only: postal address captured at sign-up. */
+            @Size(max = 500, message = "address must be at most 500 characters")
+            String address,
+
+            /** FACULTY only: must be true or registration is rejected. */
+            Boolean declarationAccepted) {
     }
 
     public record LoginRequest(
@@ -127,6 +142,8 @@ public final class AuthDtos {
             boolean emailVerified,
             /** False while an admin has suspended the account (login is blocked). */
             boolean enabled,
+            /** Faculty sign-up declaration; always false for students. */
+            boolean declarationAccepted,
             String course,
             String branch,
             Integer year,

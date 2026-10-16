@@ -1,5 +1,6 @@
 package com.example.techcampushubbackend.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -64,6 +65,12 @@ public final class ContentDtos {
             String storagePath,
             Long courseId,
             String courseTitle,
+            /** Uploader name - populated only for the admin list (moderation/audit). */
+            @JsonInclude(JsonInclude.Include.NON_NULL)
+            String createdByName,
+            /** Uploader role (ADMIN/FACULTY) - populated only for the admin list. */
+            @JsonInclude(JsonInclude.Include.NON_NULL)
+            String createdByRole,
             LocalDateTime createdAt) {
     }
 

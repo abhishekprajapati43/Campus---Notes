@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Faculty Dashboard | TechCampus_Hub</title>
+        <meta name="description" content="TechCampus_Hub - College learning portal for study notes, TNP resources, previous year papers and exam timetables.">
+        <meta name="theme-color" content="#102a56">
+        <link rel="icon" type="image/png" href="./assets/logo.png">
+        <link rel="apple-touch-icon" href="./assets/logo.png">
+        <!-- =====================================================
+         TAILWIND CSS
+    ====================================================== -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+        <!-- =====================================================
+         TAILWIND CONFIG
+    ====================================================== -->
+        <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: "#102a56",
+                        bluehub: "#2563eb",
+                        softbg: "#f5f8fc"
+                    },
+
+                    boxShadow: {
+                        soft: "0 8px 28px rgba(15,39,74,.08)"
+                    }
+                }
+            }
+        };
+        </script>
+        <!-- =====================================================
+         CUSTOM CSS
+    ====================================================== -->
+        <link rel="stylesheet" href="style.css">
+    </head>
+<body data-page="faculty">
+        <div id="dashboardSection" class="min-h-screen">
+            <div id="pageChrome"></div>
+                <!-- =====================================================
+         MAIN AREA
+    ====================================================== -->
+                <main class="main-area
+               md:ml-64
+               min-h-screen">
+                    <div id="pageHeader"></div>
+                    <!-- =================================================
+             PAGE CONTENT
+        ================================================== -->
+                    <div class="p-5
+                   md:p-8
+                   max-w-[1500px]
+                   mx-auto">
+                        <!-- =================================================
+                 WELCOME
+            ================================================== -->
+                        <section class="card
+                       p-5
+                       md:p-6
+                       mb-5
+                       flex
+                       flex-col
+                       items-center
+                       text-center
+                       gap-5">
+                            <div class="flex
+                           items-center
+                           gap-4">
+                                <div class="w-14
+                               h-14
+                               rounded-2xl
+                               bg-blue-50
+                               flex
+                               items-center
+                               justify-center
+                               text-blue-700
+                               text-2xl">
+                                    <i class="fa-solid
+                                   fa-chalkboard-user"></i>
+                                </div>
+                                <div>
+                                    <p class="text-slate-500
+                                   text-sm">
+                                        Welcome Faculty
+                                    </p>
+                                    <h2 id="facultyWelcomeName" class="text-2xl
+                                   md:text-3xl
+                                   font-extrabold">
+                                        Faculty!
+                                    </h2>
+                                    <p class="text-slate-500
+                                   mt-1">
+                                        Launch courses, share notes, inspire learners.
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+                        <!-- =================================================
+                 LAUNCH COURSE
+            ================================================== -->
+                        <section id="facultyLaunchSection" class="card
+                       p-5
+                       md:p-6
+                       mb-5">
+                            <div class="flex
+                           items-center
+                           gap-4
+                           mb-5">
+                                <div class="w-12
+                               h-12
+                               rounded-xl
+                               bg-emerald-50
+                               text-emerald-600
+                               flex
+                               items-center
+                               justify-center
+                               text-xl">
+                                    <i class="fa-solid
+                                   fa-rocket"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-xl
+                                   font-extrabold">
+                                        Launch Course
+                                    </h2>
+                                    <p class="text-sm
+                                   text-slate-500">
+                                        Publish a new course - it goes live immediately.
+                                    </p>
+                                </div>
+                            </div>
+                            <p id="launchCourseMessage" class="hidden
+                           mb-4
+                           rounded-xl
+                           px-4
+                           py-3
+                           text-sm"></p>
+                            <form id="launchCourseForm" class="grid
+                           md:grid-cols-2
+                           lg:grid-cols-3
+                           gap-4">
+                                <div class="filter-group
+                               md:col-span-2
+                               lg:col-span-3">
+                                    <label for="launchCourseTitle" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Course title
+                                        <span class="text-red-500">
+                                            *
+                                        </span>
+                                    </label>
+                                    <input id="launchCourseTitle"
+                                           class="input"
+                                           type="text"
+                                           maxlength="160"
+                                           placeholder="e.g. Data Structures Mastery"
+                                           required>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="launchCourseCode" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Course code
+                                        <span class="font-normal
+                                              text-slate-400">
+                                            (optional)
+                                        </span>
+                                    </label>
+                                    <input id="launchCourseCode"
+                                           class="input"
+                                           type="text"
+                                           maxlength="40"
+                                           placeholder="e.g. CS-101">
+                                </div>
+                                <div class="filter-group">
+                                    <label for="launchCourseCategory" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Category
+                                        <span class="font-normal
+                                              text-slate-400">
+                                            (optional)
+                                        </span>
+                                    </label>
+                                    <input id="launchCourseCategory"
+                                           class="input"
+                                           type="text"
+                                           maxlength="60"
+                                           placeholder="e.g. Computer Science">
+                                </div>
+                                <div class="filter-group">
+                                    <label for="launchCourseValidity" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Validity (days)
+                                    </label>
+                                    <input id="launchCourseValidity"
+                                           class="input"
+                                           type="number"
+                                           min="1"
+                                           step="1"
+                                           value="365">
+                                </div>
+                                <div class="filter-group
+                               md:col-span-2
+                               lg:col-span-3">
+                                    <label for="launchCourseDescription" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Description
+                                    </label>
+                                    <textarea id="launchCourseDescription"
+                                              class="input"
+                                              rows="3"
+                                              maxlength="1000"
+                                              placeholder="What will students learn?"></textarea>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="launchCoursePrice" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Price ₹
+                                        <span class="text-red-500">
+                                            *
+                                        </span>
+                                    </label>
+                                    <input id="launchCoursePrice"
+                                           class="input"
+                                           type="number"
+                                           min="0"
+                                           step="1"
+                                           placeholder="499"
+                                           required>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="launchCourseMrp" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        MRP ₹
+                                        <span class="font-normal
+                                              text-slate-400">
+                                            (optional)
+                                        </span>
+                                    </label>
+                                    <input id="launchCourseMrp"
+                                           class="input"
+                                           type="number"
+                                           min="0"
+                                           step="1"
+                                           placeholder="999">
+                                </div>
+                                <div class="filter-group">
+                                    <label for="launchCourseHighlights" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Highlights
+                                        <span class="font-normal
+                                              text-slate-400">
+                                            (one per line)
+                                        </span>
+                                    </label>
+                                    <textarea id="launchCourseHighlights"
+                                              class="input"
+                                              rows="3"
+                                              placeholder="40 hours of video&#10;Downloadable notes"></textarea>
+                                </div>
+                                <div class="md:col-span-2
+                               lg:col-span-3">
+                                    <button type="submit" class="bg-blue-600
+                                   hover:bg-blue-700
+                                   text-white
+                                   rounded-xl
+                                   font-bold
+                                   px-6
+                                   py-3
+                                   transition">
+                                        <i class="fa-solid fa-rocket mr-2"></i>Launch Course
+                                    </button>
+                                </div>
+                            </form>
+                            <!-- =================================================
+                     MY LAUNCHED COURSES
+                ================================================== -->
+                            <div class="mt-6
+                           pt-5
+                           border-t
+                           border-slate-200">
+                                <div class="mb-4">
+                                    <h3 class="text-lg
+                                   font-extrabold">
+                                        My courses
+                                    </h3>
+                                    <p class="text-sm
+                                   text-slate-500">
+                                        Courses you have launched
+                                    </p>
+                                </div>
+                                <div id="facultyCoursesList" class="grid
+                               md:grid-cols-2
+                               gap-4"></div>
+                            </div>
+                        </section>
+                        <!-- =================================================
+                 UPLOAD NOTES
+            ================================================== -->
+                        <section id="facultyUploadSection" class="card
+                       p-5
+                       md:p-6
+                       mb-5">
+                            <div class="flex
+                           items-center
+                           gap-4
+                           mb-5">
+                                <div class="w-12
+                               h-12
+                               rounded-xl
+                               bg-blue-50
+                               text-blue-600
+                               flex
+                               items-center
+                               justify-center
+                               text-xl">
+                                    <i class="fa-solid
+                                   fa-file-arrow-up"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-xl
+                                   font-extrabold">
+                                        Upload Notes
+                                    </h2>
+                                    <p class="text-sm
+                                   text-slate-500">
+                                        Share a PDF with your students.
+                                    </p>
+                                </div>
+                            </div>
+                            <p id="uploadNoteMessage" class="hidden
+                           mb-4
+                           rounded-xl
+                           px-4
+                           py-3
+                           text-sm"></p>
+                            <form id="uploadNoteForm" class="grid
+                           md:grid-cols-2
+                           lg:grid-cols-3
+                           gap-4">
+                                <div class="filter-group">
+                                    <label for="facultyNoteSubject" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Subject
+                                        <span class="text-red-500">
+                                            *
+                                        </span>
+                                    </label>
+                                    <input id="facultyNoteSubject"
+                                           class="input"
+                                           type="text"
+                                           maxlength="120"
+                                           placeholder="Subject"
+                                           required>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="facultyNoteTitle" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Title / Topic
+                                        <span class="font-normal
+                                              text-slate-400">
+                                            (optional)
+                                        </span>
+                                    </label>
+                                    <input id="facultyNoteTitle"
+                                           class="input"
+                                           type="text"
+                                           maxlength="200"
+                                           placeholder="Title / Topic">
+                                </div>
+                                <div class="filter-group">
+                                    <label for="facultyNoteCourse" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Course
+                                    </label>
+                                    <input id="facultyNoteCourse"
+                                           class="input"
+                                           type="text"
+                                           maxlength="60"
+                                           placeholder="e.g. MCA">
+                                </div>
+                                <div class="filter-group">
+                                    <label for="facultyNoteBranch" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Branch
+                                    </label>
+                                    <input id="facultyNoteBranch"
+                                           class="input"
+                                           type="text"
+                                           maxlength="40"
+                                           placeholder="e.g. Computer Science">
+                                </div>
+                                <div class="filter-group">
+                                    <label for="facultyNoteYear" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Year
+                                    </label>
+                                    <select id="facultyNoteYear" class="input">
+                                        <option value="">
+                                            Select Year
+                                        </option>
+                                        <option value="1">
+                                            Year 1
+                                        </option>
+                                        <option value="2">
+                                            Year 2
+                                        </option>
+                                        <option value="3">
+                                            Year 3
+                                        </option>
+                                        <option value="4">
+                                            Year 4
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="facultyNoteSemester" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Semester
+                                    </label>
+                                    <select id="facultyNoteSemester" class="input">
+                                        <option value="">
+                                            Select Semester
+                                        </option>
+                                        <option value="1">
+                                            Semester 1
+                                        </option>
+                                        <option value="2">
+                                            Semester 2
+                                        </option>
+                                        <option value="3">
+                                            Semester 3
+                                        </option>
+                                        <option value="4">
+                                            Semester 4
+                                        </option>
+                                        <option value="5">
+                                            Semester 5
+                                        </option>
+                                        <option value="6">
+                                            Semester 6
+                                        </option>
+                                        <option value="7">
+                                            Semester 7
+                                        </option>
+                                        <option value="8">
+                                            Semester 8
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="noteBundleSelect" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        My courses
+                                        <span class="font-normal
+                                              text-slate-400">
+                                            (optional bundle)
+                                        </span>
+                                    </label>
+                                    <select id="noteBundleSelect" class="input">
+                                        <option value="">
+                                            Free — no bundle
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="filter-group
+                               md:col-span-2">
+                                    <label for="facultyNoteDescription" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Description
+                                    </label>
+                                    <textarea id="facultyNoteDescription"
+                                              class="input"
+                                              rows="3"
+                                              maxlength="600"
+                                              placeholder="Anything students should know about this note"></textarea>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="facultyNoteFile" class="text-sm
+                                   font-semibold
+                                   mb-2
+                                   block">
+                                        Attach PDF
+                                        <span class="text-red-500">
+                                            *
+                                        </span>
+                                    </label>
+                                    <input id="facultyNoteFile"
+                                           class="input"
+                                           type="file"
+                                           accept="application/pdf"
+                                           required>
+                                    <p class="text-xs
+                                       text-slate-500
+                                       mt-2">
+                                        PDF only, up to 20 MB.
+                                    </p>
+                                </div>
+                                <div class="md:col-span-2
+                               lg:col-span-3">
+                                    <button id="uploadNoteBtn" type="submit" class="bg-blue-600
+                                   hover:bg-blue-700
+                                   text-white
+                                   rounded-xl
+                                   font-bold
+                                   px-6
+                                   py-3
+                                   transition">
+                                        <i class="fa-solid fa-file-arrow-up mr-2"></i>Upload Note
+                                    </button>
+                                </div>
+                            </form>
+                        </section>
+                        <!-- =================================================
+                 MANAGE NOTES
+            ================================================== -->
+                        <section id="facultyManageSection" class="card
+                       p-5
+                       md:p-6
+                       mb-5">
+                            <div class="flex
+                           items-center
+                           justify-between
+                           gap-4
+                           mb-5">
+                                <div class="flex
+                               items-center
+                               gap-4">
+                                    <div class="w-12
+                                   h-12
+                                   rounded-xl
+                                   bg-violet-50
+                                   text-violet-600
+                                   flex
+                                   items-center
+                                   justify-center
+                                   text-xl">
+                                        <i class="fa-solid
+                                       fa-folder-open"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-xl
+                                       font-extrabold">
+                                            Manage Notes
+                                        </h2>
+                                        <p class="text-sm
+                                       text-slate-500">
+                                            View or edit the notes you uploaded.
+                                        </p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid
+                               fa-pen-to-square
+                               text-violet-600
+                               text-xl"></i>
+                            </div>
+                            <p id="facultyManageMessage" class="hidden
+                           mb-4
+                           rounded-xl
+                           px-4
+                           py-3
+                           text-sm"></p>
+                            <div id="facultyNotesList" class="grid
+                           md:grid-cols-2
+                           xl:grid-cols-3
+                           gap-4"></div>
+                        </section>
+                    </div>
+                </main>
+            </div>
+        <!-- =====================================================
+         FACULTY EDIT NOTE MODAL
+         Own modal: the shared #editResourceModal posts to admin
+         endpoints, so faculty editing never reuses it.
+    ====================================================== -->
+        <div id="facultyEditModal" class="hidden fixed inset-0 z-[110] bg-slate-950/50 items-center justify-center p-4">
+            <div class="bg-white rounded-2xl
+                   w-full max-w-2xl
+                   p-6 shadow-2xl
+                   max-h-[90vh]
+                   overflow-y-auto">
+                <!-- HEADER -->
+                <div class="flex items-center
+                       justify-between mb-5">
+                    <div>
+                        <p class="text-sm
+                           text-blue-600
+                           font-semibold">
+                            Faculty
+                        </p>
+                        <h3 class="text-2xl
+                           font-extrabold">
+                            Edit Note
+                        </h3>
+                    </div>
+                    <button id="closeFacultyEditBtn" type="button" aria-label="Close" class="w-10 h-10
+                       rounded-xl
+                       bg-slate-100
+                       hover:bg-slate-200
+                       flex items-center
+                       justify-center">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <!-- FORM -->
+                <form id="facultyEditForm" class="space-y-4">
+                    <input id="facultyEditNoteId" type="hidden">
+                    <p id="facultyEditMessage" class="hidden
+                       rounded-xl
+                       px-4
+                       py-3
+                       text-sm"></p>
+                    <!-- SUBJECT + TITLE -->
+                    <div class="grid md:grid-cols-2
+                       gap-4">
+                        <div class="edit-field-group">
+                            <label for="facultyEditSubject" class="block text-sm
+                               font-semibold mb-2">
+                                Subject
+                            </label>
+                            <input id="facultyEditSubject" class="input" type="text" maxlength="120">
+                        </div>
+                        <div class="edit-field-group">
+                            <label for="facultyEditTitle" class="block text-sm
+                               font-semibold mb-2">
+                                Title / Topic
+                            </label>
+                            <input id="facultyEditTitle" class="input" type="text" maxlength="200">
+                        </div>
+                    </div>
+                    <!-- DESCRIPTION -->
+                    <div class="edit-field-group">
+                        <label for="facultyEditDescription" class="block text-sm
+                           font-semibold mb-2">
+                            Description
+                        </label>
+                        <textarea id="facultyEditDescription" class="input" rows="4" maxlength="600"></textarea>
+                    </div>
+                    <!-- REPLACE PDF -->
+                    <div class="edit-field-group">
+                        <label for="facultyEditFile" class="block text-sm
+                           font-semibold mb-2">
+                            Replace PDF
+                            <span class="font-normal
+                                  text-slate-400">
+                                (optional)
+                            </span>
+                        </label>
+                        <input id="facultyEditFile"
+                               class="input"
+                               type="file"
+                               accept="application/pdf">
+                        <p class="text-xs
+                           text-slate-500 mt-2">
+                            Leave empty if you only want
+                            to update the information.
+                        </p>
+                    </div>
+                    <!-- BUTTONS -->
+                    <div class="flex justify-end
+                       gap-3 pt-4
+                       border-t">
+                        <button id="cancelFacultyEditBtn" type="button" class="px-5 py-2.5
+                           rounded-xl
+                           border
+                           font-semibold
+                           hover:bg-slate-50">
+                            Cancel
+                        </button>
+                        <button id="saveFacultyEditBtn" type="submit" class="px-5 py-2.5
+                           rounded-xl
+                           bg-blue-600
+                           hover:bg-blue-700
+                           text-white
+                           font-semibold">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script src="./js/env.js"></script>
+        <script type="module" src="./js/app.js"></script>
+    </body>
+</html>

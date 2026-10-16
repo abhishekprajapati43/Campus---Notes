@@ -7,6 +7,7 @@
 // The public contract of this module is unchanged from
 // the Supabase version so no caller had to be rewritten:
 //   signUpStudent(...)  -> { data: { user, session }, error }
+//   signUpFaculty(...)  -> { data: { user, session }, error }
 //   signIn(...)         -> { data: { user, session }, error }
 //   resetPassword(...)  -> { error }
 //   getSession()        -> { data: { session }, error }
@@ -93,6 +94,58 @@ export async function signUpStudent({
         };
     } catch (error) {
         console.error("Sign up error:", error);
+
+        return {
+            data: { user: null, session: null },
+            error
+        };
+    }
+}
+
+// =====================================================
+// Faculty Signup
+// =====================================================
+
+export async function signUpFaculty({
+    email,
+    password,
+    name,
+    phone,
+    aadhaarNumber,
+    address
+}) {
+    try {
+        const data = await apiPost(
+            "/api/auth/register",
+            {
+                name: String(name || "").trim(),
+                email: String(email || "").trim(),
+                password,
+                role: "faculty",
+                phone: String(phone || "").trim(),
+                aadhaarNumber: String(aadhaarNumber || "").trim(),
+                address: String(address || "").trim(),
+                declarationAccepted: true
+            },
+            false
+        );
+
+        const user = normalizeUser(data?.user);
+
+        setAuthToken(data?.token || null);
+        setStoredUser(user);
+
+        emitAuthState("SIGNED_IN", buildSession(user));
+
+        return {
+            data: {
+                user,
+                session: buildSession(user)
+            },
+            error: null
+        };
+    } catch (error) {
+        console.error("Faculty sign up error:", error);
 
         return {
             data: { user: null, session: null },

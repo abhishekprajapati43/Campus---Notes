@@ -80,7 +80,10 @@ public class NoteController {
         return ResponseEntity.ok(ApiResponse.ok(noteService.update(id, request)));
     }
 
-    @Operation(summary = "Delete note (admin)")
+    @Operation(summary = "Delete note (admin)",
+            description = "Faculty deletion is intentionally forbidden: enforced by the "
+                    + "ADMIN-only @PreAuthorize here AND the /api/admin/** matcher in "
+                    + "SecurityConfig (two layers). No /api/faculty delete route exists.")
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/admin/notes/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {

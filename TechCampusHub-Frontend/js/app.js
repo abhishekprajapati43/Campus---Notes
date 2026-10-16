@@ -13,6 +13,7 @@ import { initNotifications } from "./notifications.js";
 import { initCertificates } from "./certificates.js";
 import { initFeedback } from "./feedback.js";
 import { initChatbot } from "./chatbot.js";
+import { initFaculty } from "./faculty.js";
 
 const PAGE =
     document.body?.dataset?.page || "auth";
@@ -70,6 +71,10 @@ document.addEventListener(
                 await initCertificates();
                 await initFeedback();
                 await initChatbot();
+
+                // Faculty workspace (self-guarded: only wires
+                // and loads on faculty.html for faculty users).
+                await initFaculty();
             }
 
             // ------------------------------------------------

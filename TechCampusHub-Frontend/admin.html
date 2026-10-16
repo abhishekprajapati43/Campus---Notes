@@ -473,6 +473,11 @@
                                 <form id="courseAdminForm" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
                                     <input id="courseTitleInput" class="input" placeholder="Course title" required>
                                     <input id="coursePriceInput" class="input" type="number" min="0" placeholder="Price (₹)">
+                                    <div>
+                                        <label for="courseMrpInput" class="block text-sm font-semibold mb-2">MRP (₹)</label>
+                                        <input id="courseMrpInput" class="input" type="number" min="0" step="0.01" placeholder="e.g. 1499">
+                                        <p class="text-xs text-slate-400 mt-1.5">Original price shown struck-through for discounts — leave blank for none</p>
+                                    </div>
                                     <input id="courseValidityInput" class="input" type="number" min="1" placeholder="Validity (days)" value="365">
                                     <input id="courseDescriptionInput" class="input md:col-span-2" placeholder="Short description">
                                     <input id="courseHighlightsInput" class="input" placeholder="Highlights — comma separated">
@@ -498,7 +503,7 @@
                                             Users
                                         </h3>
                                         <p class="text-sm text-slate-500 mt-1">
-                                            All registered students, their role and premium access.
+                                            Every registered account — students, faculty and admins — with role and premium access.
                                         </p>
                                     </div>
                                     <button id="refreshUsersBtn" type="button" class="border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold px-5 py-2.5 rounded-xl transition">

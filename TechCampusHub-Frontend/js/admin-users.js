@@ -2,8 +2,8 @@
 // TechCampus_Hub
 // admin-users.js
 //
-// Admin panel → Users: every registered student with
-// their role, purchase status and premium validity.
+// Admin panel → Users: every registered account (students, faculty,
+// admins) with their role, purchase status and premium validity.
 // =====================================================
 
 import { reloadStudents } from "./data.js";
@@ -125,6 +125,27 @@ export async function renderAdminUsers() {
                     Admin
                 </span>
             `
+            : student.role === "faculty"
+                ? `
+                    <span class="rounded-lg bg-violet-100 px-2.5 py-1 text-xs font-bold text-violet-700">
+                        Faculty
+                    </span>
+                `
+                : "";
+
+        // Faculty sign-up declaration — shown for faculty accounts only.
+        const declarationBadge = student.role === "faculty"
+            ? student.declaration_accepted
+                ? `
+                    <span class="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                        Declaration ✓
+                    </span>
+                `
+                : `
+                    <span class="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
+                        Declaration missing
+                    </span>
+                `
             : "";
 
         const details = [
@@ -184,6 +205,7 @@ export async function renderAdminUsers() {
                         <p class="font-bold text-slate-800 truncate">
                             ${escapeHtml(student.name || "Student")}
                             ${roleBadge}
+                            ${declarationBadge}
                             ${suspendedBadge}
                         </p>
                         <p class="text-sm text-slate-500 truncate">

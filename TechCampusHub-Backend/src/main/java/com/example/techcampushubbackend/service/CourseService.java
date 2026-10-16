@@ -3,9 +3,12 @@ package com.example.techcampushubbackend.service;
 import com.example.techcampushubbackend.dto.CourseDtos.CourseRequest;
 import com.example.techcampushubbackend.dto.CourseDtos.CourseResponse;
 import com.example.techcampushubbackend.entity.Course;
+import com.example.techcampushubbackend.entity.Role;
+import com.example.techcampushubbackend.entity.User;
 import com.example.techcampushubbackend.exception.ResourceNotFoundException;
 import com.example.techcampushubbackend.repository.CourseRepository;
 import com.example.techcampushubbackend.repository.FeedbackRepository;
+import com.example.techcampushubbackend.utils.CurrentUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +28,7 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
     private final FeedbackRepository feedbackRepository;
+    private final CurrentUserService currentUserService;
 
     @Transactional(readOnly = true)
     public List<CourseResponse> listPublic() {
@@ -34,6 +38,20 @@ public class CourseService {
     @Transactional(readOnly = true)
     public List<CourseResponse> listAll() {
         return withRatings(courseRepository.findAllByOrderBySortOrderAscTitleAsc());
+    }
+
+    /**
+     * Faculty workspace listing: only the courses the caller launched
+     * (admins see every course, mirroring the admin list).
+     */
+    @Transactional(readOnly = true)
+    public List<CourseResponse> listOwn() {
+        User user = currentUserService.requireUser();
+        return withRatings(courseRepository.findAllByOrderBySortOrderAscTitleAsc().stream()
+                .filter(course -> user.getRole() == Role.ADMIN
+                        || (course.getCreatedBy() != null
+                            && course.getCreatedBy().equals(user.getId())))
+                .toList());
     }
 
     @Transactional(readOnly = true)
@@ -75,18 +93,34 @@ public class CourseService {
 
     @Transactional
     public CourseResponse create(CourseRequest request) {
+        return doCreate(request, null);
+    }
+
+    /**
+     * Faculty/admin create that stamps the uploader so the faculty workspace can
+     * list the courses a staff member launched. The plain admin path leaves
+     * {@code createdBy} untouched.
+     */
+    @Transactional
+    public CourseResponse createAsOwner(CourseRequest request, Long ownerId) {
+        return doCreate(request, ownerId);
+    }
+
+    private CourseResponse doCreate(CourseRequest request, Long ownerId) {
         Course course = Course.builder()
                 .title(request.title().trim())
                 .code(trimToNull(request.code()))
                 .category(trimToNull(request.category()))
                 .description(request.description())
                 .priceInr(request.priceInr() == null ? BigDecimal.ZERO : request.priceInr())
+                .mrpInr(request.mrpInr())
                 .thumbnailUrl(trimToNull(request.thumbnailUrl()))
                 .validityDays(request.validityDays() == null ? 365 : request.validityDays())
                 .slug(uniqueSlug(request.slug(), request.title(), null))
                 .highlights(joinHighlights(request.highlights()))
                 .sortOrder(request.sortOrder() == null ? 0 : request.sortOrder())
                 .active(request.active() == null || request.active())
+                .createdBy(ownerId)
                 .build();
         Course saved = courseRepository.save(course);
         return toResponse(saved, ratingFor(saved.getId()));
@@ -100,6 +134,9 @@ public class CourseService {
         if (request.category() != null) course.setCategory(trimToNull(request.category()));
         if (request.description() != null) course.setDescription(request.description());
         if (request.priceInr() != null) course.setPriceInr(request.priceInr());
+        // Always applied (unlike the other optional fields): sending an explicit
+        // mrpInr of null clears a previous discount so the card stops showing one.
+        course.setMrpInr(request.mrpInr());
         if (request.thumbnailUrl() != null) course.setThumbnailUrl(trimToNull(request.thumbnailUrl()));
         if (request.validityDays() != null) course.setValidityDays(request.validityDays());
         if (request.slug() != null) course.setSlug(uniqueSlug(request.slug(), course.getTitle(), course.getId()));
@@ -124,7 +161,8 @@ public class CourseService {
         long count = rating == null ? 0 : (long) rating[1];
         return new CourseResponse(
                 course.getId(), course.getTitle(), course.getCode(), course.getCategory(),
-                course.getDescription(), course.getPriceInr(), course.getThumbnailUrl(),
+                course.getDescription(), course.getPriceInr(), course.getMrpInr(),
+                course.getThumbnailUrl(),
                 course.getValidityDays(), course.getSlug(), splitHighlights(course.getHighlights()),
                 course.getSortOrder(), course.isActive(), average, count, course.getCreatedAt());
     }

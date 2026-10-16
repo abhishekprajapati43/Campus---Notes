@@ -296,3 +296,43 @@
                 transform: translateY(0);
             }
         }
+
+        /* =====================================================
+   HOW IT WORKS — STEP CONNECTORS (index.html)
+===================================================== */
+
+        .how-step {
+            position: relative;
+        }
+
+        /*
+         * Dashed link + chevron between the four step cards.
+         * Markup lives inside steps 1–3 only; it renders solely
+         * at lg and up, where all four steps share one row and
+         * the 24px gap (gap-6) sits next to each card.
+         */
+        .how-step-connector {
+            display: none;
+        }
+
+        @media (min-width: 1024px) {
+
+            .how-step-connector {
+                position: absolute;
+                top: 34px;      /* p-6 (24px) + half of the w-10 icon circle */
+                left: 100%;
+                width: 24px;    /* matches the grid gap between the cards */
+                height: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: 3px;
+                pointer-events: none;
+            }
+
+            .how-step-connector::before {
+                content: "";
+                flex: 1;
+                border-top: 2px dashed #bfdbfe;
+            }
+        }

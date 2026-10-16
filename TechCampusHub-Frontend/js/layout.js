@@ -14,6 +14,7 @@ const NAV_ID_BY_PAGE = {
     courses: "coursesBtn",
     profile: "sidebarProfileBtn",
     admin: "adminNavBtn",
+    faculty: "facultyNavBtn",
     paymentHistory: "paymentHistoryBtn",
     certificates: "certificatesBtn",
     feedback: "feedbackBtn"

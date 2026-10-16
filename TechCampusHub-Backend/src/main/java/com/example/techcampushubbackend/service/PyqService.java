@@ -105,7 +105,9 @@ public class PyqService {
     }
 
     private boolean canAccess(Pyq pyq, User user) {
-        if (pyq.getCourseBundle() == null || user.getRole() == Role.ADMIN) {
+        // ADMIN and FACULTY staff read all content regardless of purchases.
+        if (pyq.getCourseBundle() == null
+                || user.getRole() == Role.ADMIN || user.getRole() == Role.FACULTY) {
             return true;
         }
         return purchaseService.hasActiveAccess(user.getId(), pyq.getCourseBundle().getId());

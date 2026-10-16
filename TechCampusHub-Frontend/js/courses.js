@@ -50,6 +50,7 @@ const FALLBACK_COURSES = [
         title: "MCA Complete Notes Bundle",
         description: "Every semester's subject notes for MCA — organized by semester and subject, PDF downloads.",
         price_inr: 499,
+        mrp_inr: 1499,
         highlights: [
             "All MCA semesters",
             "Subject-wise PDF notes",
@@ -63,6 +64,7 @@ const FALLBACK_COURSES = [
         title: "B.Tech CSE Notes Bundle",
         description: "Semester notes for Computer Science & Engineering — core subjects, units and topic notes.",
         price_inr: 599,
+        mrp_inr: 1999,
         highlights: [
             "All CSE semesters",
             "Unit-wise notes",
@@ -76,6 +78,7 @@ const FALLBACK_COURSES = [
         title: "Previous Year Papers (PYQ) Pack",
         description: "Previous year question papers with solutions — sorted by course, year and semester.",
         price_inr: 199,
+        mrp_inr: 699,
         highlights: [
             "Years of question papers",
             "Course + semester sorted",
@@ -224,6 +227,20 @@ function uniqueSlug(base, existing) {
     return slug;
 }
 
+/**
+ * Optional compare-at (MRP) price: blank, 0 or unusable input all mean
+ * "no discount", which the backend stores as a NULL mrp_inr.
+ */
+function optionalMrp(value) {
+    if (value === "" || value === null || value === undefined) {
+        return null;
+    }
+
+    const amount = Math.max(0, Number(value) || 0);
+
+    return amount > 0 ? amount : null;
+}
+
 export async function createCourse(fields) {
     const title = String(fields.title || "").trim();
 
@@ -241,6 +258,7 @@ export async function createCourse(fields) {
         title,
         description: String(fields.description || "").trim(),
         price_inr: Math.max(0, Number(fields.price_inr) || 0),
+        mrp_inr: optionalMrp(fields.mrp_inr),
         validity_days: Math.max(1, Number(fields.validity_days) || 365),
         highlights: Array.isArray(fields.highlights)
             ? fields.highlights.filter(Boolean)
@@ -291,6 +309,12 @@ export async function updateCourse(courseId, fields) {
 
     if (fields.price_inr !== undefined) {
         patch.price_inr = Math.max(0, Number(fields.price_inr) || 0);
+    }
+
+    // Sent even when blank so clearing the MRP field clears the stored
+    // discount (the backend applies an explicit null unconditionally).
+    if (fields.mrp_inr !== undefined) {
+        patch.mrp_inr = optionalMrp(fields.mrp_inr);
     }
 
     if (fields.validity_days !== undefined) {
@@ -1958,6 +1982,8 @@ async function handleCourseFormSubmit(event) {
         title: $("courseTitleInput")?.value,
         description: $("courseDescriptionInput")?.value,
         price_inr: $("coursePriceInput")?.value,
+        // Optional compare-at price; "" (blank) means no discount.
+        mrp_inr: $("courseMrpInput")?.value,
         validity_days: $("courseValidityInput")?.value,
         highlights: String($("courseHighlightsInput")?.value || "")
             .split(",")
@@ -2025,6 +2051,8 @@ async function handleCourseListClick(event) {
             course.description
         );
         setCourseFieldValue("coursePriceInput", course.price_inr);
+        // null (no discount) populates as a blank field.
+        setCourseFieldValue("courseMrpInput", course.mrp_inr);
         setCourseFieldValue(
             "courseValidityInput",
             course.validity_days ?? 365

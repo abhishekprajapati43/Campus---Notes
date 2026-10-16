@@ -76,4 +76,21 @@ public class User extends Auditable {
     @Column(nullable = false)
     @Builder.Default
     private boolean enabled = true;
+
+    /**
+     * SHA-256 hex hash (64 chars) of the faculty member's raw 12-digit Aadhaar
+     * number. The raw value is hashed in {@code AuthService.register} and never
+     * persisted or logged; this column must NEVER be exposed in API responses.
+     */
+    @Column(name = "aadhaar_number", length = 64)
+    private String aadhaarNumber;
+
+    /** Postal address captured during faculty registration. */
+    @Column(columnDefinition = "TEXT")
+    private String address;
+
+    /** Faculty sign-up declaration (privacy/accuracy consent); always false for students. */
+    @Column(name = "declaration_accepted", nullable = false)
+    @Builder.Default
+    private boolean declarationAccepted = false;
 }

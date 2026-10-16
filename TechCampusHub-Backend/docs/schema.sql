@@ -18,7 +18,10 @@ CREATE TABLE IF NOT EXISTS users (
     email                 VARCHAR(190)  NOT NULL UNIQUE,
     password              VARCHAR(255)  NOT NULL,          -- BCrypt hash
     phone                 VARCHAR(20),
-    role                  VARCHAR(20)   NOT NULL CHECK (role IN ('ADMIN', 'STUDENT')),
+    role                  VARCHAR(20)   NOT NULL CHECK (role IN ('ADMIN', 'FACULTY', 'STUDENT')),
+    aadhaar_number        VARCHAR(64),                     -- SHA-256 hash of the 12-digit Aadhaar (never exposed)
+    address               TEXT,                            -- faculty postal address
+    declaration_accepted  BOOLEAN       NOT NULL DEFAULT FALSE,
     email_verified        BOOLEAN       NOT NULL DEFAULT FALSE,
     verification_token    VARCHAR(64),
     reset_token           VARCHAR(64),
@@ -39,9 +42,11 @@ CREATE TABLE IF NOT EXISTS courses (
     category       VARCHAR(60),
     description    TEXT,
     price_inr      NUMERIC(10,2)  NOT NULL DEFAULT 0,
+    mrp_inr        NUMERIC(10,2),                          -- discount anchor; NULL = no discount shown
     thumbnail_url  VARCHAR(600),                          -- Cloudinary URL
     validity_days  INTEGER        NOT NULL DEFAULT 365,
     is_active      BOOLEAN        NOT NULL DEFAULT TRUE,
+    created_by     BIGINT,                                -- users.id (soft ref: faculty/admin uploader)
     created_at     TIMESTAMP      NOT NULL DEFAULT NOW(),
     updated_at     TIMESTAMP
 );
@@ -81,6 +86,7 @@ CREATE TABLE IF NOT EXISTS notes (
     description VARCHAR(600),
     file_url    VARCHAR(600)  NOT NULL,                  -- Cloudinary URL
     course_id   BIGINT        REFERENCES courses (id) ON DELETE SET NULL,
+    created_by  BIGINT,                                  -- users.id (soft ref: faculty/admin uploader)
     created_at  TIMESTAMP     NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMP
 );

@@ -82,7 +82,8 @@ public class NotificationService {
 
     /** True when the student has at least one approved, unexpired purchase. */
     private boolean hasActivePremium(User user) {
-        if (user.getRole() == Role.ADMIN) {
+        // ADMIN and FACULTY staff always see premium-audience notifications.
+        if (user.getRole() == Role.ADMIN || user.getRole() == Role.FACULTY) {
             return true;
         }
         return purchaseRepository.existsByUserIdAndStatusAndValidUntilAfter(

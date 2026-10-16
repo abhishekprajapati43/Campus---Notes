@@ -8,6 +8,8 @@ erDiagram
     USERS ||--o{ NOTIFICATIONS    : "receives (direct)"
     USERS ||--o{ CERTIFICATES     : "is issued"
     USERS ||--o{ PURCHASES        : "reviews (admin)"
+    USERS ||--o{ NOTES            : "uploads (faculty)"
+    USERS ||--o{ COURSES          : "creates (faculty)"
 
     COURSES ||--o{ PURCHASES      : "sold as"
     COURSES ||--o{ NOTES          : "bundles (optional)"
@@ -23,7 +25,10 @@ erDiagram
         varchar email UK
         varchar password "BCrypt hash"
         varchar phone
-        varchar role "ADMIN | STUDENT"
+        varchar role "ADMIN | FACULTY | STUDENT"
+        varchar aadhaar_number "SHA-256 hash, 64 chars - never exposed"
+        text address "faculty postal address"
+        boolean declaration_accepted "faculty sign-up consent"
         boolean email_verified
         varchar verification_token
         varchar reset_token
@@ -39,9 +44,11 @@ erDiagram
         varchar category
         text description
         numeric price_inr
+        numeric mrp_inr "discount anchor - NULL = no discount"
         varchar thumbnail_url "Cloudinary"
         int validity_days
         boolean is_active
+        bigint created_by "users.id - faculty/admin creator (soft ref)"
         timestamp created_at
     }
 
@@ -69,6 +76,7 @@ erDiagram
         varchar description
         varchar file_url "Cloudinary"
         bigint course_id FK "NULL = free"
+        bigint created_by "users.id - faculty/admin uploader (soft ref)"
         timestamp created_at
     }
 
@@ -151,7 +159,8 @@ erDiagram
 | `purchases.user_id` → `users` | Who bought the course |
 | `purchases.course_id` → `courses` | Which course was bought |
 | `purchases.reviewed_by` → `users` | Which admin approved/rejected it |
-| `notes.course_id` (nullable) | `NULL` = free note; set = only buyers of that course (plus admins) can read it. Same rule for `pyqs`, `tnp_notes`, `timetables` |
+| `notes.course_id` (nullable) | `NULL` = free note; set = only buyers of that course (plus admins/faculty) can read it. Same rule for `pyqs`, `tnp_notes`, `timetables` |
+| `notes.created_by`, `courses.created_by` (nullable) | `users.id` of the faculty/admin who uploaded it; used for faculty ownership (`GET/PUT /api/faculty/...`) and admin moderation. `NULL` = legacy/admin-seeded content |
 | `notifications.user_id` (nullable) | `NULL` = broadcast to everyone; set = direct message |
 | `favorites.item_type + item_id` | Polymorphic pointer: one table can favorite any content type; uniqueness is `(user_id, item_type, item_id)` |
 | `certificates.user_id` (nullable) | Set = issued to that student; `NULL` = reusable template |
