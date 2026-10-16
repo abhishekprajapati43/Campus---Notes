@@ -31,9 +31,6 @@ import {
     showAuthMessage,
     resetAuthForm,
     logoutUser,
-    openDeleteProfileModal,
-    closeDeleteProfileModal,
-    confirmDeleteProfile,
     handleCategoryChange,
     updateUploadPanel,
     updateStudentFilters,
@@ -1025,19 +1022,6 @@ function setupModalKeyboardShortcuts() {
                 $("editResourceForm")?.reset();
                 return;
             }
-
-            const deleteModal = $("deleteProfileModal");
-
-            if (deleteModal && !deleteModal.classList.contains("hidden")) {
-                closeDeleteProfileModal();
-                return;
-            }
-
-            const profileDropdown = $("adminProfileDropdown");
-
-            if (profileDropdown && !profileDropdown.classList.contains("hidden")) {
-                profileDropdown.classList.add("hidden");
-            }
         }
     );
 }
@@ -1340,21 +1324,19 @@ async function handleCategoryButtonClick(event) {
             );
         });
 
-    // Sidebar category links mirror the selection.
-    document
-        .querySelectorAll(
-            "[data-nav-category]"
-        )
-        .forEach(item => {
-            item.classList.toggle(
-                "active",
-                item.dataset.navCategory === category
-            );
-        });
-
     await handleCategoryChange(
         category
     );
+
+    // Smooth scroll to the section that shows
+    // the selected category's content.
+    const section =
+        document.getElementById("resourceList");
+
+    section?.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
 }
 
 // =====================================================
@@ -1401,30 +1383,6 @@ async function handleLogout() {
 
         alert(
             getErrorMessage(error)
-        );
-    }
-}
-
-// =====================================================
-// DELETE PROFILE
-// =====================================================
-
-function handleOpenDeleteProfile() {
-    openDeleteProfileModal();
-}
-
-function handleCloseDeleteProfile() {
-    closeDeleteProfileModal();
-}
-
-async function handleConfirmDeleteProfile() {
-    try {
-        await confirmDeleteProfile();
-
-    } catch (error) {
-        console.error(
-            "Profile deletion error:",
-            error
         );
     }
 }
@@ -2011,46 +1969,6 @@ function setupProfileEvents() {
     $("logoutBtn")?.addEventListener(
         "click",
         handleLogout
-    );
-
-    $("profileLogoutBtn")?.addEventListener(
-        "click",
-        handleLogout
-    );
-
-    $("deleteProfileBtn")?.addEventListener(
-        "click",
-        handleOpenDeleteProfile
-    );
-
-    // Header profile dropdown entry (separate id —
-    // duplicate ids would leave one button dead).
-    $("headerDeleteProfileBtn")?.addEventListener(
-        "click",
-        handleOpenDeleteProfile
-    );
-
-
-    $("cancelDeleteProfileBtn")?.addEventListener(
-        "click",
-        handleCloseDeleteProfile
-    );
-
-    $("confirmDeleteProfileBtn")?.addEventListener(
-        "click",
-        handleConfirmDeleteProfile
-    );
-
-    $("deleteProfileModal")?.addEventListener(
-        "click",
-        event => {
-            if (
-                event.target ===
-                event.currentTarget
-            ) {
-                closeDeleteProfileModal();
-            }
-        }
     );
 }
 

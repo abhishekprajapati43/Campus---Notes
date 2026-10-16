@@ -84,22 +84,13 @@ document.addEventListener(
                 if (category && VALID_CATEGORIES.includes(category)) {
                     await handleCategoryChange(category);
 
-                    // Keep card + sidebar active states in sync.
+                    // Keep card active states in sync.
                     document
                         .querySelectorAll("[data-dashboard-category]")
                         .forEach(card => {
                             card.classList.toggle(
                                 "active",
                                 card.dataset.dashboardCategory === category
-                            );
-                        });
-
-                    document
-                        .querySelectorAll("[data-nav-category]")
-                        .forEach(link => {
-                            link.classList.toggle(
-                                "active",
-                                link.dataset.navCategory === category
                             );
                         });
                 }

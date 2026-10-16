@@ -279,7 +279,16 @@ function actionButtons(
 
             </a>
 
+        `);
 
+
+
+        // Students can only view documents — the
+        // Download action is kept for administrators.
+
+        if (isAdmin()) {
+
+            buttons.push(`
 
             <a
 
@@ -308,6 +317,8 @@ function actionButtons(
             </a>
 
         `);
+
+        }
 
     }
 

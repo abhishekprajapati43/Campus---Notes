@@ -209,6 +209,10 @@
                 display: none;
             }
 
+            .sidebar-profile-details {
+                display: none;
+            }
+
             .main-area {
                 margin-left: 76px !important;
             }

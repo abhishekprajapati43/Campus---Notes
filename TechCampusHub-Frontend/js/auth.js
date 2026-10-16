@@ -261,26 +261,3 @@ export function onAuthStateChange(callback) {
     };
 }
 
-// =====================================================
-// Delete Current Student Account
-// =====================================================
-
-export async function requestAccountDeletion() {
-    const {
-        data: { session }
-    } = await getSession();
-
-    if (!session?.user?.id) {
-        throw new Error("No active session found.");
-    }
-
-    const { apiDelete } = await import("./api.js");
-
-    const data = await apiDelete("/api/account");
-
-    clearAuth();
-
-    emitAuthState("SIGNED_OUT", null);
-
-    return data ?? { success: true };
-}

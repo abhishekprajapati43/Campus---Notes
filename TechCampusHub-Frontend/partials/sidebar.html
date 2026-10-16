@@ -101,54 +101,6 @@
                                 Courses
                             </span>
                         </a>
-                        <!-- My Notes -->
-                        <a
-                            href="./dashboard.html?category=notes"
-                            data-nav-category="notes"
-                            data-category="notes"
-                            class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl"
-                        >
-                            <i class="fa-solid fa-book-open w-5"></i>
-                            <span class="nav-label font-semibold">
-                                My Notes
-                            </span>
-                        </a>
-                        <!-- My PYQs -->
-                        <a
-                            href="./dashboard.html?category=pyq"
-                            data-nav-category="pyq"
-                            data-category="pyq"
-                            class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl"
-                        >
-                            <i class="fa-solid fa-file-pen w-5"></i>
-                            <span class="nav-label font-semibold">
-                                My PYQs
-                            </span>
-                        </a>
-                        <!-- Timetable -->
-                        <a
-                            href="./dashboard.html?category=timetable"
-                            data-nav-category="timetable"
-                            data-category="timetable"
-                            class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl"
-                        >
-                            <i class="fa-regular fa-calendar-days w-5"></i>
-                            <span class="nav-label font-semibold">
-                                Timetable
-                            </span>
-                        </a>
-                        <!-- TNP Notes -->
-                        <a
-                            href="./dashboard.html?category=tnp"
-                            data-nav-category="tnp"
-                            data-category="tnp"
-                            class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl"
-                        >
-                            <i class="fa-solid fa-briefcase w-5"></i>
-                            <span class="nav-label font-semibold">
-                                TNP Notes
-                            </span>
-                        </a>
                         <!-- Payment History -->
                         <a id="paymentHistoryBtn" href="./payment-history.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
                             <i class="fa-solid fa-receipt w-5"></i>
@@ -192,13 +144,6 @@
                                 Admin Panel
                             </span>
                         </a>
-                        <!-- Settings -->
-                        <a id="settingsBtn" href="./settings.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
-                            <i class="fa-solid fa-gear w-5"></i>
-                            <span class="nav-label font-semibold">
-                                Settings
-                            </span>
-                        </a>
                         <!-- Profile -->
                         <a id="sidebarProfileBtn" href="./profile.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
                             <i class="fa-regular fa-user w-5"></i>
@@ -206,6 +151,104 @@
                                 Profile
                             </span>
                         </a>
+                        <!-- PROFILE DETAILS -->
+                        <div class="sidebar-profile-details
+                           rounded-xl
+                           bg-white/10
+                           p-4
+                           mt-2
+                           space-y-2.5
+                           text-sm">
+                            <!-- Profile Photo + Name -->
+                            <div class="flex items-center gap-3">
+                                <span class="w-11
+                                  h-11
+                                  shrink-0
+                                  rounded-full
+                                  bg-blue-600
+                                  text-white
+                                  flex
+                                  items-center
+                                  justify-center">
+                                    <i class="fa-solid fa-user"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <p id="sidebarProfileName" class="font-bold
+                                       truncate">
+                                        Student
+                                    </p>
+                                    <p class="text-xs
+                                       text-blue-200">
+                                        Student Profile
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- Enrollment Number -->
+                            <p id="sidebarProfileEnrollmentRow" class="flex
+                               items-center
+                               justify-between
+                               gap-2">
+                                <span class="text-blue-200">
+                                    Enrollment No:
+                                </span>
+                                <span id="sidebarProfileEnrollment" class="font-semibold
+                                  truncate">
+                                    -
+                                </span>
+                            </p>
+                            <!-- Email -->
+                            <p class="flex
+                               items-center
+                               justify-between
+                               gap-2">
+                                <span class="text-blue-200">
+                                    Email:
+                                </span>
+                                <span id="sidebarProfileEmail" class="font-semibold
+                                  truncate">
+                                    -
+                                </span>
+                            </p>
+                            <!-- Branch -->
+                            <p id="sidebarProfileBranchRow" class="flex
+                               items-center
+                               justify-between
+                               gap-2">
+                                <span class="text-blue-200">
+                                    Branch:
+                                </span>
+                                <span id="sidebarProfileBranch" class="font-semibold
+                                  truncate">
+                                    -
+                                </span>
+                            </p>
+                            <!-- Semester -->
+                            <p id="sidebarProfileSemesterRow" class="flex
+                               items-center
+                               justify-between
+                               gap-2">
+                                <span class="text-blue-200">
+                                    Semester:
+                                </span>
+                                <span id="sidebarProfileSemester" class="font-semibold
+                                  truncate">
+                                    -
+                                </span>
+                            </p>
+                            <!-- Mobile Number -->
+                            <p id="sidebarProfilePhoneRow" class="flex
+                               items-center
+                               justify-between
+                               gap-2">
+                                <span class="text-blue-200">
+                                    Mobile:
+                                </span>
+                                <span id="sidebarProfilePhone" class="font-semibold
+                                  truncate">
+                                    -
+                                </span>
+                            </p>
+                        </div>
                         <!-- Logout -->
                     </nav>
                     <!-- LOGOUT -->

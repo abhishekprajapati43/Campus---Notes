@@ -1,4 +1,4 @@
-
+﻿
 
 
 // =====================================================
@@ -47,9 +47,7 @@ import {
 
     getCurrentUser,
 
-    signOut,
-
-    requestAccountDeletion
+    signOut
 
 } from "./auth.js";
 
@@ -533,6 +531,31 @@ export function updateAdminUploadUI() {
 // Update Student Profile UI
 // =====================================================
 
+//
+// Small helper: writes text into an element by id
+// when the element exists on the current page.
+//
+
+function setTextContent(id, value) {
+    const element = $(id);
+
+    if (element) {
+        element.textContent = value;
+    }
+}
+
+//
+// Profile rows that are shown for students and
+// hidden for administrators in the sidebar.
+//
+
+const SIDEBAR_STUDENT_ROWS = [
+    "sidebarProfileEnrollmentRow",
+    "sidebarProfileBranchRow",
+    "sidebarProfileSemesterRow",
+    "sidebarProfilePhoneRow"
+];
+
 export function updateStudentProfileUI(
     student = currentStudent
 ) {
@@ -557,121 +580,58 @@ export function updateStudentProfileUI(
         student.branch ||
         "";
 
-    const year =
-        student.year ||
-        "";
-
     const semester =
         student.semester ||
         "";
 
+    const phone =
+        student.phone ||
+        "";
 
-    // -------------------------------------------------
-    // Header
-    // -------------------------------------------------
-
-    const userNameBadge =
-        $("userNameBadge");
-
-    if (userNameBadge) {
-
-        userNameBadge.textContent =
-            name;
-    }
+    const enrollment =
+        student.id ?? "";
 
 
     // -------------------------------------------------
-    // Profile Top
+    // Sidebar Profile Section
     // -------------------------------------------------
 
-    const profileName =
-        $("adminProfileName");
+    setTextContent(
+        "sidebarProfileName",
+        name
+    );
 
-    const profileEmail =
-        $("adminProfileEmail");
+    setTextContent(
+        "sidebarProfileEnrollment",
+        enrollment || "-"
+    );
 
-    const profileNameDetail =
-        $("adminProfileNameDetail");
+    setTextContent(
+        "sidebarProfileEmail",
+        email || "-"
+    );
 
-    if (profileName) {
+    setTextContent(
+        "sidebarProfileBranch",
+        branch || "-"
+    );
 
-        profileName.textContent =
-            name;
-    }
+    setTextContent(
+        "sidebarProfileSemester",
+        semester
+            ? `Semester ${semester}`
+            : "-"
+    );
 
-    if (profileEmail) {
+    setTextContent(
+        "sidebarProfilePhone",
+        phone || "-"
+    );
 
-        profileEmail.textContent =
-            email;
-    }
-
-    if (profileNameDetail) {
-
-        profileNameDetail.textContent =
-            name;
-    }
-
-
-    // -------------------------------------------------
-    // Student Profile Details
-    // -------------------------------------------------
-
-    const profileCourse =
-        $("profileCourse");
-
-    const profileBranch =
-        $("profileBranch");
-
-    const profileYear =
-        $("profileYear");
-
-    const profileSemester =
-        $("profileSemester");
-
-
-    // IMPORTANT:
-    // Show student fields again after Admin login
-
-    if (profileCourse) {
-
-        profileCourse.closest("p")
-            ?.classList.remove("hidden");
-
-        profileCourse.textContent =
-            course || "-";
-    }
-
-
-    if (profileBranch) {
-
-        profileBranch.closest("p")
-            ?.classList.remove("hidden");
-
-        profileBranch.textContent =
-            branch || "-";
-    }
-
-
-    if (profileYear) {
-
-        profileYear.closest("p")
-            ?.classList.remove("hidden");
-
-        profileYear.textContent =
-            year || "-";
-    }
-
-
-    if (profileSemester) {
-
-        profileSemester.closest("p")
-            ?.classList.remove("hidden");
-
-        profileSemester.textContent =
-            semester
-                ? `Semester ${semester}`
-                : "-";
-    }
+    // Students see every profile row.
+    SIDEBAR_STUDENT_ROWS.forEach(
+        rowId => $(rowId)?.classList.remove("hidden")
+    );
 
 
     // -------------------------------------------------
@@ -704,20 +664,6 @@ export function updateStudentProfileUI(
             ? `Semester ${semester}`
             : "-";
     }
-
-    // -------------------------------------------------
-    // Role
-    // -------------------------------------------------
-
-    const adminRoleDetail =
-        $("adminRoleDetail");
-
-    if (adminRoleDetail) {
-
-        adminRoleDetail.classList.add(
-            "hidden"
-        );
-    }
 }
 
 // =====================================================
@@ -738,176 +684,24 @@ export function updateAdminProfileUI(
 
 
     // -------------------------------------------------
-    // Profile Elements
+    // Sidebar Profile Section
     // -------------------------------------------------
 
-    const userNameBadge =
-        $("userNameBadge");
-
-    const profileName =
-        $("adminProfileName");
-
-    const profileEmail =
-        $("adminProfileEmail");
-
-    const profileNameDetail =
-        $("adminProfileNameDetail");
-
-    const profileCourse =
-        $("profileCourse");
-
-    const profileBranch =
-        $("profileBranch");
-
-    const profileSemester =
-        $("profileSemester");
-
-    const studentProfileDetails =
-        $("studentProfileDetails");
-
-    const adminRoleDetail =
-        $("adminRoleDetail");
-
-
-    // -------------------------------------------------
-    // Header
-    // -------------------------------------------------
-
-    if (userNameBadge) {
-
-        userNameBadge.textContent =
-            name;
-    }
-
-
-    // -------------------------------------------------
-    // Profile Top
-    // -------------------------------------------------
-
-    if (profileName) {
-
-        profileName.textContent =
-            name;
-    }
-
-
-    if (profileEmail) {
-
-        profileEmail.textContent =
-            email;
-    }
-
-
-    // -------------------------------------------------
-    // Name
-    // -------------------------------------------------
-
-    if (profileNameDetail) {
-
-        profileNameDetail.textContent =
-            name;
-    }
-
-
-    // -------------------------------------------------
-    // Admin Role
-    // -------------------------------------------------
-
-    if (adminRoleDetail) {
-
-        adminRoleDetail.classList.remove(
-            "hidden"
-        );
-    }
-
-
-    // -------------------------------------------------
-    // Hide Student Details for Admin
-    // -------------------------------------------------
-
-if (profileCourse) {
-    profileCourse.closest("p")
-        ?.classList.add("hidden");
-}
-
-if (profileBranch) {
-    profileBranch.closest("p")
-        ?.classList.add("hidden");
-}
-
-if (profileYear) {
-    profileYear.closest("p")
-        ?.classList.add("hidden");
-}
-
-if (profileSemester) {
-    profileSemester.closest("p")
-        ?.classList.add("hidden");
-}
-
-if (adminRoleDetail) {
-    adminRoleDetail.classList.remove("hidden");
-}
-}
-
-// =====================================================
-
-// Delete Profile Visibility
-
-// =====================================================
-
-
-export function updateDeleteProfileVisibility() {
-
-    const buttons =
-
-        document.querySelectorAll(
-
-            "#deleteProfileBtn," +
-
-            " #headerDeleteProfileBtn"
-
-        );
-
-    const section =
-
-        $("deleteProfileSection");
-
-
-
-    if (!buttons.length && !section) {
-
-        return;
-
-    }
-
-
-
-    // Student only — admins manage accounts from the admin panel.
-
-    const hide = isAdminRole();
-
-
-
-    buttons.forEach(
-
-        btn => btn.classList.toggle("hidden", hide)
-
+    setTextContent(
+        "sidebarProfileName",
+        name
     );
 
+    setTextContent(
+        "sidebarProfileEmail",
+        email || "-"
+    );
 
-
-    if (section) {
-
-        section.classList.toggle("hidden", hide);
-
-    }
-
+    // Admins have no student academic details.
+    SIDEBAR_STUDENT_ROWS.forEach(
+        rowId => $(rowId)?.classList.add("hidden")
+    );
 }
-
-
-
-
 
 // =====================================================
 
@@ -1349,113 +1143,6 @@ export function updateUploadPanel() {
         hideAdminPanel();
     }
 }
-
-// =====================================================
-// Profile Dropdown
-// =====================================================
-
-export function updateProfileDropdown() {
-    const dropdown =
-        $("adminProfileDropdown");
-    if (!dropdown) {
-        return;
-
-    }
-    const profileButton =
-
-        $("profileButton");
-
-
-
-    if (!profileButton) {
-
-        return;
-
-    }
-
-
-
-    if (
-
-        profileButton.dataset
-
-            .dropdownReady === "true"
-
-    ) {
-
-        return;
-
-    }
-
-
-
-    profileButton.dataset
-
-        .dropdownReady = "true";
-
-
-
-    profileButton.addEventListener(
-
-        "click",
-
-        event => {
-
-            event.stopPropagation();
-
-
-
-            dropdown.classList.toggle(
-
-                "hidden"
-
-            );
-
-        }
-
-    );
-
-
-
-    document.addEventListener(
-
-        "click",
-
-        event => {
-
-            if (
-
-                !dropdown.contains(
-
-                    event.target
-
-                ) &&
-
-                !profileButton.contains(
-
-                    event.target
-
-                )
-
-            ) {
-
-                dropdown.classList.add(
-
-                    "hidden"
-
-                );
-
-            }
-
-        }
-
-    );
-
-}
-
-
-
-
 
 // =====================================================
 
@@ -2006,10 +1693,6 @@ applyRoleUI();
 
 
 
-// Danger-zone delete button (settings page) is students-only.
-
-updateDeleteProfileVisibility();
-
 
 
 // =====================================================
@@ -2466,11 +2149,6 @@ export async function logoutUser() {
         setSignupMode(false);
         updateAuthModeUI();
 
-        const dropdown = $("adminProfileDropdown");
-        if (dropdown) {
-            dropdown.classList.add("hidden");
-        }
-
         return success;
 
     } catch (error) {
@@ -2485,254 +2163,6 @@ export async function logoutUser() {
         return false;
     }
 }
-
-// =====================================================
-// Delete Profile Modal
-// =====================================================
-
-
-
-export function openDeleteProfileModal() {
-
-    if (isAdminRole()) {
-
-        return;
-
-    }
-
-
-
-    const modal =
-
-        $("deleteProfileModal");
-
-
-
-    if (!modal) {
-
-        return;
-
-    }
-
-
-
-    const message =
-
-        $("deleteProfileMessage");
-
-
-
-    if (message) {
-
-        message.textContent =
-
-            "Are you sure you want to delete your profile?";
-
-    }
-
-
-
-    modal.classList.remove(
-
-        "hidden"
-
-    );
-
-}
-
-
-
-
-
-export function closeDeleteProfileModal() {
-
-    const modal =
-
-        $("deleteProfileModal");
-
-
-
-    if (!modal) {
-
-        return;
-
-    }
-
-
-
-    modal.classList.add(
-
-        "hidden"
-
-    );
-
-}
-
-
-
-
-
-// =====================================================
-
-// Confirm Delete Profile
-
-// =====================================================
-
-
-
-export async function confirmDeleteProfile() {
-
-    if (isAdminRole()) {
-
-        return false;
-
-    }
-
-
-
-    const confirmButton =
-
-        $("confirmDeleteProfileBtn");
-
-
-
-    if (confirmButton) {
-
-        confirmButton.disabled =
-
-            true;
-
-
-
-        confirmButton.textContent =
-
-            "Deleting...";
-
-    }
-
-
-
-    try {
-
-        await requestAccountDeletion();
-
-
-
-        clearUserState();
-
-
-
-        closeDeleteProfileModal();
-
-
-
-        hideElement(
-
-            $("dashboardSection")
-
-        );
-
-
-
-        hideElement(
-
-            $("adminPanel")
-
-        );
-
-
-
-        showAuthSection();
-
-
-
-        setSignupMode(
-
-            true
-
-        );
-
-
-
-        resetAuthForm();
-
-
-
-        updateAuthModeUI();
-
-
-
-        showAuthMessage(
-
-            "Your profile has been deleted. Please create a new account.",
-
-            "success"
-
-        );
-
-
-
-        // The account is gone: log out for good and land on the login page.
-
-        window.location.replace("./login.html?deleted=1");
-
-
-
-        return true;
-
-
-
-    } catch (error) {
-
-        console.error(
-
-            "Profile deletion error:",
-
-            error
-
-        );
-
-
-
-        showAuthMessage(
-
-            error.message ||
-
-                "Unable to delete your profile.",
-
-            "error"
-
-        );
-
-
-
-        return false;
-
-
-
-    } finally {
-
-        if (confirmButton) {
-
-            confirmButton.disabled =
-
-                false;
-
-
-
-            confirmButton.textContent =
-
-                "Delete";
-
-        }
-
-    }
-
-}
-
-
-
-
 
 // =====================================================
 
