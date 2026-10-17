@@ -16,6 +16,7 @@ import { initChatbot } from "./chatbot.js";
 import { initFaculty, initHeaderProfileMenu, initChangePasswordModal } from "./faculty.js";
 import { setupPdfViewer } from "./pdfviewer.js";
 import { setupSmartSearch } from "./smartsearch.js";
+import { setupDashboardCounts } from "./dashboardcounts.js";
 
 const PAGE =
     document.body?.dataset?.page || "auth";
@@ -93,6 +94,13 @@ document.addEventListener(
                 // suggestions + history (self-guarded: no-ops
                 // when the smart search box is absent).
                 setupSmartSearch();
+
+                // "Available: X" counts on the four dashboard
+                // cards (Notes / TNP / PYQ / Exam Timetable),
+                // resolved in one request and scoped to the
+                // caller's free + purchased content (self-
+                // guarded: no-ops when the cards are absent).
+                setupDashboardCounts();
 
                 await initFavorites();
                 await initNotifications();

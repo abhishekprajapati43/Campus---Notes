@@ -757,3 +757,13 @@ export function smartSearch(query, limit = 20) {
 export function smartSearchSuggestions(query) {
     return apiGet(`/api/search/suggest?q=${encodeURIComponent(query)}`);
 }
+
+/**
+ * Availability counts for the four dashboard cards, resolved once per load
+ * from a single request. Shape: { notes, tnp, pyq, timetable }. The backend
+ * scopes them to the caller: free content plus active purchases for a
+ * student, everything the app would list for staff.
+ */
+export function dashboardSummary() {
+    return apiGet("/api/dashboard/summary");
+}

@@ -1,0 +1,81 @@
+package com.example.techcampushubbackend.service;
+
+import com.example.techcampushubbackend.dto.DashboardDtos.DashboardSummary;
+import com.example.techcampushubbackend.entity.Role;
+import com.example.techcampushubbackend.entity.User;
+import com.example.techcampushubbackend.repository.NoteRepository;
+import com.example.techcampushubbackend.repository.PurchaseRepository;
+import com.example.techcampushubbackend.repository.PyqRepository;
+import com.example.techcampushubbackend.repository.TimetableRepository;
+import com.example.techcampushubbackend.repository.TnpNoteRepository;
+import com.example.techcampushubbackend.utils.CurrentUserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * Single dashboard summary for the signed-in student.
+ *
+ * <p>The four cards (Notes / TNP / PYQ / Exam Timetable) all read from one
+ * response, so the dashboard renders with a single request. Every count is
+ * availability, not a raw row count: free resources plus resources of course
+ * bundles the student holds an approved, unexpired purchase of. Locked,
+ * hidden, deleted, draft and expired material is never counted.
+ *
+ * <p>The counting rule is the same access model the rest of the app enforces
+ * when opening a document, so the number on a card always matches what the
+ * student can actually reach in that section.
+ */
+@Service
+@RequiredArgsConstructor
+public class DashboardService {
+
+    private final NoteRepository noteRepository;
+    private final TnpNoteRepository tnpNoteRepository;
+    private final PyqRepository pyqRepository;
+    private final TimetableRepository timetableRepository;
+    private final PurchaseRepository purchaseRepository;
+    private final CurrentUserService currentUserService;
+
+    /** Availability counts for the caller's dashboard cards. */
+    @Transactional(readOnly = true)
+    public DashboardSummary summary() {
+        User user = currentUserService.requireUser();
+
+        // Staff see everything the app would list for them; students are
+        // scoped to free content plus their active purchases.
+        if (user.getRole() == Role.ADMIN || user.getRole() == Role.FACULTY) {
+            return new DashboardSummary(
+                    noteRepository.count(),
+                    tnpNoteRepository.count(),
+                    pyqRepository.count(),
+                    timetableRepository.count());
+        }
+
+        List<Long> courseIds = accessibleCourseIds(user.getId());
+
+        return new DashboardSummary(
+                noteRepository.countAccessible(courseIds),
+                tnpNoteRepository.countAccessible(courseIds),
+                pyqRepository.countAccessible(courseIds),
+                timetableRepository.countAccessible(courseIds));
+    }
+
+    /**
+     * Course bundle ids this student may open right now: an approved purchase
+     * whose validity window has not expired. An empty list keeps the SQL
+     * {@code IN} clause valid and reduces it to free content only.
+     */
+    private List<Long> accessibleCourseIds(Long userId) {
+        List<Long> courseIds = purchaseRepository
+                .findActiveByUser(userId, LocalDateTime.now()).stream()
+                .map(purchase -> purchase.getCourse().getId())
+                .distinct()
+                .toList();
+
+        return courseIds.isEmpty() ? List.of(-1L) : courseIds;
+    }
+}
