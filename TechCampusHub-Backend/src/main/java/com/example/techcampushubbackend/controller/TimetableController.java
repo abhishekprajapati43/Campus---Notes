@@ -3,9 +3,11 @@ package com.example.techcampushubbackend.controller;
 import com.example.techcampushubbackend.dto.ApiResponse;
 import com.example.techcampushubbackend.dto.ContentDtos.TimetableRequest;
 import com.example.techcampushubbackend.dto.ContentDtos.TimetableResponse;
+import com.example.techcampushubbackend.service.ContentStreamService;
 import com.example.techcampushubbackend.service.TimetableService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.net.URI;
 import java.util.List;
 
 /** Timetables: student reading + admin CRUD. */
@@ -31,6 +32,7 @@ import java.util.List;
 public class TimetableController {
 
     private final TimetableService timetableService;
+    private final ContentStreamService contentStreamService;
 
     @Operation(summary = "List visible timetables (student)")
     @GetMapping("/timetables")
@@ -44,11 +46,12 @@ public class TimetableController {
         return ResponseEntity.ok(ApiResponse.ok(timetableService.getVisible(id)));
     }
 
-    @Operation(summary = "Download timetable file (redirects to the Cloudinary URL)")
+    @Operation(summary = "Download timetable file (streams through the backend)",
+            description = "Bytes are relayed server-side under the same visibility "
+                    + "check as reading the timetable - the storage URL is never exposed.")
     @GetMapping("/timetables/{id}/download")
-    public ResponseEntity<Void> download(@PathVariable Long id) {
-        String url = timetableService.getVisible(id).fileUrl();
-        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
+    public void download(@PathVariable Long id, HttpServletResponse response) {
+        contentStreamService.stream(timetableService.requireVisibleFileUrl(id), response);
     }
 
     @Operation(summary = "List all timetables (admin)")

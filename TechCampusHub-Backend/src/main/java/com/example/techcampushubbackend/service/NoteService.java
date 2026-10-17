@@ -37,13 +37,18 @@ public class NoteService {
     private final CurrentUserService currentUserService;
     private final UserRepository userRepository;
 
-    /** Student listing - filters out paid bundles the caller cannot access. */
+    /**
+     * Listing for the public endpoint - filters out paid bundles the caller
+     * cannot access and withholds the storage URL from students (document
+     * bytes stream through GET /api/content/notes/{id}/pdf; staff keep the
+     * URL because their management UIs depend on it).
+     */
     @Transactional(readOnly = true)
     public List<NoteResponse> listVisible() {
         User user = currentUserService.requireUser();
         return noteRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(note -> canAccess(note, user))
-                .map(NoteService::toResponse)
+                .map(note -> toVisibleResponse(note, user))
                 .toList();
     }
 
@@ -95,7 +100,7 @@ public class NoteService {
         if (!canAccess(note, user)) {
             throw new ResourceNotFoundException("Note", id);
         }
-        return toResponse(note);
+        return toVisibleResponse(note, user);
     }
 
     /** Admin create - identical to before (no owner stamped). */
@@ -212,6 +217,53 @@ public class NoteService {
                 null,
                 null,
                 note.getCreatedAt());
+    }
+
+    /**
+     * Per-role payload: students get the storage URL withheld (they read the
+     * bytes through /api/content/**), staff keep the real URL because their
+     * management UIs (edit/replace/delete) depend on it.
+     */
+    private static NoteResponse toVisibleResponse(Note note, User user) {
+        boolean staff = user.getRole() == Role.ADMIN || user.getRole() == Role.FACULTY;
+        return staff ? toResponse(note) : toStudentResponse(note);
+    }
+
+    /**
+     * Student payload: {@code fileUrl}/{@code storagePath} are withheld so the
+     * storage URL never reaches the browser - students read the bytes through
+     * GET /api/content/notes/{id}/pdf, which re-checks access server-side.
+     */
+    public static NoteResponse toStudentResponse(Note note) {
+        NoteResponse base = toResponse(note);
+        return new NoteResponse(
+                base.id(), base.title(), base.subject(), base.course(),
+                base.branch(), base.year(), base.semester(), base.description(),
+                null,
+                null,
+                base.courseId(), base.courseTitle(),
+                null,
+                null,
+                base.createdAt());
+    }
+
+    /**
+     * Access-checked server-side resolution of the storage URL for the secure
+     * streaming routes (in-app viewer relay + /download). Mirrors the
+     * visibility rules of {@link #getVisible(Long)}; the URL is only ever
+     * relayed as bytes, never serialized into a response body.
+     */
+    @Transactional(readOnly = true)
+    public String requireVisibleFileUrl(Long id) {
+        User user = currentUserService.requireUser();
+        Note note = require(id);
+        if (!canAccess(note, user)) {
+            throw new ResourceNotFoundException("Note", id);
+        }
+        if (note.getFileUrl() == null || note.getFileUrl().isBlank()) {
+            throw new ResourceNotFoundException("Note file", id);
+        }
+        return note.getFileUrl();
     }
 
     /** Admin-list enrichment: resolves every uploader in one batched query (no N+1). */

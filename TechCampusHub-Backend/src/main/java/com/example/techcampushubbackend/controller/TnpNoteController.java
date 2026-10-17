@@ -3,9 +3,11 @@ package com.example.techcampushubbackend.controller;
 import com.example.techcampushubbackend.dto.ApiResponse;
 import com.example.techcampushubbackend.dto.ContentDtos.TnpNoteRequest;
 import com.example.techcampushubbackend.dto.ContentDtos.TnpNoteResponse;
+import com.example.techcampushubbackend.service.ContentStreamService;
 import com.example.techcampushubbackend.service.TnpNoteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.net.URI;
 import java.util.List;
 
 /** Training &amp; placement notes: student reading + admin CRUD. */
@@ -31,6 +32,7 @@ import java.util.List;
 public class TnpNoteController {
 
     private final TnpNoteService tnpNoteService;
+    private final ContentStreamService contentStreamService;
 
     @Operation(summary = "List visible TNP notes (student)")
     @GetMapping("/tnp-notes")
@@ -44,11 +46,12 @@ public class TnpNoteController {
         return ResponseEntity.ok(ApiResponse.ok(tnpNoteService.getVisible(id)));
     }
 
-    @Operation(summary = "Download TNP note PDF (redirects to the Cloudinary URL)")
+    @Operation(summary = "Download TNP note PDF (streams through the backend)",
+            description = "Bytes are relayed server-side under the same visibility "
+                    + "check as reading the note - the storage URL is never exposed.")
     @GetMapping("/tnp-notes/{id}/download")
-    public ResponseEntity<Void> download(@PathVariable Long id) {
-        String url = tnpNoteService.getVisible(id).fileUrl();
-        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
+    public void download(@PathVariable Long id, HttpServletResponse response) {
+        contentStreamService.stream(tnpNoteService.requireVisibleFileUrl(id), response);
     }
 
     @Operation(summary = "List all TNP notes (admin)")

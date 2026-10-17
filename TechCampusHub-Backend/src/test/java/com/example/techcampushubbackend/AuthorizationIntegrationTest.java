@@ -272,7 +272,7 @@ class AuthorizationIntegrationTest {
     }
 
     @Test
-    void pdfDownloadRedirectsToCloudinaryUrl() throws Exception {
+    void pdfDownloadStreamsBytesWithoutRedirecting() throws Exception {
         MvcResult created = mockMvc.perform(post("/api/admin/notes")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -285,14 +285,28 @@ class AuthorizationIntegrationTest {
         long noteId = objectMapper.readTree(created.getResponse().getContentAsString())
                 .path("data").path("id").asLong();
 
-        // 302 with Location pointing at the stored Cloudinary URL (no binary proxying)
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                        .get("/api/notes/%d/download".formatted(noteId))
+        // The bytes are relayed through the backend - the response is never a
+        // 302 whose Location hands out the storage URL. Status 200 when the
+        // storage answers, 502/404 when it does not.
+        MvcResult download = mockMvc.perform(get("/api/notes/%d/download".formatted(noteId))
                         .header("Authorization", "Bearer " + studentToken))
-                .andExpect(status().isFound())
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
-                        .header().string("Location",
-                                "https://res.cloudinary.com/demo/raw/upload/dl.pdf"));
+                .andExpect(result -> {
+                    int status = result.getResponse().getStatus();
+                    org.junit.jupiter.api.Assertions.assertTrue(
+                            status == 200 || status == 404 || status == 502,
+                            "expected relayed bytes, got status " + status);
+                    org.junit.jupiter.api.Assertions.assertNull(
+                            result.getResponse().getHeader("Location"),
+                            "download must never redirect to the storage URL");
+                })
+                .andReturn();
+
+        if (download.getResponse().getStatus() == 200) {
+            org.junit.jupiter.api.Assertions.assertEquals(
+                    "application/pdf", download.getResponse().getContentType());
+            org.junit.jupiter.api.Assertions.assertEquals(
+                    "inline", download.getResponse().getHeader("Content-Disposition"));
+        }
 
         // anonymous download attempt is 401, not a redirect
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
@@ -340,11 +354,16 @@ class AuthorizationIntegrationTest {
         long freeNoteId = objectMapper.readTree(freeNote.getResponse().getContentAsString())
                 .path("data").path("id").asLong();
 
+        // The row itself is visible to the student, but the storage URL is
+        // withheld - students read the bytes through the secure relay
+        // (GET /api/content/notes/{id}/pdf), never a direct link.
         mockMvc.perform(get("/api/notes/" + freeNoteId)
                         .header("Authorization", "Bearer " + studentToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.fileUrl").value(
-                        "https://res.cloudinary.com/demo/raw/upload/free.pdf"));
+                .andExpect(jsonPath("$.data.fileUrl")
+                        .value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.data.storagePath")
+                        .value(org.hamcrest.Matchers.nullValue()));
 
         // bundle-gated note - student without access gets 404
         mockMvc.perform(post("/api/admin/notes")

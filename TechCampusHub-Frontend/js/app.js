@@ -14,6 +14,7 @@ import { initCertificates } from "./certificates.js";
 import { initFeedback } from "./feedback.js";
 import { initChatbot } from "./chatbot.js";
 import { initFaculty, initHeaderProfileMenu, initChangePasswordModal } from "./faculty.js";
+import { setupPdfViewer } from "./pdfviewer.js";
 
 const PAGE =
     document.body?.dataset?.page || "auth";
@@ -75,6 +76,11 @@ document.addEventListener(
                 // Shared change-password modal (header dropdown
                 // + faculty Profile panel button).
                 initChangePasswordModal();
+
+                // Secure in-app PDF viewer: wires the shared
+                // modal + the student card triggers once
+                // (self-guarded, no-ops when the modal is absent).
+                setupPdfViewer();
 
                 await initFavorites();
                 await initNotifications();

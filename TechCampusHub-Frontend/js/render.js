@@ -251,7 +251,46 @@ function actionButtons(
 
 
 
-    if (fileUrl) {
+    // Students never receive the storage URL from the API: their
+    // "View" button opens the secure in-app viewer, which pulls the
+    // bytes through the authenticated backend relay (PDF.js canvas -
+    // no download/print/save UI, right-click and save shortcuts off).
+
+    if (!isAdmin() && item?.id != null) {
+
+        buttons.push(`
+
+            <button
+
+                type="button"
+
+                class="inline-flex items-center gap-2
+
+                       rounded-lg bg-gray-100 px-3 py-2
+
+                       text-sm font-medium text-gray-700
+
+                       transition hover:bg-gray-200"
+
+                data-pdf-open
+
+                data-pdf-category="${escapeHtml(category)}"
+
+                data-pdf-id="${escapeHtml(item.id)}"
+
+                data-pdf-title="${escapeHtml(item.title || item.subject || item.topic || "Document")}"
+
+            >
+
+                <i class="fa-regular fa-eye"></i>
+
+                View
+
+            </button>
+
+        `);
+
+    } else if (fileUrl) {
 
         buttons.push(`
 
@@ -283,8 +322,8 @@ function actionButtons(
 
 
 
-        // Students can only view documents — the
-        // Download action is kept for administrators.
+        // The Download action is kept for administrators -
+        // students only ever get the in-app viewer.
 
         if (isAdmin()) {
 

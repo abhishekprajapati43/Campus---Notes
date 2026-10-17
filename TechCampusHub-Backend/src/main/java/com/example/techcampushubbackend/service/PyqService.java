@@ -33,7 +33,7 @@ public class PyqService {
         User user = currentUserService.requireUser();
         return pyqRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(pyq -> canAccess(pyq, user))
-                .map(PyqService::toResponse)
+                .map(pyq -> toVisibleResponse(pyq, user))
                 .toList();
     }
 
@@ -79,7 +79,7 @@ public class PyqService {
         if (!canAccess(pyq, user)) {
             throw new ResourceNotFoundException("PYQ", id);
         }
-        return toResponse(pyq);
+        return toVisibleResponse(pyq, user);
     }
 
     @Transactional
@@ -179,5 +179,46 @@ public class PyqService {
                 pyq.getCourseBundle() == null ? null : pyq.getCourseBundle().getId(),
                 pyq.getCourseBundle() == null ? null : pyq.getCourseBundle().getTitle(),
                 pyq.getCreatedAt());
+    }
+
+    /**
+     * Per-role payload: students get the storage URL withheld (they read the
+     * bytes through /api/content/**), staff keep the real URL because their
+     * management UIs (edit/replace/delete) depend on it.
+     */
+    private static PyqResponse toVisibleResponse(Pyq pyq, User user) {
+        boolean staff = user.getRole() == Role.ADMIN || user.getRole() == Role.FACULTY;
+        return staff ? toResponse(pyq) : toStudentResponse(pyq);
+    }
+
+    /** Student payload: storage URLs withheld - bytes stream via /api/content/**. */
+    public static PyqResponse toStudentResponse(Pyq pyq) {
+        PyqResponse base = toResponse(pyq);
+        return new PyqResponse(
+                base.id(), base.title(), base.subject(), base.course(),
+                base.branch(), base.semester(), base.examYear(), base.description(),
+                null,
+                null,
+                base.courseId(), base.courseTitle(),
+                base.createdAt());
+    }
+
+    /**
+     * Access-checked server-side resolution of the storage URL for the secure
+     * streaming routes (in-app viewer relay + /download). Mirrors the
+     * visibility rules of {@link #getVisible(Long)}; the URL is only ever
+     * relayed as bytes, never serialized into a response body.
+     */
+    @Transactional(readOnly = true)
+    public String requireVisibleFileUrl(Long id) {
+        User user = currentUserService.requireUser();
+        Pyq pyq = require(id);
+        if (!canAccess(pyq, user)) {
+            throw new ResourceNotFoundException("PYQ", id);
+        }
+        if (pyq.getFileUrl() == null || pyq.getFileUrl().isBlank()) {
+            throw new ResourceNotFoundException("PYQ file", id);
+        }
+        return pyq.getFileUrl();
     }
 }

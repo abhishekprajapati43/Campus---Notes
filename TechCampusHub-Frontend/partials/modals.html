@@ -431,3 +431,121 @@
                     </form>
                 </div>
             </div>
+
+            <!-- =========================================================
+     SECURE PDF VIEWER MODAL (shared)
+     Renders documents sent by the authenticated backend relay
+     (GET /api/content/{category}/{id}/pdf) onto a canvas with
+     PDF.js, so:
+       - the storage URL never reaches the browser,
+       - the stream URL itself needs the JWT (no direct links),
+       - there is no download / print / save control anywhere,
+       - the right-click menu and Ctrl+S / Ctrl+P / Ctrl+Shift+S
+         are disabled while the viewer is open.
+     Opened from the student resource cards (js/pdfviewer.js).
+========================================================= -->
+            <div id="pdfViewerModal" class="hidden fixed inset-0 z-[130] bg-slate-950/75 items-center justify-center p-4">
+                <div class="bg-white rounded-2xl
+                       w-full max-w-4xl
+                       h-[85vh]
+                       shadow-2xl overflow-hidden
+                       flex flex-col">
+                    <!-- Header: document title + close -->
+                    <div class="flex items-center justify-between
+                                gap-4 px-5 py-4
+                                border-b border-slate-200">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="w-10 h-10 shrink-0
+                                  rounded-xl bg-red-50 text-red-600
+                                  flex items-center justify-center">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </span>
+                            <div class="min-w-0">
+                                <h3 id="pdfViewerTitle" class="text-lg
+                                   font-extrabold truncate">
+                                    Document
+                                </h3>
+                                <p id="pdfViewerSubtitle" class="text-xs
+                                   text-slate-500 truncate">
+                                    Secure in-app viewer
+                                </p>
+                            </div>
+                        </div>
+                        <button id="pdfViewerCloseBtn" type="button" aria-label="Close"
+                                class="w-10 h-10 shrink-0 rounded-xl
+                                   bg-slate-100 hover:bg-slate-200
+                                   flex items-center justify-center">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <!-- Toolbar: page navigation + zoom -->
+                    <div class="flex items-center justify-between flex-wrap
+                                gap-3 px-5 py-3
+                                bg-slate-50 border-b border-slate-200">
+                        <div class="flex items-center gap-2">
+                            <button id="pdfViewerPrevBtn" type="button" aria-label="Previous page"
+                                    class="w-9 h-9 rounded-lg
+                                       bg-white border border-slate-200
+                                       hover:bg-slate-100
+                                       flex items-center justify-center">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+                            <span class="text-sm text-slate-600 font-medium px-1">
+                                Page <span id="pdfViewerPageNum">0</span>
+                                of <span id="pdfViewerPageCount">0</span>
+                            </span>
+                            <button id="pdfViewerNextBtn" type="button" aria-label="Next page"
+                                    class="w-9 h-9 rounded-lg
+                                       bg-white border border-slate-200
+                                       hover:bg-slate-100
+                                       flex items-center justify-center">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="pdfViewerZoomOutBtn" type="button" aria-label="Zoom out"
+                                    class="w-9 h-9 rounded-lg
+                                       bg-white border border-slate-200
+                                       hover:bg-slate-100
+                                       flex items-center justify-center">
+                                <i class="fa-solid fa-minus"></i>
+                            </button>
+                            <span id="pdfViewerZoomLabel" class="text-sm
+                                  text-slate-600 font-medium w-14 text-center">
+                                100%
+                            </span>
+                            <button id="pdfViewerZoomInBtn" type="button" aria-label="Zoom in"
+                                    class="w-9 h-9 rounded-lg
+                                       bg-white border border-slate-200
+                                       hover:bg-slate-100
+                                       flex items-center justify-center">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Page canvas + loading/error states -->
+                    <div id="pdfViewerBody" class="relative flex-1 min-h-0
+                                overflow-auto bg-slate-200
+                                flex justify-center p-4 select-none">
+                        <canvas id="pdfViewerCanvas" class="hidden bg-white
+                               shadow-lg select-none"></canvas>
+                        <div id="pdfViewerLoading" class="hidden absolute inset-0
+                             bg-slate-100/80
+                             flex items-center justify-center">
+                            <div class="flex items-center gap-3 text-slate-600">
+                                <i class="fa-solid fa-circle-notch fa-spin text-xl"></i>
+                                <span class="text-sm font-medium">Loading document…</span>
+                            </div>
+                        </div>
+                        <div id="pdfViewerError" class="hidden absolute inset-0
+                             bg-slate-100/90
+                             flex flex-col items-center justify-center
+                             gap-3 text-center p-6">
+                            <i class="fa-solid fa-triangle-exclamation
+                               text-2xl text-red-500"></i>
+                            <p id="pdfViewerErrorMessage" class="text-sm
+                               text-slate-600 max-w-sm"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>

@@ -33,7 +33,7 @@ public class TimetableService {
         User user = currentUserService.requireUser();
         return timetableRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(t -> canAccess(t, user))
-                .map(TimetableService::toResponse)
+                .map(t -> toVisibleResponse(t, user))
                 .toList();
     }
 
@@ -79,7 +79,7 @@ public class TimetableService {
         if (!canAccess(timetable, user)) {
             throw new ResourceNotFoundException("Timetable", id);
         }
-        return toResponse(timetable);
+        return toVisibleResponse(timetable, user);
     }
 
     @Transactional
@@ -182,6 +182,48 @@ public class TimetableService {
                 t.getCourseBundle() == null ? null : t.getCourseBundle().getId(),
                 t.getCourseBundle() == null ? null : t.getCourseBundle().getTitle(),
                 t.getCreatedAt());
+    }
+
+    /**
+     * Per-role payload: students get the storage URL withheld (they read the
+     * bytes through /api/content/**), staff keep the real URL because their
+     * management UIs (edit/replace/delete) depend on it.
+     */
+    private static TimetableResponse toVisibleResponse(Timetable t, User user) {
+        boolean staff = user.getRole() == Role.ADMIN || user.getRole() == Role.FACULTY;
+        return staff ? toResponse(t) : toStudentResponse(t);
+    }
+
+    /** Student payload: storage URLs withheld - bytes stream via /api/content/**. */
+    public static TimetableResponse toStudentResponse(Timetable t) {
+        TimetableResponse base = toResponse(t);
+        return new TimetableResponse(
+                base.id(), base.title(), base.course(), base.semester(),
+                base.examType(), base.examYear(), base.dayOfWeek(), base.effectiveFrom(),
+                null,
+                null,
+                base.fileName(),
+                base.courseId(), base.courseTitle(),
+                base.createdAt());
+    }
+
+    /**
+     * Access-checked server-side resolution of the storage URL for the secure
+     * streaming routes (in-app viewer relay + /download). Mirrors the
+     * visibility rules of {@link #getVisible(Long)}; the URL is only ever
+     * relayed as bytes, never serialized into a response body.
+     */
+    @Transactional(readOnly = true)
+    public String requireVisibleFileUrl(Long id) {
+        User user = currentUserService.requireUser();
+        Timetable timetable = require(id);
+        if (!canAccess(timetable, user)) {
+            throw new ResourceNotFoundException("Timetable", id);
+        }
+        if (timetable.getFileUrl() == null || timetable.getFileUrl().isBlank()) {
+            throw new ResourceNotFoundException("Timetable file", id);
+        }
+        return timetable.getFileUrl();
     }
 
     /**

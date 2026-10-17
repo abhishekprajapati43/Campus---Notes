@@ -23,6 +23,7 @@ public class AppProperties {
     private final Mail mail = new Mail();
     private final Cloudinary cloudinary = new Cloudinary();
     private final Cors cors = new Cors();
+    private final Content content = new Content();
 
     @Getter
     @Setter
@@ -74,5 +75,17 @@ public class AppProperties {
     public static class Cors {
         private List<String> allowedOrigins = new ArrayList<>(
                 List.of("http://localhost:5500", "http://localhost:3000", "http://localhost:5173"));
+    }
+
+    @Getter
+    @Setter
+    public static class Content {
+        /**
+         * Host allowlist for the secure PDF relay (GET /api/content/**): the
+         * backend only fetches storage URLs whose host equals or is a subdomain
+         * of one of these entries. Plain http is additionally limited to
+         * loopback addresses regardless of this list.
+         */
+        private List<String> streamHosts = new ArrayList<>(List.of("res.cloudinary.com"));
     }
 }

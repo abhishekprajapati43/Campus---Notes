@@ -3,9 +3,11 @@ package com.example.techcampushubbackend.controller;
 import com.example.techcampushubbackend.dto.ApiResponse;
 import com.example.techcampushubbackend.dto.ContentDtos.PyqRequest;
 import com.example.techcampushubbackend.dto.ContentDtos.PyqResponse;
+import com.example.techcampushubbackend.service.ContentStreamService;
 import com.example.techcampushubbackend.service.PyqService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.net.URI;
 import java.util.List;
 
 /** Previous year papers: student reading + admin CRUD. */
@@ -31,6 +32,7 @@ import java.util.List;
 public class PyqController {
 
     private final PyqService pyqService;
+    private final ContentStreamService contentStreamService;
 
     @Operation(summary = "List visible PYQs (student)")
     @GetMapping("/pyqs")
@@ -44,11 +46,12 @@ public class PyqController {
         return ResponseEntity.ok(ApiResponse.ok(pyqService.getVisible(id)));
     }
 
-    @Operation(summary = "Download PYQ PDF (redirects to the Cloudinary URL)")
+    @Operation(summary = "Download PYQ PDF (streams through the backend)",
+            description = "Bytes are relayed server-side under the same visibility "
+                    + "check as reading the paper - the storage URL is never exposed.")
     @GetMapping("/pyqs/{id}/download")
-    public ResponseEntity<Void> download(@PathVariable Long id) {
-        String url = pyqService.getVisible(id).fileUrl();
-        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
+    public void download(@PathVariable Long id, HttpServletResponse response) {
+        contentStreamService.stream(pyqService.requireVisibleFileUrl(id), response);
     }
 
     @Operation(summary = "List all PYQs (admin)")

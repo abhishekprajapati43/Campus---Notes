@@ -3,9 +3,11 @@ package com.example.techcampushubbackend.controller;
 import com.example.techcampushubbackend.dto.ApiResponse;
 import com.example.techcampushubbackend.dto.ContentDtos.NoteRequest;
 import com.example.techcampushubbackend.dto.ContentDtos.NoteResponse;
+import com.example.techcampushubbackend.service.ContentStreamService;
 import com.example.techcampushubbackend.service.NoteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,12 +22,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.net.URI;
 import java.util.List;
 
 /**
- * Notes: students read (bundle-gated), admins manage. The download link is the
- * Cloudinary {@code fileUrl} embedded in each response.
+ * Notes: students read (bundle-gated), admins manage. Student payloads carry
+ * no storage URL - document bytes stream through the secure
+ * {@code /api/content/**} relay (or {@code /download}) instead.
  */
 @Tag(name = "Notes", description = "Course notes - student reading and admin CRUD")
 @RestController
@@ -34,6 +36,7 @@ import java.util.List;
 public class NoteController {
 
     private final NoteService noteService;
+    private final ContentStreamService contentStreamService;
 
     @Operation(summary = "List visible notes (student)")
     @GetMapping("/notes")
@@ -47,11 +50,12 @@ public class NoteController {
         return ResponseEntity.ok(ApiResponse.ok(noteService.getVisible(id)));
     }
 
-    @Operation(summary = "Download note PDF (redirects to the Cloudinary URL)")
+    @Operation(summary = "Download note PDF (streams through the backend)",
+            description = "Bytes are relayed server-side under the same visibility "
+                    + "check as reading the note - the storage URL is never exposed.")
     @GetMapping("/notes/{id}/download")
-    public ResponseEntity<Void> download(@PathVariable Long id) {
-        String url = noteService.getVisible(id).fileUrl();
-        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(url)).build();
+    public void download(@PathVariable Long id, HttpServletResponse response) {
+        contentStreamService.stream(noteService.requireVisibleFileUrl(id), response);
     }
 
     // ------------------------------------------------------------------ admin

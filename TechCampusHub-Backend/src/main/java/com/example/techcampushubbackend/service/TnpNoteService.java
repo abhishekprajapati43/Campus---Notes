@@ -33,7 +33,7 @@ public class TnpNoteService {
         User user = currentUserService.requireUser();
         return tnpNoteRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(note -> canAccess(note, user))
-                .map(TnpNoteService::toResponse)
+                .map(note -> toVisibleResponse(note, user))
                 .toList();
     }
 
@@ -79,7 +79,7 @@ public class TnpNoteService {
         if (!canAccess(note, user)) {
             throw new ResourceNotFoundException("TNP note", id);
         }
-        return toResponse(note);
+        return toVisibleResponse(note, user);
     }
 
     @Transactional
@@ -170,5 +170,45 @@ public class TnpNoteService {
                 note.getCourseBundle() == null ? null : note.getCourseBundle().getId(),
                 note.getCourseBundle() == null ? null : note.getCourseBundle().getTitle(),
                 note.getCreatedAt());
+    }
+
+    /**
+     * Per-role payload: students get the storage URL withheld (they read the
+     * bytes through /api/content/**), staff keep the real URL because their
+     * management UIs (edit/replace/delete) depend on it.
+     */
+    private static TnpNoteResponse toVisibleResponse(TnpNote note, User user) {
+        boolean staff = user.getRole() == Role.ADMIN || user.getRole() == Role.FACULTY;
+        return staff ? toResponse(note) : toStudentResponse(note);
+    }
+
+    /** Student payload: storage URLs withheld - bytes stream via /api/content/**. */
+    public static TnpNoteResponse toStudentResponse(TnpNote note) {
+        TnpNoteResponse base = toResponse(note);
+        return new TnpNoteResponse(
+                base.id(), base.title(), base.topic(), base.description(),
+                null,
+                null,
+                base.courseId(), base.courseTitle(),
+                base.createdAt());
+    }
+
+    /**
+     * Access-checked server-side resolution of the storage URL for the secure
+     * streaming routes (in-app viewer relay + /download). Mirrors the
+     * visibility rules of {@link #getVisible(Long)}; the URL is only ever
+     * relayed as bytes, never serialized into a response body.
+     */
+    @Transactional(readOnly = true)
+    public String requireVisibleFileUrl(Long id) {
+        User user = currentUserService.requireUser();
+        TnpNote note = require(id);
+        if (!canAccess(note, user)) {
+            throw new ResourceNotFoundException("TNP note", id);
+        }
+        if (note.getFileUrl() == null || note.getFileUrl().isBlank()) {
+            throw new ResourceNotFoundException("TNP note file", id);
+        }
+        return note.getFileUrl();
     }
 }
