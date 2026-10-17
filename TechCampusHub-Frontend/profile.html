@@ -76,8 +76,14 @@
                                     </p>
                                 </div>
                             </div>
-                            <!-- Profile Information -->
-                            <div class="grid
+                            <!-- Profile Information
+                                 The grid itself is the (single) profile
+                                 form: each card holds its input control
+                                 inline. Everything is disabled until
+                                 "Edit Profile" is pressed, so the read-
+                                 only view reads exactly like plain
+                                 text inside the same cards. -->
+                            <form id="studentProfileForm" class="grid
                grid-cols-1
                md:grid-cols-2
                gap-5">
@@ -88,9 +94,9 @@
                        mb-1">
                                         Name
                                     </p>
-                                    <p id="studentProfilePageName" class="font-bold text-lg">
-                                        -
-                                    </p>
+                                    <input id="studentProfileName" type="text"
+                                           class="profile-field"
+                                           maxlength="120" placeholder="-" disabled>
                                 </div>
                                 <!-- Email -->
                                 <div class="border rounded-xl p-4">
@@ -99,9 +105,9 @@
                        mb-1">
                                         Email
                                     </p>
-                                    <p id="studentProfilePageEmail" class="font-bold">
-                                        -
-                                    </p>
+                                    <input id="studentProfileEmail" type="email"
+                                           class="profile-field"
+                                           placeholder="-" disabled>
                                 </div>
                                 <!-- Mobile Number -->
                                 <div class="border rounded-xl p-4">
@@ -110,9 +116,9 @@
                        mb-1">
                                         Mobile Number
                                     </p>
-                                    <p id="studentProfilePagePhone" class="font-bold text-lg">
-                                        -
-                                    </p>
+                                    <input id="studentProfilePhone" type="tel"
+                                           class="profile-field"
+                                           maxlength="20" placeholder="-" disabled>
                                 </div>
                                 <!-- Gender -->
                                 <div class="border rounded-xl p-4">
@@ -121,9 +127,9 @@
                        mb-1">
                                         Gender
                                     </p>
-                                    <p id="studentProfilePageGender" class="font-bold text-lg">
-                                        -
-                                    </p>
+                                    <input id="studentProfileGender" type="text"
+                                           class="profile-field"
+                                           placeholder="-" disabled>
                                 </div>
                                 <!-- Address -->
                                 <div class="border rounded-xl p-4">
@@ -132,9 +138,9 @@
                        mb-1">
                                         Address
                                     </p>
-                                    <p id="studentProfilePageAddress" class="font-bold">
-                                        -
-                                    </p>
+                                    <input id="studentProfileAddress" type="text"
+                                           class="profile-field"
+                                           placeholder="-" disabled>
                                 </div>
                                 <!-- Registration Date -->
                                 <div class="border rounded-xl p-4">
@@ -143,9 +149,9 @@
                        mb-1">
                                         Registration Date
                                     </p>
-                                    <p id="studentProfilePageRegistered" class="font-bold text-lg">
-                                        -
-                                    </p>
+                                    <input id="studentProfileRegistered" type="text"
+                                           class="profile-field"
+                                           placeholder="-" disabled>
                                 </div>
                                 <!-- Course (students only) -->
                                 <div data-profile-role="student" class="border rounded-xl p-4">
@@ -154,9 +160,9 @@
                        mb-1">
                                         Course
                                     </p>
-                                    <p id="studentProfilePageCourse" class="font-bold text-lg">
-                                        -
-                                    </p>
+                                    <input id="studentProfileCourse" type="text"
+                                           class="profile-field"
+                                           maxlength="60" placeholder="-" disabled>
                                 </div>
                                 <!-- Semester (students only) -->
                                 <div data-profile-role="student" class="border rounded-xl p-4">
@@ -165,9 +171,9 @@
                        mb-1">
                                         Semester
                                     </p>
-                                    <p id="studentProfilePageSemester" class="font-bold text-lg">
-                                        -
-                                    </p>
+                                    <input id="studentProfileSemester" type="number"
+                                           class="profile-field"
+                                           min="1" max="12" placeholder="-" disabled>
                                 </div>
                                 <!-- Roll / Enrollment Number (students only) -->
                                 <div data-profile-role="student" class="border rounded-xl p-4">
@@ -176,9 +182,9 @@
                        mb-1">
                                         Roll / Enrollment Number
                                     </p>
-                                    <p id="studentProfilePageEnrollment" class="font-bold text-lg">
-                                        -
-                                    </p>
+                                    <input id="studentProfileEnrollment" type="text"
+                                           class="profile-field"
+                                           placeholder="-" disabled>
                                 </div>
                                 <!-- Department (faculty only) -->
                                 <div data-profile-role="faculty" class="border rounded-xl p-4">
@@ -213,98 +219,17 @@
                                         -
                                     </p>
                                 </div>
-                            </div>
+                            </form>
                             <!-- Profile message: same behaviour as the
                                  faculty Profile panel message -->
                             <p id="studentProfileMessage" aria-live="polite"
                                class="hidden text-sm min-h-5 mb-3"></p>
                             <!-- =============================================
-                 EDIT PROFILE FORM
-                 Mirrors the faculty Profile form, but stays
-                 hidden until "Edit Profile" is pressed so the
-                 cards above keep displaying the record. Only
-                 the fields the backend accepts travel on save
-                 (name / phone / course / semester); the rest
-                 are read-only, exactly like the faculty panel.
-            ============================================== -->
-                            <form id="studentProfileForm" class="hidden
-                                   grid
-                                   grid-cols-1
-                                   md:grid-cols-2
-                                   gap-4
-                                   pt-5
-                                   border-t border-slate-200"
-                                  data-profile-role="student">
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileName">
-                                        Full Name
-                                    </label>
-                                    <input id="studentProfileName" type="text" class="input"
-                                           maxlength="120" disabled>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileEmail">
-                                        Email
-                                    </label>
-                                    <input id="studentProfileEmail" type="email" class="input"
-                                           disabled>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfilePhone">
-                                        Mobile Number
-                                    </label>
-                                    <input id="studentProfilePhone" type="tel" class="input"
-                                           maxlength="20" disabled>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileGender">
-                                        Gender
-                                    </label>
-                                    <input id="studentProfileGender" type="text" class="input"
-                                           disabled>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileAddress">
-                                        Address
-                                    </label>
-                                    <input id="studentProfileAddress" type="text" class="input"
-                                           disabled>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileRegistered">
-                                        Registration Date
-                                    </label>
-                                    <input id="studentProfileRegistered" type="text" class="input"
-                                           disabled>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileCourse">
-                                        Course
-                                    </label>
-                                    <input id="studentProfileCourse" type="text" class="input"
-                                           maxlength="60" disabled>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileSemester">
-                                        Semester
-                                    </label>
-                                    <input id="studentProfileSemester" type="number" class="input"
-                                           min="1" max="12" disabled>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileEnrollment">
-                                        Roll / Enrollment Number
-                                    </label>
-                                    <input id="studentProfileEnrollment" type="text" class="input"
-                                           disabled>
-                                </div>
-                            </form>
-                            <!-- =============================================
                  PROFILE ACTIONS
                  Same look as the faculty Profile panel buttons.
-                 Save owns the form above via the form attribute,
-                 so the row stays visible while the form is
-                 hidden.
+                 Save owns the inline field form via the form
+                 attribute. In edit mode Edit Profile is swapped
+                 for Save Changes + Cancel.
             ============================================== -->
                             <div class="mt-6
                                         pt-5
@@ -335,6 +260,12 @@
                                                text-white rounded-xl font-bold
                                                px-6 py-3 transition">
                                     <i class="fa-solid fa-check mr-2"></i>Save Changes
+                                </button>
+                                <button id="studentProfileCancelBtn" type="button"
+                                        class="hidden border border-slate-200 hover:bg-slate-50
+                                               text-slate-700 rounded-xl font-bold
+                                               px-6 py-3 transition">
+                                    <i class="fa-solid fa-xmark mr-2"></i>Cancel
                                 </button>
                             </div>
                         </section>

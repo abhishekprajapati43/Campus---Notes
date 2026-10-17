@@ -109,6 +109,49 @@
             cursor: not-allowed;
         }
 
+        /* Inline profile fields: the profile cards hold the
+           inputs themselves. Disabled they read like plain
+           bold text; enabled (edit mode) they gain the
+           familiar input chrome in the exact same spot. */
+        .profile-field {
+            width: 100%;
+
+            font-weight: 700;
+            font-size: 17px;
+            color: #18345f;
+
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 10px;
+
+            padding: 2px 4px;
+
+            outline: none;
+        }
+
+        .profile-field::placeholder {
+            color: #94a3b8;
+            font-weight: 500;
+            font-size: 16px;
+        }
+
+        .profile-field:disabled {
+            cursor: default;
+        }
+
+        .profile-field:enabled {
+            background: white;
+            border-color: #dbe4ef;
+            padding: 10px 12px;
+        }
+
+        .profile-field:focus {
+            border-color: #2563eb;
+
+            box-shadow:
+                0 0 0 3px rgba(37, 99, 235, .10);
+        }
+
         .auth-bg {
             background:
                 radial-gradient(circle at 10% 10%,

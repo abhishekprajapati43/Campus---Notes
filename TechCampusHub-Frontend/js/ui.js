@@ -657,57 +657,60 @@ export function updateStudentProfileUI(
     // -------------------------------------------------
     // Profile Page Section
     // -------------------------------------------------
+    //
+    // The cards hold the form controls themselves (inline
+    // edit mode), so the read-only view is simply the same
+    // inputs disabled. The writes are skipped while the
+    // user is editing so an unrelated refresh can never
+    // discard in-progress changes.
+    //
 
-    const pageName = $("studentProfilePageName");
+    if (!studentProfileEditing) {
+        studentProfileSetValue(
+            "studentProfileName",
+            name
+        );
 
-    const pageEmail = $("studentProfilePageEmail");
+        studentProfileSetValue(
+            "studentProfileEmail",
+            email
+        );
 
-    const pageCourse = $("studentProfilePageCourse");
+        studentProfileSetValue(
+            "studentProfilePhone",
+            phone
+        );
 
-    const pageSemester = $("studentProfilePageSemester");
+        studentProfileSetValue(
+            "studentProfileGender",
+            gender
+        );
 
-    if (pageName) {
-        pageName.textContent = name;
+        studentProfileSetValue(
+            "studentProfileAddress",
+            address
+        );
+
+        studentProfileSetValue(
+            "studentProfileRegistered",
+            formatRegistrationDate(student.created_at)
+        );
+
+        studentProfileSetValue(
+            "studentProfileCourse",
+            course
+        );
+
+        studentProfileSetValue(
+            "studentProfileSemester",
+            semester
+        );
+
+        studentProfileSetValue(
+            "studentProfileEnrollment",
+            enrollment
+        );
     }
-
-    if (pageEmail) {
-        pageEmail.textContent = email || "-";
-    }
-
-    if (pageCourse) {
-        pageCourse.textContent = course || "-";
-    }
-
-    if (pageSemester) {
-        pageSemester.textContent = semester
-            ? `Semester ${semester}`
-            : "-";
-    }
-
-    setTextContent(
-        "studentProfilePagePhone",
-        phone || "-"
-    );
-
-    setTextContent(
-        "studentProfilePageGender",
-        gender || "-"
-    );
-
-    setTextContent(
-        "studentProfilePageAddress",
-        address || "-"
-    );
-
-    setTextContent(
-        "studentProfilePageRegistered",
-        formatRegistrationDate(student.created_at)
-    );
-
-    setTextContent(
-        "studentProfilePageEnrollment",
-        enrollment || "-"
-    );
 
     setTextContent(
         "studentProfilePageDepartment",
@@ -759,19 +762,21 @@ function applyProfileRoleCards(isFaculty) {
 }
 
 // =====================================================
-// Profile page: Edit Profile + save
+// Profile page: inline Edit Profile + save
 // (PUT /api/auth/profile)
 // =====================================================
 //
-// Same behaviour as the faculty Profile panel, but the
-// student profile page keeps its read-only cards: the form
-// opens on "Edit Profile" and closes again after a
-// successful save. Only the fields the backend accepts
-// travel on save (name / phone / course / semester); email,
-// gender, address, the registration date and the roll
-// number have no update route by design, exactly like the
-// faculty panel. Wiring is self-guarded, so every page
-// without the form no-ops.
+// There is exactly ONE profile section: the cards on the
+// page ARE the form. "Edit Profile" simply unlocks the
+// editable inputs in place (and swaps the button for
+// Save Changes + Cancel); "Save" persists and locks them
+// again; "Cancel" restores the values snapshotted on
+// entering edit mode. Only the fields the backend accepts
+// travel on save (name / phone / course / semester);
+// email, gender, address, the registration date and the
+// roll number stay read-only, exactly like the faculty
+// panel. Wiring is self-guarded, so every page without
+// the cards no-ops.
 // =====================================================
 
 const STUDENT_PROFILE_READ_ONLY_FIELDS = [
@@ -794,6 +799,10 @@ let studentProfileEditing = false;
 let studentProfileWired = false;
 
 let studentProfileMessageTimer = null;
+
+// Editable values captured on entering edit mode, so
+// Cancel can restore them without a server round-trip.
+let studentProfileSnapshot = null;
 
 //
 // Same look/behaviour as the faculty panel message:
@@ -879,26 +888,19 @@ function applyStudentProfileEditingState() {
         }
     });
 
-    // The form only exists while editing; the read-only
-    // cards above keep displaying the record otherwise.
-    $("studentProfileForm")?.classList.toggle(
+    // Same cards, same position - edit mode simply unlocks
+    // the inputs in place. There is no second form.
+    $("studentProfileEditBtn")?.classList.toggle(
         "hidden",
-        !studentProfileEditing
+        studentProfileEditing
     );
 
-    // Save only exists while editing; Edit disables itself
-    // in edit mode (same affordance as the faculty panel).
-    $("studentProfileSaveBtn")?.classList.toggle(
-        "hidden",
-        !studentProfileEditing
-    );
-
-    const editButton = $("studentProfileEditBtn");
-
-    if (editButton) {
-        editButton.disabled = studentProfileEditing;
-        editButton.classList.toggle("opacity-50", studentProfileEditing);
-    }
+    ["studentProfileSaveBtn", "studentProfileCancelBtn"].forEach(id => {
+        $(id)?.classList.toggle(
+            "hidden",
+            !studentProfileEditing
+        );
+    });
 }
 
 function setStudentProfileEditing(editable) {
@@ -935,10 +937,44 @@ function prefillStudentProfileForm(student) {
     studentProfileSetValue("studentProfileEnrollment", enrollment);
 }
 
+function snapshotStudentProfileFields() {
+    studentProfileSnapshot = STUDENT_PROFILE_EDITABLE_FIELDS.reduce(
+        (values, id) => {
+            values[id] = studentProfileGetValue(id);
+            return values;
+        },
+        {}
+    );
+}
+
+function restoreStudentProfileSnapshot() {
+    if (!studentProfileSnapshot) {
+        return;
+    }
+
+    Object.entries(studentProfileSnapshot).forEach(([id, value]) => {
+        studentProfileSetValue(id, value);
+    });
+
+    studentProfileSnapshot = null;
+}
+
+function handleStudentProfileCancel() {
+    if (!studentProfileEditing) {
+        return;
+    }
+
+    // Restore the values captured on entering edit mode and
+    // lock the fields again - nothing touched the server.
+    restoreStudentProfileSnapshot();
+    setStudentProfileEditing(false);
+}
+
 async function handleStudentProfileSave(event) {
     event.preventDefault();
 
-    // Enter submits the form even while hidden/read-only; ignore it.
+    // The inputs are only unlocked in edit mode; ignore any
+    // stray submit (e.g. Enter) while the fields are locked.
     if (!studentProfileEditing) {
         return;
     }
@@ -990,7 +1026,13 @@ async function handleStudentProfileSave(event) {
             ...(next || {})
         });
 
-        // Re-render the read-only cards above the form.
+        // Leave edit mode first (relocks the inputs), then
+        // re-render the inline fields with the fresh values;
+        // the in-edit guard would otherwise skip the writes.
+        setStudentProfileEditing(false);
+
+        studentProfileSnapshot = null;
+
         updateStudentProfileUI(next);
 
         // Header dropdown name (renderHeaderProfile is not
@@ -1002,8 +1044,6 @@ async function handleStudentProfileSave(event) {
             headerName.textContent =
                 String(next?.name || "").trim() || "Student";
         }
-
-        setStudentProfileEditing(false);
 
         studentProfileMessage("Profile updated successfully.");
     } catch (error) {
@@ -1059,8 +1099,17 @@ export function initStudentProfileEditing() {
 
             prefillStudentProfileForm(source);
 
+            // Capture the pre-edit values so Cancel can put
+            // them back without hitting the server.
+            snapshotStudentProfileFields();
+
             setStudentProfileEditing(true);
         }
+    );
+
+    $("studentProfileCancelBtn")?.addEventListener(
+        "click",
+        handleStudentProfileCancel
     );
 
     form.addEventListener(
