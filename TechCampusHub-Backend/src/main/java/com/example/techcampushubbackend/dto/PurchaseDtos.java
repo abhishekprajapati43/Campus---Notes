@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /** Request/response payloads for course purchases. */
 public final class PurchaseDtos {
@@ -63,6 +64,10 @@ public final class PurchaseDtos {
             String userName,
             String userEmail,
             BigDecimal amountInr,
+            /** 1+1 offer: list price before the discount (null on legacy rows). */
+            BigDecimal originalAmountInr,
+            /** 1+1 offer: discount granted on this purchase (null/zero = none). */
+            BigDecimal discountAmountInr,
             String utr,
             String status,
             LocalDateTime validFrom,
@@ -72,5 +77,25 @@ public final class PurchaseDtos {
             /** Course completion progress (0-100); null when not tracked yet. */
             Integer progress,
             LocalDateTime createdAt) {
+    }
+
+    /**
+     * Snapshot of the 1+1 second-course offer for the storefront and checkout
+     * UI. Display only: the real discount is always recomputed server-side
+     * inside the purchase request itself, so a tampered client can never
+     * choose its own price.
+     */
+    public record SecondCourseOfferResponse(
+            /** True while the student holds exactly one other course (second-course stage). */
+            boolean eligible,
+
+            /** Percent off granted on the second course (50). */
+            int discountPercent,
+
+            /** Distinct courses the student already holds (pending or approved). */
+            int ownedCourseCount,
+
+            /** Those course ids, so the UI can skip owned cards. */
+            List<Long> ownedCourseIds) {
     }
 }

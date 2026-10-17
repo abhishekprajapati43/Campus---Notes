@@ -3,6 +3,7 @@ package com.example.techcampushubbackend.service;
 import com.example.techcampushubbackend.dto.PurchaseDtos.PurchaseApproveRequest;
 import com.example.techcampushubbackend.dto.PurchaseDtos.PurchaseCreateRequest;
 import com.example.techcampushubbackend.dto.PurchaseDtos.PurchaseResponse;
+import com.example.techcampushubbackend.dto.PurchaseDtos.SecondCourseOfferResponse;
 import com.example.techcampushubbackend.entity.Course;
 import com.example.techcampushubbackend.entity.Purchase;
 import com.example.techcampushubbackend.entity.PurchaseStatus;
@@ -18,6 +19,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -29,6 +32,14 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class PurchaseService {
+
+    /**
+     * 1+1 second-course offer: a student buying their second course pays this
+     * fraction of the list price. First and every later course stay at full
+     * price; eligibility is always decided from the purchase ledger below,
+     * never from anything the client sends.
+     */
+    public static final BigDecimal SECOND_COURSE_DISCOUNT = new BigDecimal("0.50");
 
     private final PurchaseRepository purchaseRepository;
     private final CourseRepository courseRepository;
@@ -55,14 +66,65 @@ public class PurchaseService {
             throw new BadRequestException("A purchase request for this course is already pending review");
         }
 
+        // 1+1 second-course offer, decided purely server-side.
+        BigDecimal originalAmount = course.getPriceInr();
+        BigDecimal discountAmount = secondCourseDiscountFor(user, course, originalAmount);
+
         Purchase purchase = Purchase.builder()
                 .user(user)
                 .course(course)
-                .amountInr(course.getPriceInr())
+                .amountInr(originalAmount.subtract(discountAmount))
+                .originalAmountInr(originalAmount)
+                .discountAmountInr(discountAmount)
                 .utr(request.utr().trim())
                 .status(PurchaseStatus.PENDING)
                 .build();
         return toResponse(purchaseRepository.save(purchase));
+    }
+
+    /**
+     * 1+1 second-course offer: half price while the student holds exactly one
+     * other course (pending or approved) and this purchase is for a different
+     * course. Everything is derived from the purchase ledger, so the price a
+     * frontend displays is never trusted; rejected rows never count, and
+     * pending rows count so discounted requests cannot stack while earlier
+     * ones await admin review.
+     */
+    private BigDecimal secondCourseDiscountFor(User user, Course course, BigDecimal originalAmount) {
+        if (originalAmount == null || originalAmount.signum() <= 0) {
+            return BigDecimal.ZERO.setScale(2);
+        }
+
+        List<Long> ownedCourseIds = purchaseRepository.findCourseIdsByUserAndStatusIn(
+                user.getId(), List.of(PurchaseStatus.PENDING, PurchaseStatus.APPROVED));
+
+        boolean secondCourseStage = ownedCourseIds.size() == 1
+                && !ownedCourseIds.contains(course.getId());
+
+        if (!secondCourseStage) {
+            return BigDecimal.ZERO.setScale(2);
+        }
+
+        return originalAmount.multiply(SECOND_COURSE_DISCOUNT)
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * 1+1 offer snapshot for the course cards and the checkout step. Display
+     * only - the actual discount is recomputed in {@link #request}.
+     */
+    @Transactional(readOnly = true)
+    public SecondCourseOfferResponse offer() {
+        User user = currentUserService.requireUser();
+
+        List<Long> ownedCourseIds = purchaseRepository.findCourseIdsByUserAndStatusIn(
+                user.getId(), List.of(PurchaseStatus.PENDING, PurchaseStatus.APPROVED));
+
+        return new SecondCourseOfferResponse(
+                ownedCourseIds.size() == 1,
+                SECOND_COURSE_DISCOUNT.movePointRight(2).intValue(),
+                ownedCourseIds.size(),
+                ownedCourseIds);
     }
 
     @Transactional(readOnly = true)
@@ -215,6 +277,8 @@ public class PurchaseService {
                 p.getUser().getName(),
                 p.getUser().getEmail(),
                 p.getAmountInr(),
+                p.getOriginalAmountInr(),
+                p.getDiscountAmountInr(),
                 p.getUtr(),
                 p.getStatus().name(),
                 p.getValidFrom(),

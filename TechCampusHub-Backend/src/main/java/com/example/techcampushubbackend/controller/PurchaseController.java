@@ -6,6 +6,7 @@ import com.example.techcampushubbackend.dto.PurchaseDtos.PurchaseApproveRequest;
 import com.example.techcampushubbackend.dto.PurchaseDtos.PurchaseCreateRequest;
 import com.example.techcampushubbackend.dto.PurchaseDtos.PurchaseResponse;
 import com.example.techcampushubbackend.dto.PurchaseDtos.PurchaseReviewRequest;
+import com.example.techcampushubbackend.dto.PurchaseDtos.SecondCourseOfferResponse;
 import com.example.techcampushubbackend.dto.PurchaseDtos.SetValidityRequest;
 import com.example.techcampushubbackend.service.PurchaseService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -58,6 +59,15 @@ public class PurchaseController {
     @GetMapping("/purchases/my-courses")
     public ResponseEntity<ApiResponse<List<PurchaseResponse>>> myActiveCourses() {
         return ResponseEntity.ok(ApiResponse.ok(purchaseService.listMyActive()));
+    }
+
+    @Operation(summary = "1+1 second-course offer snapshot",
+            description = "Tells the storefront whether the caller is at the second-course "
+                    + "stage (50% off a different course). Display only - the server "
+                    + "recomputes the real discount when the purchase is created.")
+    @GetMapping("/purchases/offer")
+    public ResponseEntity<ApiResponse<SecondCourseOfferResponse>> secondCourseOffer() {
+        return ResponseEntity.ok(ApiResponse.ok(purchaseService.offer()));
     }
 
     // ------------------------------------------------------------------ admin

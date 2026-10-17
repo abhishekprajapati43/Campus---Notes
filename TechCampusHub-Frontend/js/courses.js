@@ -29,7 +29,8 @@ import {
     setPurchaseValidity,
     getCourseRating,
     getCourseReviews,
-    submitCourseReview
+    submitCourseReview,
+    getSecondCourseOffer
 } from "./api.js";
 
 // =====================================================
@@ -41,6 +42,10 @@ export const DEFAULT_UPi_ID = "techcampushub@upi";
 const UPi_STORAGE_KEY = "campusnotes:upiId";
 const PURCHASES_STORAGE_KEY = "campusnotes:purchases";
 const COURSES_LOCAL_KEY = "campusnotes:courses";
+
+// 1+1 second-course offer: display fallback for the backend's
+// discountPercent (the server value always wins when present).
+const SECOND_COURSE_DISCOUNT_PERCENT = 50;
 
 // Catalog used when the courses table does not exist yet.
 const FALLBACK_COURSES = [
@@ -96,6 +101,8 @@ let coursesCache = null;
 let coursesMode = "cloud";        // "cloud" | "fallback"
 let purchasesCache = [];          // current user's purchases
 let ownershipLoaded = false;
+let offerCache = null;            // 1+1 second-course offer snapshot
+let offerLoaded = false;
 
 // =====================================================
 // Helpers
@@ -109,6 +116,87 @@ export function formatPrice(value) {
     }
 
     return `₹${amount.toLocaleString("en-IN")}`;
+}
+
+/**
+ * Like formatPrice but keeps paise for discounted amounts
+ * (₹249.50); whole rupees stay compact (₹499).
+ */
+export function formatAmount(value) {
+    const amount = Number(value) || 0;
+
+    if (amount <= 0) {
+        return "Free";
+    }
+
+    const hasFraction = amount % 1 !== 0;
+
+    return `₹${amount.toLocaleString("en-IN", hasFraction
+        ? { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+        : {})}`;
+}
+
+// =====================================================
+// 1+1 second-course offer
+// =====================================================
+//
+// Cached snapshot from GET /api/purchases/offer. Invalidated
+// by refreshOwnership() whenever the student's purchases
+// change, and falls back to "no offer" when the backend is
+// unreachable so the storefront still renders.
+// =====================================================
+
+async function loadOffer(force = false) {
+    if (offerLoaded && !force) {
+        return offerCache;
+    }
+
+    try {
+        const data = await getSecondCourseOffer();
+
+        offerCache = data && typeof data === "object" ? data : null;
+    } catch (error) {
+        console.error("Offer loading error:", error);
+
+        offerCache = null;
+    }
+
+    offerLoaded = true;
+
+    return offerCache;
+}
+
+/**
+ * Discounted price for a course (card or checkout), or null when
+ * the 1+1 offer does not apply: not at the second-course stage,
+ * the course is already owned, or the course is free. Display
+ * only - the backend recomputes the real discount on submit.
+ */
+function offerPriceFor(course) {
+    const offer = offerCache;
+
+    if (!offer?.eligible || !course) {
+        return null;
+    }
+
+    const original = Number(course.price_inr) || 0;
+
+    if (original <= 0) {
+        return null;
+    }
+
+    const owned = Array.isArray(offer.ownedCourseIds)
+        ? offer.ownedCourseIds.map(Number)
+        : [];
+
+    if (owned.includes(Number(course.id))) {
+        return null;
+    }
+
+    const percent = Number(offer.discountPercent) || SECOND_COURSE_DISCOUNT_PERCENT;
+    const discounted = original * (1 - percent / 100);
+
+    return discounted > 0 ? Math.round(discounted * 100) / 100 : null;
 }
 
 function localRead(key, fallback) {
@@ -364,6 +452,9 @@ export async function deleteCourse(courseId) {
 export async function refreshOwnership() {
     ownershipLoaded = true;
     purchasesCache = [];
+    // Purchases drive the 1+1 offer eligibility; re-fetch it on
+    // the next ask instead of serving a stale snapshot.
+    offerLoaded = false;
 
     const identity = await getIdentity();
 
@@ -679,6 +770,9 @@ async function renderCourseGrid() {
 
     const courses = await loadCourses();
 
+    // 1+1 second-course offer snapshot (cached; no-ops offline).
+    await loadOffer();
+
     if (!courses.length) {
         grid.innerHTML = `
             <p class="text-slate-500">No courses available yet.</p>
@@ -688,7 +782,13 @@ async function renderCourseGrid() {
 
     grid.innerHTML = courses.map(course => {
         const status = purchaseStatusFor(course.id);
-        const price = formatPrice(course.price_inr);
+
+        // 1+1 offer: struck-through list price + discounted price on
+        // the card while the student is at the second-course stage.
+        const offerPrice = offerPriceFor(course);
+        const price = offerPrice != null
+            ? formatAmount(offerPrice)
+            : formatPrice(course.price_inr);
         const purchase = getPurchaseFor(course.id);
         const expired = purchase ? purchaseExpired(purchase) : false;
 
@@ -757,6 +857,15 @@ async function renderCourseGrid() {
 
         const ratingHtml = ratingBadgeHtml(course);
 
+        const offerBadge = offerPrice != null
+            ? `
+                <div class="mt-4 rounded-xl bg-orange-50 border border-orange-200
+                           px-3 py-2 text-center text-xs font-extrabold text-orange-700">
+                    <i class="fa-solid fa-tag mr-1"></i>50% OFF — Second Course Offer
+                </div>
+            `
+            : "";
+
         return `
             <article class="card p-6 flex flex-col">
                 <div class="flex items-start justify-between gap-3">
@@ -776,13 +885,19 @@ async function renderCourseGrid() {
                 <ul class="mt-4 space-y-2 flex-1">
                     ${highlights}
                 </ul>
+                ${offerBadge}
                 <div class="mt-5 flex items-end justify-between gap-3">
                     <div>
                         <p class="text-xs uppercase tracking-wide text-slate-400 font-bold">
-                            One-time
+                            One-time${offerPrice != null
+                                ? ` · <span class="text-orange-600">50% OFF</span>`
+                                : ""}
                         </p>
                         <p class="text-2xl font-extrabold text-slate-900">
-                            ${escapeHtml(price)}
+                            ${offerPrice != null
+                                ? `<span class="text-sm font-bold text-slate-400
+                                            line-through mr-2">${escapeHtml(formatAmount(course.price_inr))}</span>`
+                                : ""}${escapeHtml(price)}
                         </p>
                     </div>
                     <button type="button"
@@ -863,6 +978,27 @@ function validityText(row) {
         (expired ? " (expired)" : "");
 }
 
+/**
+ * Paid amount for the purchase tables: the plain paid price, or the
+ * struck-through list price + paid amount + offer tag when the 1+1
+ * second-course discount applied.
+ */
+function amountCellHtml(row) {
+    const paid = formatAmount(row.amount_inr);
+    const discount = Number(row.discount_amount_inr) || 0;
+
+    if (discount <= 0) {
+        return escapeHtml(paid);
+    }
+
+    return `
+        <span class="text-slate-400 line-through text-xs
+                     mr-1">${escapeHtml(formatAmount(row.original_amount_inr))}</span>${escapeHtml(paid)}
+        <span class="ml-1 rounded bg-orange-50 px-1.5 py-0.5
+                     text-xs font-bold text-orange-600">50% OFF</span>
+    `;
+}
+
 async function renderPurchasesTable(containerId = "myPurchasesList") {
     const container = $(containerId);
 
@@ -906,7 +1042,7 @@ async function renderPurchasesTable(containerId = "myPurchasesList") {
                             <td class="py-3 pr-4 font-semibold text-slate-800">
                                 ${escapeHtml(row.course_title || courseTitleFor(row.course_id))}
                             </td>
-                            <td class="py-3 pr-4">${escapeHtml(formatPrice(row.amount_inr))}</td>
+                            <td class="py-3 pr-4">${amountCellHtml(row)}</td>
                             <td class="py-3 pr-4 font-mono text-xs">${escapeHtml(row.utr || "-")}</td>
                             <td class="py-3 pr-4">${escapeHtml(formatDate(row.created_at))}</td>
                             <td class="py-3 pr-4 ${purchaseExpired(row)
@@ -1002,7 +1138,7 @@ function coursesMessage(text, type = "info") {
 let activeCourse = null;
 let upiId = DEFAULT_UPi_ID;
 
-function openBuyModal(course) {
+async function openBuyModal(course) {
     const modal = $("buyModal");
 
     if (!modal) {
@@ -1011,9 +1147,41 @@ function openBuyModal(course) {
 
     activeCourse = course;
 
+    // Fresh offer snapshot so the checkout shows the price the
+    // student actually has to pay right now.
+    await loadOffer();
+
+    const offerPrice = offerPriceFor(course);
+
     $("buyCourseTitle").textContent = course.title;
-    $("buyCoursePrice").textContent = formatPrice(course.price_inr);
+    $("buyCoursePrice").textContent = offerPrice != null
+        ? formatAmount(offerPrice)
+        : formatPrice(course.price_inr);
     $("buyUpiIdText").textContent = upiId;
+
+    // 1+1 second-course offer breakdown on the payment step.
+    const originalSpan = $("buyCourseOriginalPrice");
+    const offerRow = $("buyOfferRow");
+
+    if (offerPrice != null) {
+        const saved = Math.round(
+            (Number(course.price_inr) - offerPrice) * 100
+        ) / 100;
+
+        if (originalSpan) {
+            originalSpan.textContent = formatAmount(course.price_inr);
+            originalSpan.classList.remove("hidden");
+        }
+
+        if (offerRow) {
+            $("buyOfferText").textContent =
+                `50% OFF — Second Course Offer applied. You save ${formatAmount(saved)}.`;
+            offerRow.classList.remove("hidden");
+        }
+    } else {
+        originalSpan?.classList.add("hidden");
+        offerRow?.classList.add("hidden");
+    }
 
     // Average rating of this course (details/checkout view).
     const ratingBox = $("buyCourseRating");
@@ -1023,9 +1191,11 @@ function openBuyModal(course) {
 
     const upiLink = $("buyUpiLink");
 
+    // The UPI deep link pre-fills the final payable amount -
+    // discounted while the 1+1 offer applies.
     upiLink.href = buildUpiLink({
         upiId,
-        amount: course.price_inr,
+        amount: offerPrice ?? course.price_inr,
         title: course.title
     });
 
@@ -1239,7 +1409,7 @@ async function renderAdminPurchases() {
             <div class="border rounded-xl p-4 flex flex-wrap items-center gap-4 justify-between">
                 <div class="min-w-0">
                     <p class="font-bold text-slate-800 truncate">
-                        ${escapeHtml(row.course_title || "Course")} — ${escapeHtml(formatPrice(row.amount_inr))}
+                        ${escapeHtml(row.course_title || "Course")} — ${amountCellHtml(row)}
                     </p>
                     <p class="text-sm text-slate-500 truncate">
                         ${escapeHtml(row.user_name || "Student")} · ${escapeHtml(row.user_email || "-")}
@@ -2191,7 +2361,9 @@ export function setupCommerceEvents() {
                 );
 
                 if (course) {
-                    openBuyModal(course);
+                    openBuyModal(course).catch(error => {
+                        console.error("Buy modal error:", error);
+                    });
                 }
             });
         });

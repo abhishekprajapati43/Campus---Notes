@@ -9,12 +9,24 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
 public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
 
     List<Purchase> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    /**
+     * Distinct course ids the student holds a pending or approved purchase of.
+     * Drives the 1+1 second-course offer: rejected rows never count, and
+     * pending rows count so several discounted requests can never stack
+     * while earlier ones await admin review.
+     */
+    @Query("select distinct p.course.id from Purchase p where p.user.id = :userId "
+            + "and p.status in :statuses")
+    List<Long> findCourseIdsByUserAndStatusIn(@Param("userId") Long userId,
+            @Param("statuses") Collection<PurchaseStatus> statuses);
 
     List<Purchase> findByStatusOrderByCreatedAtDesc(PurchaseStatus status);
 

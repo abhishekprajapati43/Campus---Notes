@@ -353,6 +353,10 @@ export function normalizePurchase(purchase) {
         user_name: purchase.userName,
         user_email: purchase.userEmail,
         amount_inr: Number(purchase.amountInr) || 0,
+        // 1+1 second-course offer: list price before the discount and the
+        // discount granted (0 on legacy full-price rows).
+        original_amount_inr: Number(purchase.originalAmountInr) || 0,
+        discount_amount_inr: Number(purchase.discountAmountInr) || 0,
         utr: purchase.utr,
         status: String(purchase.status || "").toLowerCase(),
         valid_from: purchase.validFrom,
@@ -670,6 +674,20 @@ export function setUserRegistrationStatus(userId, status) {
 /** Admin: permanently delete an account and all of its data. */
 export function adminDeleteUser(userId) {
     return apiDelete(`/api/admin/users/${userId}`);
+}
+
+// =====================================================
+// 1+1 second-course offer
+// =====================================================
+
+/**
+ * Snapshot of the 1+1 offer for the caller:
+ * { eligible, discountPercent, ownedCourseCount, ownedCourseIds }.
+ * Display only - the backend recomputes the real discount when a
+ * purchase is actually created, so the client never sets the price.
+ */
+export function getSecondCourseOffer() {
+    return apiGet("/api/purchases/offer");
 }
 
 // =====================================================

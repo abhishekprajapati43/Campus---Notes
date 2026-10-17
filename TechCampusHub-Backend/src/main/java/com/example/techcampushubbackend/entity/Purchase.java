@@ -44,6 +44,18 @@ public class Purchase extends Auditable {
     @Column(name = "amount_inr", nullable = false, precision = 10, scale = 2)
     private BigDecimal amountInr;
 
+    /**
+     * 1+1 second-course offer: the course's list price at purchase time.
+     * Nullable so the columns can be added to populated tables without a
+     * failure; null reads as "legacy full-price row, no offer data".
+     */
+    @Column(name = "original_amount_inr", precision = 10, scale = 2)
+    private BigDecimal originalAmountInr;
+
+    /** Discount granted on this purchase (null/zero = no offer applied). */
+    @Column(name = "discount_amount_inr", precision = 10, scale = 2)
+    private BigDecimal discountAmountInr;
+
     /** UPI transaction reference submitted by the student. */
     @Column(nullable = false, length = 64)
     private String utr;
