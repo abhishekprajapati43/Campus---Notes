@@ -32,6 +32,7 @@ import {
     initializeAuthenticatedUser,
     updateAuthModeUI,
     syncSignupRoleUI,
+    setRoleTabState,
     showAuthMessage,
     resetAuthForm,
     logoutUser,
@@ -80,10 +81,22 @@ let eventsInitialized = false;
 let authListenerInitialized = false;
 
 // =====================================================
-// Admin Login State
+// Login Role Selection (Student / Faculty / Admin)
 // =====================================================
 
-let adminLoginIdentifier = "";
+//
+// login.html asks which kind of account is signing in;
+// the choice is validated against the credentials and the
+// backend role decides the post-login redirect.
+//
+
+let loginRole = "student";
+
+const LOGIN_ROLE_LABELS = {
+    student: "Student",
+    faculty: "Faculty",
+    admin: "Admin"
+};
 
 // =====================================================
 // Utility
@@ -124,9 +137,9 @@ function getErrorMessage(error) {
 
 // =====================================================
 // AUTH UI
-// Main login is ALWAYS Student login.
-// Administrator login is handled through the
-// separate admin modal.
+// One unified login for every role: the Student /
+// Faculty / Admin tabs on login.html pick the account
+// type checked during sign-in.
 // =====================================================
 
 function updateAuthRoleUI() {
@@ -161,8 +174,9 @@ function updateAuthRoleUI() {
     }
 
     if (authSubmitBtn) {
-        // Pages may override the login label
-        // (faculty-login.html shows "Sign In").
+        // Pages may override the login label via a
+        // data-login-label attribute; the default is
+        // "Login".
         authSubmitBtn.textContent = isSignupMode
             ? "Create Account"
             : (authSubmitBtn.dataset.loginLabel || "Login");
@@ -182,7 +196,7 @@ function updateAuthRoleUI() {
 
 // =====================================================
 // AUTH FORM
-// Student Login + Student Signup
+// Unified Login (Student / Faculty / Admin) + Student Signup
 // =====================================================
 
 async function handleAuthSubmit(event) {
@@ -407,7 +421,7 @@ async function handleAuthSubmit(event) {
         }
 
         // =================================================
-        // STUDENT LOGIN
+        // LOGIN
         // =================================================
 
         const {
@@ -429,40 +443,36 @@ async function handleAuthSubmit(event) {
         }
 
         // =================================================
-        // FACULTY-ONLY LOGIN PAGE
-        // faculty-login.html rejects every non-faculty
-        // account here, BEFORE initializeAuthenticatedUser()
-        // fires the role-based redirect to another page.
+        // UNIFIED ROLE CHECK
+        // The role tabs on login.html pick the expected
+        // account type. A mismatch stops here, BEFORE
+        // initializeAuthenticatedUser() fires the
+        // role-based redirect to another page.
         // =================================================
 
+        const actualRole =
+            String(data.user.role || "").toLowerCase();
+
         if (
-            document.body?.dataset?.authScope === "faculty"
-            && data.user.role !== "faculty"
+            document.getElementById("loginRoleTabs")
+            && actualRole !== loginRole
         ) {
             await logoutUser();
 
             throw new Error(
-                data.user.role === "admin"
-                    ? "Administrator account detected. Please use the Administrator Login."
-                    : "This sign-in is for faculty members only. Students should use the Student Login."
+                `You selected ${LOGIN_ROLE_LABELS[loginRole] || loginRole}. ` +
+                `This account is a ` +
+                `${LOGIN_ROLE_LABELS[actualRole] || actualRole} account - ` +
+                `please select ` +
+                `${LOGIN_ROLE_LABELS[actualRole] || actualRole} and try again.`
             );
         }
 
-        // Load existing profile/role.
+        // Load existing profile/role; applyRoleUI then
+        // redirects to the matching dashboard
+        // (student -> dashboard.html, faculty ->
+        // faculty.html, admin -> admin.html).
         await initializeAuthenticatedUser();
-
-        // -------------------------------------------------
-        // Prevent administrator account from using
-        // normal Student Login.
-        // -------------------------------------------------
-
-        if (currentUserRole === "admin") {
-            await logoutUser();
-
-            throw new Error(
-                "Administrator account detected. Please use the Administrator Login."
-            );
-        }
 
         showAuthMessage(
             "Login successful.",
@@ -594,6 +604,66 @@ function handleSignupRoleTab(event) {
 
     updateAuthRoleUI();
     updateAuthModeUI();
+}
+
+// =====================================================
+// LOGIN ROLE TABS (Student / Faculty / Admin)
+// =====================================================
+
+//
+// One tab is always active: Student/Faculty/Admin on the
+// sign-in view. The choice only affects login (signup has
+// its own tabs) and is validated against the account role
+// in handleAuthSubmit().
+//
+
+function handleLoginRoleTab(event) {
+    const role =
+        event.currentTarget?.dataset?.loginRole || "";
+
+    if (!LOGIN_ROLE_LABELS[role]) {
+        return;
+    }
+
+    loginRole = role;
+
+    [
+        "loginRoleTabStudent",
+        "loginRoleTabFaculty",
+        "loginRoleTabAdmin"
+    ].forEach(tabId => {
+        const tab = $(tabId);
+
+        setRoleTabState(
+            tab,
+            tab?.dataset?.loginRole === loginRole
+        );
+    });
+
+    // Drop stale feedback from a previous attempt.
+    const message = $("authMessage");
+
+    if (message) {
+        message.textContent = "";
+        message.classList.add("hidden");
+    }
+}
+
+function setupLoginRoleTabs() {
+    $("loginRoleTabStudent")?.addEventListener(
+        "click",
+        handleLoginRoleTab
+    );
+
+    $("loginRoleTabFaculty")?.addEventListener(
+        "click",
+        handleLoginRoleTab
+    );
+
+    $("loginRoleTabAdmin")?.addEventListener(
+        "click",
+        handleLoginRoleTab
+    );
 }
 
 // =====================================================
@@ -845,536 +915,6 @@ async function handleForgotPassword(event) {
 }
 
 // =====================================================
-// ADMIN LOGIN MODAL
-// =====================================================
-
-function openAdminLoginModal() {
-    const modal =
-        $("adminLoginModal");
-
-    const step1 =
-        $("adminStep1");
-
-    const step2 =
-        $("adminStep2");
-
-    const idInput =
-        $("adminLoginId");
-
-    const passwordInput =
-        $("adminLoginPassword");
-
-    const message =
-        $("adminLoginMessage");
-
-    const stepText =
-        $("adminLoginStepText");
-
-    const idDisplay =
-        $("adminLoginIdDisplay");
-
-    adminLoginIdentifier = "";
-
-    if (modal) {
-        modal.classList.remove("hidden");
-    }
-
-    if (step1) {
-        step1.classList.remove("hidden");
-    }
-
-    if (step2) {
-        step2.classList.add("hidden");
-    }
-
-    if (idInput) {
-        idInput.value = "";
-    }
-
-    if (passwordInput) {
-        passwordInput.value = "";
-        passwordInput.type = "password";
-    }
-
-    if (idDisplay) {
-        idDisplay.textContent = "";
-    }
-
-    if (message) {
-        message.textContent = "";
-        message.className = "text-sm";
-    }
-
-    if (stepText) {
-        stepText.textContent =
-            "Step 1 of 2";
-    }
-
-    const toggleButton =
-        $("toggleAdminPasswordBtn");
-
-    if (toggleButton) {
-        toggleButton.innerHTML =
-            '<i class="fa-solid fa-eye"></i>';
-    }
-
-    setTimeout(() => {
-        idInput?.focus();
-    }, 100);
-}
-
-// =====================================================
-// CLOSE ADMIN LOGIN MODAL
-// =====================================================
-
-function closeAdminLoginModal() {
-    const modal =
-        $("adminLoginModal");
-
-    const idInput =
-        $("adminLoginId");
-
-    const passwordInput =
-        $("adminLoginPassword");
-
-    const message =
-        $("adminLoginMessage");
-
-    adminLoginIdentifier = "";
-
-    if (modal) {
-        modal.classList.add("hidden");
-    }
-
-    if (idInput) {
-        idInput.value = "";
-    }
-
-    if (passwordInput) {
-        passwordInput.value = "";
-        passwordInput.type = "password";
-    }
-
-    if (message) {
-        message.textContent = "";
-    }
-
-    const toggleButton =
-        $("toggleAdminPasswordBtn");
-
-    if (toggleButton) {
-        toggleButton.innerHTML =
-            '<i class="fa-solid fa-eye"></i>';
-    }
-}
-
-// =====================================================
-// ADMIN LOGIN STEP 1 → STEP 2
-// =====================================================
-
-function showAdminLoginStep2() {
-    const idInput =
-        $("adminLoginId");
-
-    const step1 =
-        $("adminStep1");
-
-    const step2 =
-        $("adminStep2");
-
-    const idDisplay =
-        $("adminLoginIdDisplay");
-
-    const stepText =
-        $("adminLoginStepText");
-
-    const message =
-        $("adminLoginMessage");
-
-    const adminId =
-        idInput?.value?.trim() || "";
-
-    if (!adminId) {
-        if (message) {
-            message.textContent =
-                "Please enter Administrator ID or email.";
-
-            message.className =
-                "text-sm text-red-600";
-        }
-
-        idInput?.focus();
-
-        return;
-    }
-
-    adminLoginIdentifier =
-        adminId;
-
-    if (idDisplay) {
-        idDisplay.textContent =
-            adminId;
-    }
-
-    if (step1) {
-        step1.classList.add("hidden");
-    }
-
-    if (step2) {
-        step2.classList.remove("hidden");
-    }
-
-    if (stepText) {
-        stepText.textContent =
-            "Step 2 of 2";
-    }
-
-    if (message) {
-        message.textContent = "";
-    }
-
-    setTimeout(() => {
-        $("adminLoginPassword")?.focus();
-    }, 100);
-}
-
-// =====================================================
-// ADMIN LOGIN STEP 2 → STEP 1
-// =====================================================
-
-function showAdminLoginStep1() {
-    const step1 =
-        $("adminStep1");
-
-    const step2 =
-        $("adminStep2");
-
-    const stepText =
-        $("adminLoginStepText");
-
-    const message =
-        $("adminLoginMessage");
-
-    const passwordInput =
-        $("adminLoginPassword");
-
-    if (step1) {
-        step1.classList.remove("hidden");
-    }
-
-    if (step2) {
-        step2.classList.add("hidden");
-    }
-
-    if (stepText) {
-        stepText.textContent =
-            "Step 1 of 2";
-    }
-
-    if (passwordInput) {
-        passwordInput.value = "";
-    }
-
-    if (message) {
-        message.textContent = "";
-    }
-
-    setTimeout(() => {
-        $("adminLoginId")?.focus();
-    }, 100);
-}
-
-// =====================================================
-// ADMIN LOGIN SUBMIT
-// =====================================================
-
-async function handleAdminLogin() {
-    const passwordInput =
-        $("adminLoginPassword");
-
-    const submitButton =
-        $("adminLoginSubmitBtn");
-
-    const message =
-        $("adminLoginMessage");
-
-    const password =
-        passwordInput?.value || "";
-
-    if (!adminLoginIdentifier) {
-        showAdminLoginStep1();
-        return;
-    }
-
-    if (!password) {
-        if (message) {
-            message.textContent =
-                "Please enter your Administrator password.";
-
-            message.className =
-                "text-sm text-red-600";
-        }
-
-        passwordInput?.focus();
-
-        return;
-    }
-
-    try {
-        if (submitButton) {
-            submitButton.disabled = true;
-            submitButton.textContent =
-                "Signing in...";
-        }
-
-        if (message) {
-            message.textContent = "";
-        }
-
-        // -------------------------------------------------
-        // Backend login
-        // -------------------------------------------------
-
-        const {
-            data,
-            error
-        } = await signIn(
-            adminLoginIdentifier,
-            password
-        );
-
-        if (error) {
-            throw error;
-        }
-
-        if (!data?.user) {
-            throw new Error(
-                "Administrator login failed."
-            );
-        }
-
-        // -------------------------------------------------
-        // Load profile and role
-        // -------------------------------------------------
-
-        await initializeAuthenticatedUser();
-
-        // -------------------------------------------------
-        // Verify Admin role
-        // -------------------------------------------------
-
-        if (currentUserRole !== "admin") {
-            console.warn(
-                "Non-admin account attempted Administrator login."
-            );
-
-            await logoutUser();
-
-            throw new Error(
-                "This account is not an Administrator account."
-            );
-        }
-
-        // -------------------------------------------------
-        // SUCCESS
-        // -------------------------------------------------
-
-        closeAdminLoginModal();
-
-    } catch (error) {
-        console.error(
-            "Administrator login error:",
-            error
-        );
-
-        if (message) {
-            message.textContent =
-                getErrorMessage(error);
-
-            message.className =
-                "text-sm text-red-600";
-        }
-
-    } finally {
-        if (submitButton) {
-            submitButton.disabled = false;
-
-            submitButton.textContent =
-                "Administrator Login";
-        }
-    }
-}
-
-// =====================================================
-// ADMIN PASSWORD TOGGLE
-// =====================================================
-
-function toggleAdminPassword() {
-    const passwordInput =
-        $("adminLoginPassword");
-
-    const toggleButton =
-        $("toggleAdminPasswordBtn");
-
-    if (!passwordInput) {
-        return;
-    }
-
-    const visible =
-        passwordInput.type === "text";
-
-    passwordInput.type =
-        visible
-            ? "password"
-            : "text";
-
-    if (toggleButton) {
-        toggleButton.innerHTML =
-            visible
-                ? '<i class="fa-solid fa-eye"></i>'
-                : '<i class="fa-solid fa-eye-slash"></i>';
-
-        toggleButton.setAttribute(
-            "aria-label",
-            passwordInput.type === "text"
-                ? "Hide password"
-                : "Show password"
-        );
-    }
-}
-
-// =====================================================
-// ADMIN LOGIN EVENTS
-// =====================================================
-
-function setupAdminLoginEvents() {
-    const adminIcon =
-        $("adminLoginIcon");
-
-    const modal =
-        $("adminLoginModal");
-
-    const closeButton =
-        $("closeAdminLoginBtn");
-
-    const continueButton =
-        $("adminContinueBtn");
-
-    const submitButton =
-        $("adminLoginSubmitBtn");
-
-    const backButton =
-        $("adminBackBtn");
-
-    const passwordToggle =
-        $("toggleAdminPasswordBtn");
-
-    const idInput =
-        $("adminLoginId");
-
-    const passwordInput =
-        $("adminLoginPassword");
-
-    // -------------------------------------------------
-    // Open
-    // -------------------------------------------------
-
-    adminIcon?.addEventListener(
-        "click",
-        openAdminLoginModal
-    );
-
-    // -------------------------------------------------
-    // Close
-    // -------------------------------------------------
-
-    closeButton?.addEventListener(
-        "click",
-        closeAdminLoginModal
-    );
-
-    // -------------------------------------------------
-    // Continue
-    // -------------------------------------------------
-
-    continueButton?.addEventListener(
-        "click",
-        showAdminLoginStep2
-    );
-
-    // -------------------------------------------------
-    // Login
-    // -------------------------------------------------
-
-    submitButton?.addEventListener(
-        "click",
-        handleAdminLogin
-    );
-
-    // -------------------------------------------------
-    // Back
-    // -------------------------------------------------
-
-    backButton?.addEventListener(
-        "click",
-        showAdminLoginStep1
-    );
-
-    // -------------------------------------------------
-    // Password toggle
-    // -------------------------------------------------
-
-    passwordToggle?.addEventListener(
-        "click",
-        toggleAdminPassword
-    );
-
-    // -------------------------------------------------
-    // Enter on Admin ID
-    // -------------------------------------------------
-
-    idInput?.addEventListener(
-        "keydown",
-        event => {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                showAdminLoginStep2();
-            }
-        }
-    );
-
-    // -------------------------------------------------
-    // Enter on Password
-    // -------------------------------------------------
-
-    passwordInput?.addEventListener(
-        "keydown",
-        event => {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                handleAdminLogin();
-            }
-        }
-    );
-
-    // -------------------------------------------------
-    // Click outside modal
-    // -------------------------------------------------
-
-    modal?.addEventListener(
-        "click",
-        event => {
-            if (
-                event.target ===
-                event.currentTarget
-            ) {
-                closeAdminLoginModal();
-            }
-        }
-    );
-}
-
-// =====================================================
 // MODAL KEYBOARD SHORTCUTS
 // =====================================================
 
@@ -1383,13 +923,6 @@ function setupModalKeyboardShortcuts() {
         "keydown",
         event => {
             if (event.key !== "Escape") {
-                return;
-            }
-
-            const adminModal = $("adminLoginModal");
-
-            if (adminModal && !adminModal.classList.contains("hidden")) {
-                closeAdminLoginModal();
                 return;
             }
 
@@ -2712,7 +2245,8 @@ export function setupEvents() {
     // INITIAL AUTH UI
     // =================================================
 
-    // Main login is always Student login.
+    // Always start on the unified login view (role tabs,
+    // not the signup fields).
     setSignupMode(false);
 
     resetAuthForm();
@@ -2734,9 +2268,6 @@ export function setupEvents() {
     // login.html?mode=signup        -> open on signup
     // login.html?mode=signup&role=faculty
     //                               -> faculty signup
-    //                               (used by the
-    //  "Request Access" link on
-    //  faculty-login.html)
     // =================================================
 
     if ($("authForm")) {
@@ -2788,10 +2319,10 @@ export function setupEvents() {
     );
 
     // =================================================
-    // ADMIN LOGIN MODAL
+    // LOGIN ROLE TABS (Student / Faculty / Admin)
     // =================================================
 
-    setupAdminLoginEvents();
+    setupLoginRoleTabs();
 
     // =================================================
     // ESCAPE CLOSES OPEN OVERLAYS

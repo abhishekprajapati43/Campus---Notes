@@ -63,14 +63,6 @@ import {
 
 import {
 
-    ADMIN_EMAIL
-
-} from "./config.js";
-
-
-
-import {
-
     getSignupMode,
 
     setSignupMode,
@@ -573,29 +565,6 @@ function formatRegistrationDate(value) {
     );
 }
 
-//
-// Profile rows that are shown for students and
-// hidden for administrators in the sidebar.
-//
-
-const SIDEBAR_STUDENT_ROWS = [
-    "sidebarProfileEnrollmentRow",
-    "sidebarProfileBranchRow",
-    "sidebarProfileSemesterRow",
-    "sidebarProfilePhoneRow"
-];
-
-//
-// Sidebar profile rows that faculty accounts do not
-// have (no enrollment number, branch or semester).
-//
-
-const SIDEBAR_FACULTY_HIDDEN_ROWS = [
-    "sidebarProfileEnrollmentRow",
-    "sidebarProfileBranchRow",
-    "sidebarProfileSemesterRow"
-];
-
 export function updateStudentProfileUI(
     student = currentStudent
 ) {
@@ -659,58 +628,13 @@ export function updateStudentProfileUI(
 
 
     // -------------------------------------------------
-    // Sidebar Profile Section
+    // Dashboard greeting: "Welcome Back <name>"
     // -------------------------------------------------
 
     setTextContent(
-        "sidebarProfileName",
+        "profileNameWelcome",
         name
     );
-
-    // Sidebar heading text ("Student Profile" / "Faculty Profile").
-    setTextContent(
-        "sidebarProfileTitle",
-        isFaculty ? "Faculty Profile" : "Student Profile"
-    );
-
-    setTextContent(
-        "sidebarProfileEnrollment",
-        enrollment || "-"
-    );
-
-    setTextContent(
-        "sidebarProfileEmail",
-        email || "-"
-    );
-
-    setTextContent(
-        "sidebarProfileBranch",
-        branch || "-"
-    );
-
-    setTextContent(
-        "sidebarProfileSemester",
-        semester
-            ? `Semester ${semester}`
-            : "-"
-    );
-
-    setTextContent(
-        "sidebarProfilePhone",
-        phone || "-"
-    );
-
-    // Students see every profile row.
-    SIDEBAR_STUDENT_ROWS.forEach(
-        rowId => $(rowId)?.classList.remove("hidden")
-    );
-
-    // Faculty keep name/email/phone only.
-    if (isFaculty) {
-        SIDEBAR_FACULTY_HIDDEN_ROWS.forEach(
-            rowId => $(rowId)?.classList.add("hidden")
-        );
-    }
 
 
     // -------------------------------------------------
@@ -827,31 +751,11 @@ export function updateAdminProfileUI(
     student = null
 ) {
 
-    const name = "Administrator";
-
-    const email =
-        user?.email ||
-        student?.email ||
-        ADMIN_EMAIL;
-
-
-    // -------------------------------------------------
-    // Sidebar Profile Section
-    // -------------------------------------------------
-
+    // Admins who open the student dashboard (kept reachable
+    // by old links) see a generic greeting in the heading.
     setTextContent(
-        "sidebarProfileName",
-        name
-    );
-
-    setTextContent(
-        "sidebarProfileEmail",
-        email || "-"
-    );
-
-    // Admins have no student academic details.
-    SIDEBAR_STUDENT_ROWS.forEach(
-        rowId => $(rowId)?.classList.add("hidden")
+        "profileNameWelcome",
+        "Administrator"
     );
 
     // The profile page (when reached by an admin) keeps the
@@ -900,14 +804,18 @@ export function updateAdminNavVisibility() {
 // over the same nodes when the role changes on a page.
 //
 // - Students keep the full learning link set.
-// - Faculty keep Dashboard, their own workspace quick-link
-//   group (Course / Launch Course / Content Upload /
-//   Manage Content) and the Profile block; the generic
-//   student entries and the plain Faculty entry are gone.
+// - Faculty keep Dashboard and their own workspace
+//   quick-link group (Course / Launch Course / Content
+//   Upload / Manage Content); the generic student entries
+//   and the plain Faculty entry are gone.
 // - Administrators keep Dashboard, Courses, Payment
 //   History, Admin Panel and Logout but lose the
 //   Notifications / Favorites / Certificates / Feedback
-//   entries and the whole Profile block.
+//   entries.
+//
+// The Profile accordion was removed from the sidebar for
+// every role; profile access lives in the header profile
+// menu (students + faculty) instead.
 //
 // Every lookup is null-guarded because these ids only
 // exist on pages that render the shared sidebar.
@@ -950,12 +858,10 @@ export function updateSidebarNavForRole() {
         ...FACULTY_HIDDEN_NAV_LINKS
     ].forEach(id => $(id)?.classList.remove("hidden"));
 
-    $("sidebarProfileSection")?.classList.remove("hidden");
-
-    // The header profile menu (photo + name + dropdown) is a
-    // faculty-dashboard affordance; every other role keeps
-    // the plain header.
-    $("headerProfileMenu")?.classList.toggle("hidden", !faculty);
+    // The header profile menu (photo + name + dropdown) is
+    // the profile affordance for students and faculty;
+    // administrators keep the plain header.
+    $("headerProfileMenu")?.classList.toggle("hidden", admin);
 
     if (faculty) {
         FACULTY_HIDDEN_NAV_LINKS.forEach(
@@ -967,10 +873,6 @@ export function updateSidebarNavForRole() {
         ADMIN_HIDDEN_NAV_LINKS.forEach(
             id => $(id)?.classList.add("hidden")
         );
-
-        // The Profile block itself (accordion included)
-        // disappears for administrators.
-        $("sidebarProfileSection")?.classList.add("hidden");
     }
 
     // The quick-link group only exists for faculty; the
@@ -2142,7 +2044,7 @@ return {
 // active tab = solid blue, inactive = slate text.
 //
 
-function setRoleTabState(button, active) {
+export function setRoleTabState(button, active) {
     if (!button) {
         return;
     }
@@ -2212,6 +2114,20 @@ export function syncSignupRoleUI() {
 
     setRoleTabState($("roleTabStudent"), !isFaculty);
     setRoleTabState($("roleTabFaculty"), isFaculty);
+
+    // -------------------------------------------------
+    // Login mode role tabs (Student / Faculty / Admin)
+    // only belong to the sign-in view; signup keeps its
+    // own Student/Faculty tabs inside #signupFields.
+    // -------------------------------------------------
+
+    const loginRoleTabs = $("loginRoleTabs");
+
+    if (signup) {
+        hideElement(loginRoleTabs);
+    } else {
+        showElement(loginRoleTabs);
+    }
 }
 
 
@@ -2297,8 +2213,9 @@ if (getSignupMode()){
 
         if (submitButton) {
 
-            // Pages may override the login label
-            // (faculty-login.html shows "Sign In").
+            // Pages may override the login label via a
+            // data-login-label attribute; the default is
+            // "Login".
             submitButton.textContent =
 
                 submitButton.dataset.loginLabel || "Login";

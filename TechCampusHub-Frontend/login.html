@@ -66,21 +66,6 @@
            justify-between
            auth-card">
                     <!-- =================================================
-         ADMIN LOGIN ICON
-    ================================================== -->
-                    <button
-                        id="adminLoginIcon"
-                        type="button"
-                        class="admin-login-icon
-               absolute
-               top-6
-               right-6"
-                        title="Administrator Login"
-                        aria-label="Administrator Login"
-                    >
-                        <i class="fa-solid fa-user-shield"></i>
-                    </button>
-                    <!-- =================================================
          BRAND CONTENT
     ================================================== -->
                     <div>
@@ -254,6 +239,49 @@
                  AUTH FORM
             ================================================== -->
                     <form id="authForm" class="space-y-4">
+                        <!-- =================================================
+                     LOGIN ROLE TABS (Student / Faculty / Admin)
+                     One page signs in every role; the selected
+                     role is validated against the account and
+                     drives the post-login redirect.
+                ================================================== -->
+                        <div
+                            id="loginRoleTabs"
+                            role="tablist"
+                            aria-label="Login role"
+                            class="grid grid-cols-3 gap-2 p-1 bg-slate-100 rounded-xl"
+                        >
+                            <button
+                                id="loginRoleTabStudent"
+                                type="button"
+                                role="tab"
+                                data-login-role="student"
+                                aria-selected="true"
+                                class="py-2.5 rounded-lg text-sm font-bold transition bg-blue-600 text-white"
+                            >
+                                Student
+                            </button>
+                            <button
+                                id="loginRoleTabFaculty"
+                                type="button"
+                                role="tab"
+                                data-login-role="faculty"
+                                aria-selected="false"
+                                class="py-2.5 rounded-lg text-sm font-bold transition text-slate-600 hover:text-slate-900"
+                            >
+                                Faculty
+                            </button>
+                            <button
+                                id="loginRoleTabAdmin"
+                                type="button"
+                                role="tab"
+                                data-login-role="admin"
+                                aria-selected="false"
+                                class="py-2.5 rounded-lg text-sm font-bold transition text-slate-600 hover:text-slate-900"
+                            >
+                                Admin
+                            </button>
+                        </div>
                         <!-- SIGNUP FIELDS -->
                         <div id="signupFields" class="hidden space-y-4">
                             <!-- SIGNUP ROLE TABS -->
@@ -727,213 +755,9 @@
            transition">
                         Don't have an account?
                     </div>
-                    <!-- FACULTY LOGIN LINK -->
-                    <p class="text-center
-                  text-sm
-                  text-slate-500
-                  mt-3">
-                        Faculty?
-                        <a href="./faculty-login.html" class="font-bold
-                           text-navy
-                           hover:text-blue-600
-                           transition">
-                            Faculty Login
-                        </a>
-                    </p>
                 </div>
             </div>
         </section>
-        <!-- =========================================================
-     ADMIN LOGIN MODAL
-========================================================= -->
-        <div id="adminLoginModal" class="hidden
-           fixed
-           inset-0
-           z-[200]
-           bg-slate-950/60
-           admin-modal
-           items-center
-           justify-center
-           p-4">
-            <div class="bg-white
-               rounded-3xl
-               w-full
-               max-w-md
-               p-7
-               shadow-2xl
-               relative">
-                <!-- CLOSE BUTTON -->                    <button id="closeAdminLoginBtn" type="button" aria-label="Close" class="absolute
-                   top-5
-                   right-5
-                   w-9
-                   h-9
-                   rounded-xl
-                   bg-slate-100
-                   hover:bg-slate-200
-                   flex
-                   items-center
-                   justify-center
-                   text-slate-600">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-                <!-- HEADER -->
-                <div class="text-center mb-7">
-                    <div class="w-14
-                       h-14
-                       mx-auto
-                       rounded-2xl
-                       bg-blue-50
-                       text-blue-600
-                       flex
-                       items-center
-                       justify-center
-                       text-xl">
-                        <i class="fa-solid fa-user-shield"></i>
-                    </div>
-                    <h2 class="text-2xl
-                       font-extrabold
-                       text-slate-900
-                       mt-4">
-                        Administrator Login
-                    </h2>
-                    <p id="adminLoginStepText" class="text-sm
-                       text-slate-500
-                       mt-2">
-                        Enter your administrator ID
-                    </p>
-                </div>
-                <!-- =================================================
-             STEP 1 : ADMIN ID
-        ================================================== -->
-                <div id="adminStep1" class="admin-step">
-                    <label class="block
-                       text-sm
-                       font-semibold
-                       mb-2">
-                        Administrator ID
-                    </label>
-                    <div class="relative">
-                        <i class="fa-solid
-                           fa-user-shield
-                           absolute
-                           left-4
-                           top-1/2
-                           -translate-y-1/2
-                           text-slate-400"></i>
-                        <input
-                            id="adminLoginId"
-                            class="input pl-11"
-                            type="text"
-                            placeholder="Enter administrator ID"
-                            autocomplete="username"
-                        >
-                    </div>
-                    <button id="adminContinueBtn" type="button" class="w-full
-                       mt-5
-                       bg-blue-600
-                       hover:bg-blue-700
-                       text-white
-                       font-bold
-                       py-3.5
-                       rounded-xl
-                       transition">
-                        Continue
-                        <i class="fa-solid
-                           fa-arrow-right
-                           ml-2"></i>
-                    </button>
-                </div>
-                <!-- =================================================
-             STEP 2 : PASSWORD
-        ================================================== -->
-                <div id="adminStep2" class="admin-step hidden">
-                    <div class="mb-4
-                       px-3
-                       py-2
-                       bg-slate-50
-                       rounded-xl
-                       text-sm">
-                        <span class="text-slate-500">
-                            Administrator ID:
-                        </span>
-                        <span id="adminLoginIdDisplay" class="font-bold
-                           text-slate-800
-                           ml-1">
-                            -
-                        </span>
-                    </div>
-                    <label class="block
-                       text-sm
-                       font-semibold
-                       mb-2">
-                        Password
-                    </label>
-                    <div class="relative">
-                        <i class="fa-solid
-                           fa-lock
-                           absolute
-                           left-4
-                           top-1/2
-                           -translate-y-1/2
-                           text-slate-400"></i>
-                        <input
-                            id="adminLoginPassword"
-                            class="input
-                           pl-11
-                           pr-12"
-                            type="password"
-                            placeholder="Enter administrator password"
-                            autocomplete="current-password"
-                        >
-                        <button
-                            id="toggleAdminPasswordBtn"
-                            type="button"
-                            class="absolute
-                           right-4
-                           top-1/2
-                           -translate-y-1/2
-                           text-slate-400"
-                            aria-label="Show password"
-                        >
-                            <i class="fa-regular
-                               fa-eye"></i>
-                        </button>
-                    </div>
-                    <div class="grid
-                       grid-cols-2
-                       gap-3
-                       mt-5">
-                        <button id="adminBackBtn" type="button" class="border
-                           border-slate-200
-                           hover:bg-slate-50
-                           text-slate-700
-                           font-bold
-                           py-3
-                           rounded-xl
-                           transition">
-                            <i class="fa-solid
-                               fa-arrow-left
-                               mr-2"></i>
-                            Back
-                        </button>
-                        <button id="adminLoginSubmitBtn" type="button" class="bg-blue-600
-                           hover:bg-blue-700
-                           text-white
-                           font-bold
-                           py-3
-                           rounded-xl
-                           transition">
-                            Login
-                        </button>
-                    </div>
-                </div>
-                <!-- MESSAGE -->
-                <p id="adminLoginMessage" aria-live="polite" class="text-sm
-                   text-center
-                   min-h-5
-                   mt-4"></p>
-            </div>
-        </div>
         <!-- =========================================================
      FACULTY DECLARATION MODAL
 ========================================================= -->

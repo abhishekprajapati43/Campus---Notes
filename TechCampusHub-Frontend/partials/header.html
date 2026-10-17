@@ -47,8 +47,8 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- RIGHT HEADER PROFILE (faculty only; hidden for every
-                             other role so student/admin pages stay unchanged) -->
+                        <!-- RIGHT HEADER PROFILE (students + faculty; hidden for
+                             administrators so admin pages stay unchanged) -->
                         <div id="headerProfileMenu" class="hidden relative">
                             <button id="headerProfileBtn" type="button"
                                     aria-haspopup="true" aria-expanded="false"
@@ -62,8 +62,8 @@
                                 <span class="hidden sm:block text-left min-w-0">
                                     <span id="headerProfileName" class="block text-sm
                                           font-bold text-slate-800 truncate
-                                          max-w-[160px]">Faculty</span>
-                                    <span class="block text-xs text-slate-500">Faculty</span>
+                                          max-w-[160px]">Student</span>
+                                    <span id="headerProfileRole" class="block text-xs text-slate-500">Student</span>
                                 </span>
                                 <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
                             </button>

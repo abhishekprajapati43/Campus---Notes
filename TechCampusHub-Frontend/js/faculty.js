@@ -301,14 +301,42 @@ function renderWelcome() {
 
 function renderHeaderProfile() {
     const user = getStoredUser() || null;
+    const rawRole = String(
+        user?.role || currentStudent?.role || ""
+    ).toLowerCase();
+
+    const isFaculty = rawRole === "faculty";
+
     const name = String(
         user?.name || currentStudent?.name || ""
-    ).trim() || "Faculty";
+    ).trim() || (isFaculty ? "Faculty" : "Student");
+
+    const roleLabel = isFaculty
+        ? "Faculty"
+        : rawRole === "admin"
+            ? "Admin"
+            : "Student";
 
     const nameTarget = $("headerProfileName");
 
     if (nameTarget) {
         nameTarget.textContent = name;
+    }
+
+    // Small caption under the name ("Student" / "Faculty").
+    const roleTarget = $("headerProfileRole");
+
+    if (roleTarget) {
+        roleTarget.textContent = roleLabel;
+    }
+
+    // "My Profile" points at the page that role actually uses.
+    const profileLink = $("headerMyProfileBtn");
+
+    if (profileLink) {
+        profileLink.href = isFaculty
+            ? "./faculty.html#profile"
+            : "./profile.html";
     }
 
     const photoTarget = $("headerProfilePhoto");
@@ -366,15 +394,21 @@ function setupHeaderProfileMenu() {
     dropdown.addEventListener("click", () => setOpen(false));
 
     $("headerChangePasswordBtn")?.addEventListener("click", () => {
-        // The modal lives in faculty.html; on any other page a
-        // faculty member may open (notifications, certificates,
-        // profile, …) fall back to the Profile tab that has it.
+        // The shared modal ships with the header partial on every
+        // page; the page fallbacks only matter if a future page
+        // ever renders the header without the shared modals.
         if ($("facultyChangePasswordModal")) {
             openChangePasswordModal();
             return;
         }
 
-        window.location.href = "./faculty.html#profile";
+        const isFaculty = String(
+            getStoredUser()?.role || currentStudent?.role || ""
+        ).toLowerCase() === "faculty";
+
+        window.location.href = isFaculty
+            ? "./faculty.html#profile"
+            : "./profile.html";
     });
 
     $("headerLogoutBtn")?.addEventListener(
@@ -407,6 +441,72 @@ function setupHeaderProfileMenu() {
 export function initHeaderProfileMenu() {
     renderHeaderProfile();
     setupHeaderProfileMenu();
+}
+
+// =====================================================
+// Change-password modal (shared)
+// =====================================================
+
+//
+// The modal ships in partials/modals.html, so every page
+// that renders the shared header can open it: the header
+// dropdown on any page plus the faculty Profile panel
+// button. Wiring lives here (not in setupFacultyEvents) so
+// student pages get the same behaviour as the workspace.
+//
+
+let changePasswordWired = false;
+
+export function initChangePasswordModal() {
+    const form = $("facultyChangePasswordForm");
+
+    if (!form || changePasswordWired) {
+        return;
+    }
+
+    changePasswordWired = true;
+
+    $("facultyProfileChangePasswordBtn")?.addEventListener(
+        "click",
+        openChangePasswordModal
+    );
+
+    form.addEventListener(
+        "submit",
+        handleChangePassword
+    );
+
+    $("closeFacultyChangePasswordBtn")?.addEventListener(
+        "click",
+        closeChangePasswordModal
+    );
+
+    $("cancelFacultyChangePasswordBtn")?.addEventListener(
+        "click",
+        closeChangePasswordModal
+    );
+
+    // Click on the dimmed backdrop closes the modal.
+    $("facultyChangePasswordModal")?.addEventListener(
+        "click",
+        event => {
+            if (event.target === event.currentTarget) {
+                closeChangePasswordModal();
+            }
+        }
+    );
+
+    document.addEventListener("keydown", event => {
+        if (event.key !== "Escape") {
+            return;
+        }
+
+        const modal = $("facultyChangePasswordModal");
+
+        if (modal && !modal.classList.contains("hidden")) {
+            closeChangePasswordModal();
+        }
+    });
 }
 
 // =====================================================
@@ -3709,36 +3809,9 @@ export function setupFacultyEvents() {
         () => setProfileEditing(true)
     );
 
-    $("facultyProfileChangePasswordBtn")?.addEventListener(
-        "click",
-        openChangePasswordModal
-    );
-
-    // ---- Change password modal ----
-    $("facultyChangePasswordForm")?.addEventListener(
-        "submit",
-        handleChangePassword
-    );
-
-    $("closeFacultyChangePasswordBtn")?.addEventListener(
-        "click",
-        closeChangePasswordModal
-    );
-
-    $("cancelFacultyChangePasswordBtn")?.addEventListener(
-        "click",
-        closeChangePasswordModal
-    );
-
-    // Click on the dimmed backdrop closes the modal.
-    $("facultyChangePasswordModal")?.addEventListener(
-        "click",
-        event => {
-            if (event.target === event.currentTarget) {
-                closeChangePasswordModal();
-            }
-        }
-    );
+    // The shared change-password modal (Profile button +
+    // header dropdown) is wired for every page by
+    // initChangePasswordModal() in app.js.
 
     // Sidebar hashes (#course, #launch, …) never match an
     // element id, so the native anchor jump never fires while
@@ -3772,14 +3845,8 @@ export function setupFacultyEvents() {
             return;
         }
 
-        // The change password modal shares the stage next.
-        const changePasswordModal = $("facultyChangePasswordModal");
-
-        if (changePasswordModal
-            && !changePasswordModal.classList.contains("hidden")) {
-            closeChangePasswordModal();
-            return;
-        }
+        // (The shared change-password modal is closed by its
+        // own Escape listener from initChangePasswordModal().)
 
         const modal = $("facultyEditModal");
 

@@ -13,7 +13,7 @@ import { initNotifications } from "./notifications.js";
 import { initCertificates } from "./certificates.js";
 import { initFeedback } from "./feedback.js";
 import { initChatbot } from "./chatbot.js";
-import { initFaculty, initHeaderProfileMenu } from "./faculty.js";
+import { initFaculty, initHeaderProfileMenu, initChangePasswordModal } from "./faculty.js";
 
 const PAGE =
     document.body?.dataset?.page || "auth";
@@ -71,6 +71,10 @@ document.addEventListener(
                 // shared header, so faculty chrome can never show
                 // up live without its handlers (self-guarded).
                 initHeaderProfileMenu();
+
+                // Shared change-password modal (header dropdown
+                // + faculty Profile panel button).
+                initChangePasswordModal();
 
                 await initFavorites();
                 await initNotifications();

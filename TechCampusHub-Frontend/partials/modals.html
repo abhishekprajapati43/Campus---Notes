@@ -333,3 +333,101 @@
                     </div>
                 </div>
             </div>
+
+            <!-- =========================================================
+     CHANGE PASSWORD MODAL (shared)
+     Lives in the partials so every role that sees the header
+     profile menu (students + faculty) can change their password
+     from any page. Uses the shared auth endpoint; opened from
+     the header dropdown and the faculty Profile panel button.
+========================================================= -->
+            <div id="facultyChangePasswordModal" class="hidden fixed inset-0 z-[110] bg-slate-950/50 items-center justify-center p-4">
+                <div class="bg-white rounded-2xl
+                   w-full max-w-md
+                   p-6 shadow-2xl">
+                    <div class="flex items-center
+                           justify-between mb-5">
+                        <div>
+                            <p class="text-sm
+                               text-blue-600
+                               font-semibold">
+                                Account
+                            </p>
+                            <h3 class="text-2xl
+                               font-extrabold">
+                                Change Password
+                            </h3>
+                        </div>
+                        <button id="closeFacultyChangePasswordBtn" type="button" aria-label="Close" class="w-10 h-10
+                           rounded-xl
+                           bg-slate-100
+                           hover:bg-slate-200
+                           flex items-center
+                           justify-center">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <p id="facultyChangePasswordMessage" aria-live="polite"
+                       class="text-sm min-h-5 mb-3"></p>
+                    <form id="facultyChangePasswordForm" class="space-y-4">
+                        <div>
+                            <label for="facultyCurrentPassword" class="block text-sm
+                               font-semibold mb-2">
+                                Current Password
+                            </label>
+                            <input id="facultyCurrentPassword"
+                                   class="input"
+                                   type="password"
+                                   autocomplete="current-password"
+                                   required>
+                        </div>
+                        <div>
+                            <label for="facultyNewPassword" class="block text-sm
+                               font-semibold mb-2">
+                                New Password
+                            </label>
+                            <input id="facultyNewPassword"
+                                   class="input"
+                                   type="password"
+                                   autocomplete="new-password"
+                                   minlength="8"
+                                   required>
+                        </div>
+                        <div>
+                            <label for="facultyConfirmPassword" class="block text-sm
+                               font-semibold mb-2">
+                                Confirm New Password
+                            </label>
+                            <input id="facultyConfirmPassword"
+                                   class="input"
+                                   type="password"
+                                   autocomplete="new-password"
+                                   minlength="8"
+                                   required>
+                        </div>
+                        <div class="flex items-center gap-3 pt-2">
+                            <button type="submit" class="bg-blue-600
+                               hover:bg-blue-700
+                               text-white
+                               rounded-xl
+                               font-bold
+                               px-6
+                               py-3
+                               transition">
+                                <i class="fa-solid fa-key mr-2"></i>Update Password
+                            </button>
+                            <button id="cancelFacultyChangePasswordBtn" type="button"
+                                    class="border border-slate-200
+                               hover:bg-slate-50
+                               text-slate-700
+                               rounded-xl
+                               font-bold
+                               py-3
+                               px-6
+                               transition">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>

@@ -12,7 +12,6 @@ const NAV_ID_BY_PAGE = {
     notifications: "notificationsBtn",
     favorites: "favoritesBtn",
     courses: "coursesBtn",
-    profile: "sidebarProfileBtn",
     admin: "adminNavBtn",
     // faculty.html lives inside the faculty workspace group,
     // so the Dashboard quick link carries the active state.
@@ -57,8 +56,6 @@ export async function renderLayout(page) {
     applyHeaderBranding(page);
 
     markActiveNav(page);
-
-    setupSidebarProfileSection();
 }
 
 // =====================================================
@@ -90,74 +87,6 @@ function applyHeaderBranding(page) {
     if (headerSubtitle) {
         headerSubtitle.textContent = "Admin Dashboard";
     }
-}
-
-// =====================================================
-// Sidebar Profile Accordion
-// =====================================================
-
-//
-// The Profile row expands/collapses the details card
-// nested underneath it instead of navigating, so the
-// profile page stays reachable through the compact
-// "View full profile" link inside the card. The chosen
-// state is stored in localStorage and restored on every
-// render so it survives navigation between pages.
-//
-
-const SIDEBAR_PROFILE_EXPANDED_KEY =
-    "campusnotes:sidebarProfileExpanded";
-
-function setupSidebarProfileSection() {
-    const profileBtn =
-        document.getElementById("sidebarProfileBtn");
-
-    const details =
-        document.getElementById("sidebarProfileDetails");
-
-    if (!profileBtn || !details) {
-        return;
-    }
-
-    const chevron =
-        profileBtn.querySelector(".fa-chevron-down");
-
-    let expanded =
-        window.localStorage.getItem(
-            SIDEBAR_PROFILE_EXPANDED_KEY
-        ) !== "false";
-
-    const applyState = () => {
-        details.classList.toggle(
-            "hidden",
-            !expanded
-        );
-
-        chevron?.classList.toggle(
-            "rotate-180",
-            expanded
-        );
-
-        profileBtn.setAttribute(
-            "aria-expanded",
-            String(expanded)
-        );
-    };
-
-    applyState();
-
-    profileBtn.addEventListener("click", () => {
-        // Toggle the card only; navigation happens
-        // through the "View full profile" link.
-        expanded = !expanded;
-
-        window.localStorage.setItem(
-            SIDEBAR_PROFILE_EXPANDED_KEY,
-            String(expanded)
-        );
-
-        applyState();
-    });
 }
 
 function markActiveNav(page) {
