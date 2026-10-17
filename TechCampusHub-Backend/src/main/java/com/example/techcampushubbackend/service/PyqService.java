@@ -27,6 +27,7 @@ public class PyqService {
     private final CourseService courseService;
     private final PurchaseService purchaseService;
     private final CurrentUserService currentUserService;
+    private final PdfIndexService pdfIndexService;
 
     @Transactional(readOnly = true)
     public List<PyqResponse> listVisible() {
@@ -107,7 +108,9 @@ public class PyqService {
                 .courseBundle(loadBundle(request.courseId()))
                 .createdBy(ownerId)
                 .build();
-        return toResponse(pyqRepository.save(pyq));
+        Pyq saved = pyqRepository.save(pyq);
+        reindexForSearch(saved);
+        return toResponse(saved);
     }
 
     /**
@@ -141,12 +144,23 @@ public class PyqService {
         if (request.fileUrl() != null) pyq.setFileUrl(request.fileUrl());
         if (request.storagePath() != null) pyq.setStoragePath(request.storagePath());
         if (request.courseId() != null) pyq.setCourseBundle(loadBundle(request.courseId()));
-        return toResponse(pyqRepository.save(pyq));
+        Pyq saved = pyqRepository.save(pyq);
+        reindexForSearch(saved);
+        return toResponse(saved);
     }
 
     @Transactional
     public void delete(Long id) {
         pyqRepository.delete(require(id));
+        pdfIndexService.removeIndexAsync(PdfIndexService.CAT_PYQ, id);
+    }
+
+    /** Keeps the smart-search index in sync after every write. */
+    private void reindexForSearch(Pyq pyq) {
+        pdfIndexService.reindexAsync(PdfIndexService.CAT_PYQ, pyq.getId(),
+                pyq.getFileUrl(), pyq.getTitle(), pyq.getSubject(),
+                pyq.getCourseBundle() == null ? null : pyq.getCourseBundle().getId(),
+                pyq.getCourseBundle() == null ? null : pyq.getCourseBundle().getTitle());
     }
 
     /**

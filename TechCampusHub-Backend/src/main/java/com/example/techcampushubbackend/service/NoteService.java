@@ -36,6 +36,7 @@ public class NoteService {
     private final PurchaseService purchaseService;
     private final CurrentUserService currentUserService;
     private final UserRepository userRepository;
+    private final PdfIndexService pdfIndexService;
 
     /**
      * Listing for the public endpoint - filters out paid bundles the caller
@@ -132,7 +133,9 @@ public class NoteService {
                 .courseBundle(loadBundle(request.courseId()))
                 .createdBy(ownerId)
                 .build();
-        return toResponse(noteRepository.save(note));
+        Note saved = noteRepository.save(note);
+        reindexForSearch(saved);
+        return toResponse(saved);
     }
 
     @Transactional
@@ -152,7 +155,9 @@ public class NoteService {
         if (request.courseId() != null) {
             note.setCourseBundle(loadBundle(request.courseId()));
         }
-        return toResponse(noteRepository.save(note));
+        Note saved = noteRepository.save(note);
+        reindexForSearch(saved);
+        return toResponse(saved);
     }
 
     /**
@@ -187,7 +192,17 @@ public class NoteService {
      */
     @Transactional
     public void delete(Long id) {
-        noteRepository.delete(require(id));
+        Note note = require(id);
+        noteRepository.delete(note);
+        pdfIndexService.removeIndexAsync(PdfIndexService.CAT_NOTES, id);
+    }
+
+    /** Keeps the smart-search index in sync after every write. */
+    private void reindexForSearch(Note note) {
+        pdfIndexService.reindexAsync(PdfIndexService.CAT_NOTES, note.getId(),
+                note.getFileUrl(), note.getTitle(), note.getSubject(),
+                note.getCourseBundle() == null ? null : note.getCourseBundle().getId(),
+                note.getCourseBundle() == null ? null : note.getCourseBundle().getTitle());
     }
 
     private Note require(Long id) {

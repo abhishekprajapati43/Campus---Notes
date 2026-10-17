@@ -52,11 +52,6 @@ import {
 } from "./admin.js";
 
 import {
-    updateSearchUI,
-    refreshSearch
-} from "./search.js";
-
-import {
     renderCurrentCategory,
     setupRenderActions
 } from "./render.js";
@@ -1187,31 +1182,7 @@ async function reloadApplicationData() {
         isAdmin()
     );
 
-    updateSearchUI();
-
     updateStudentFilters();
-
-    await refreshSearch();
-
-    await renderCurrentCategory();
-}
-
-// =====================================================
-// SEARCH EVENTS
-// =====================================================
-
-async function handleSearchChange() {
-    updateSearchUI();
-
-    updateStudentFilters();
-
-    await refreshSearch();
-
-    await renderCurrentCategory();
-}
-
-async function handleSearchInput() {
-    await refreshSearch();
 
     await renderCurrentCategory();
 }
@@ -1778,31 +1749,8 @@ function setupSearchEvents() {
     const searchCategory =
         $("searchCategory");
 
-    const searchInput =
-        $("searchNotes");
-
-    const ids = [
-        "searchCourse",
-        "searchBranch",
-        "searchYear",
-        "filterSemester",
-        "searchSubject",
-
-        "tnpSearchSubject",
-
-        "pyqSearchCourse",
-        "pyqSearchYear",
-        "pyqSearchSemester",
-        "pyqSearchSubject",
-
-        "timetableSearchCourse",
-        "timetableSearchSemester",
-        "timetableSearchYear",
-        "timetableSearchSubject"
-    ];
-
     // -------------------------------------------------
-    // Category dropdown
+    // Category dropdown (dashboard category state)
     // -------------------------------------------------
 
     searchCategory?.addEventListener(
@@ -1817,33 +1765,6 @@ function setupSearchEvents() {
             );
         }
     );
-
-    // -------------------------------------------------
-    // Search text
-    // -------------------------------------------------
-
-    searchInput?.addEventListener(
-        "input",
-        handleSearchInput
-    );
-
-    // -------------------------------------------------
-    // Filters
-    // -------------------------------------------------
-
-    ids.forEach(id => {
-        const element =
-            $(id);
-
-        if (!element) {
-            return;
-        }
-
-        element.addEventListener(
-            "change",
-            handleSearchChange
-        );
-    });
 }
 
 // =====================================================

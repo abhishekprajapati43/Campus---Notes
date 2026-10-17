@@ -396,260 +396,45 @@
                             </div>
                         </section>
                         <!-- =================================================
-                 SEARCH / FILTERS
+                 SMART SEARCH (content search inside uploaded PDFs)
             ================================================== -->
                         <section id="searchFiltersSection" class="card p-5 md:p-6 mb-5">
-                            <div class="flex
-                           items-center
-                           justify-between
-                           mb-5">
+                            <div class="flex items-center justify-between mb-5">
                                 <div>
-                                    <h2 class="text-lg
-                                   font-extrabold">
-                                        Learning Resources
-                                    </h2>
-                                    <p class="text-sm
-                                   text-slate-500">
-                                        Search and filter your
-                                college resources
+                                    <h2 class="text-lg font-extrabold">Smart Search</h2>
+                                    <p class="text-sm text-slate-500">
+                                        Search inside every note, PYQ and study material &mdash; not just titles
                                     </p>
                                 </div>
-                                <span id="currentCategoryLabel" class="text-sm
-                               font-bold
-                               text-blue-600">
+                                <span id="currentCategoryLabel" class="text-sm font-bold text-blue-600">
                                     Notes
                                 </span>
                             </div>
-                            <!-- CATEGORY SELECT -->
+                            <!-- CATEGORY SELECT (app category state, not visible) -->
                             <select id="searchCategory" class="hidden">
-                                <option value="notes">
-                                    Notes
-                                </option>
-                                <option value="tnp">
-                                    TNP
-                                </option>
-                                <option value="pyq">
-                                    Previous Year Papers
-                                </option>
-                                <option value="timetable">
-                                    Exam Timetable
-                                </option>
+                                <option value="notes">Notes</option>
+                                <option value="tnp">TNP</option>
+                                <option value="pyq">Previous Year Papers</option>
+                                <option value="timetable">Exam Timetable</option>
                             </select>
-                            <!-- =================================================
-                     NOTES FILTERS
-                ================================================== -->
-                            <div id="notesSearchFilters" class="grid
-                           grid-cols-1
-                           md:grid-cols-2
-                           lg:grid-cols-5
-                           gap-4">
-                                <!-- Course -->
-                                <div class="filter-group">
-                                    <label class="text-sm
-                                   font-semibold
-                                   mb-2
-                                   block">
-                                        Course
-                                    </label>
-                                    <select id="searchCourse" class="input"></select>
-                                </div>
-                                <!-- Branch -->
-                                <div class="filter-group">
-                                    <label class="text-sm
-                                   font-semibold
-                                   mb-2
-                                   block">
-                                        Branch
-                                    </label>
-                                    <select id="searchBranch" class="input"></select>
-                                </div>
-                                <!-- Year -->
-                                <div id="notesYearFilter" class="filter-group">
-                                    <label class="text-sm
-                                   font-semibold
-                                   mb-2
-                                   block">
-                                        Year
-                                    </label>
-                                    <select id="searchYear" class="input"></select>
-                                </div>
-                                <!-- Semester -->
-                                <div class="filter-group">
-                                    <label class="text-sm
-                                   font-semibold
-                                   mb-2
-                                   block">
-                                        Semester
-                                    </label>
-                                    <select id="filterSemester" class="input"></select>
-                                </div>
-                                <!-- Subject -->
-                                <div class="filter-group">
-                                    <label class="text-sm
-                                   font-semibold
-                                   mb-2
-                                   block">
-                                        Subject
-                                    </label>
-                                    <select id="searchSubject" class="input">
-                                        <option value="ALL">
-                                            All Subjects
-                                        </option>
-                                    </select>
-                                </div>
-                            </div>
-                            <!-- =================================================
-                     TNP FILTERS
-                ================================================== -->
-                            <div id="tnpSearchFilters" class="hidden
-                           grid
-                           grid-cols-1
-                           md:grid-cols-2
-                           gap-4">
-                                <!-- Compatibility -->
-                                <input id="tnpSearchCourse" type="hidden">
-                                <!-- Subject -->
-                                <div class="filter-group">
-                                    <label class="text-sm
-                                   font-semibold
-                                   mb-2
-                                   block">
-                                        Subject
-                                    </label>
-                                    <select id="tnpSearchSubject" class="input">
-                                        <option value="ALL">
-                                            All Subjects
-                                        </option>
-                                    </select>
-                                </div>
-                            </div>
-                            <!-- =================================================
-                     PYQ FILTERS
-                ================================================== -->
-                            <div id="pyqSearchFilters" class="hidden
-                           grid
-                           grid-cols-1
-                           md:grid-cols-2
-                           lg:grid-cols-4
-                           gap-4">
-                                <!-- Course -->
-                                <div class="filter-group">
-                                    <label class="text-sm
-                                   font-semibold
-                                   mb-2
-                                   block">
-                                        Course
-                                    </label>
-                                    <select id="pyqSearchCourse" class="input"></select>
-                                </div>
-                                <!-- Previous Year -->
-                                <div class="filter-group">
-                                    <label class="text-sm
-                                   font-semibold
-                                   mb-2
-                                   block">
-                                        Previous Year
-                                    </label>
-                                    <select id="pyqSearchYear" class="input"></select>
-                                </div>
-                                <!-- Semester -->
-                                <div class="filter-group">
-                                    <label class="text-sm
-                                   font-semibold
-                                   mb-2
-                                   block">
-                                        Semester
-                                    </label>
-                                    <select id="pyqSearchSemester" class="input"></select>
-                                </div>
-                                <!-- Subject -->
-                                <div class="filter-group">
-                                    <label class="text-sm
-                                   font-semibold
-                                   mb-2
-                                   block">
-                                        Subject
-                                    </label>
-                                    <select id="pyqSearchSubject" class="input">
-                                        <option value="ALL">
-                                            All Subjects
-                                        </option>
-                                    </select>
-                                </div>
-                            </div>
-                            <!-- =================================================
-                     TIMETABLE FILTERS
-                ================================================== -->
-                            <div id="timetableSearchFilters" class="hidden
-                           grid
-                           grid-cols-1
-                           md:grid-cols-2
-                           lg:grid-cols-4
-                           gap-4">
-                                <!-- Course -->
-                                <div class="filter-group">
-                                    <label class="text-sm
-                                   font-semibold
-                                   mb-2
-                                   block">
-                                        Course
-                                    </label>
-                                    <select id="timetableSearchCourse" class="input"></select>
-                                </div>
-                                <!-- Semester -->
-                                <div class="filter-group">
-                                    <label class="text-sm
-                                   font-semibold
-                                   mb-2
-                                   block">
-                                        Semester
-                                    </label>
-                                    <select id="timetableSearchSemester" class="input"></select>
-                                </div>
-                                <!-- Exam Year -->
-                                <div class="filter-group">
-                                    <label class="text-sm
-                                   font-semibold
-                                   mb-2
-                                   block">
-                                        Exam Year
-                                    </label>
-                                    <select id="timetableSearchYear" class="input"></select>
-                                </div>
-                                <!-- Subject -->
-                                <div class="filter-group">
-                                    <label class="text-sm
-                                   font-semibold
-                                   mb-2
-                                   block">
-                                        Subject
-                                    </label>
-                                    <select id="timetableSearchSubject" class="input">
-                                        <option value="ALL">
-                                            All Subjects
-                                        </option>
-                                    </select>
-                                </div>
-                            </div>
-                            <!-- =================================================
-                     GLOBAL SEARCH
-                ================================================== -->
-                            <div class="mt-5
-                           relative">
-                                <i class="fa-solid
-                               fa-magnifying-glass
-                               absolute
-                               left-4
-                               top-1/2
-                               -translate-y-1/2
-                               text-slate-400"></i>
+                            <!-- SEARCH BOX -->
+                            <div class="relative" id="smartSearchWrap">
+                                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
                                 <input
-                                    id="searchNotes"
-                                    class="input pl-11"
+                                    id="smartSearchInput"
+                                    class="input pl-11 pr-11"
                                     type="search"
-                                    placeholder="Search by subject, topic, or keyword..."
+                                    autocomplete="off"
+                                    placeholder="Search a topic inside your PDFs... e.g. Oops, Normalization"
                                 >
+                                <i id="smartSearchSpinner" class="hidden fa-solid fa-circle-notch fa-spin absolute right-4 top-1/2 -translate-y-1/2 text-blue-600"></i>
+                                <!-- SUGGESTIONS -->
+                                <div id="smartSearchSuggestions" class="hidden absolute left-0 right-0 top-full mt-2 z-30 rounded-xl border border-slate-200 bg-white shadow-xl p-2 max-h-64 overflow-auto"></div>
                             </div>
+                            <!-- SEARCH HISTORY -->
+                            <div id="smartSearchHistory" class="hidden mt-3 flex flex-wrap items-center gap-2"></div>
+                            <!-- RESULTS / STATES -->
+                            <div id="smartSearchResults" class="mt-5 space-y-3"></div>
                         </section>
                         <!-- =================================================
                  RESOURCE LIST

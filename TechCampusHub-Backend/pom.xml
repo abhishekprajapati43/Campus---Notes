@@ -90,6 +90,13 @@
             <version>${cloudinary.version}</version>
         </dependency>
 
+        <!-- PDF text extraction for the smart search index -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.5</version>
+        </dependency>
+
         <!-- OpenAPI / Swagger UI -->
         <dependency>
             <groupId>org.springdoc</groupId>

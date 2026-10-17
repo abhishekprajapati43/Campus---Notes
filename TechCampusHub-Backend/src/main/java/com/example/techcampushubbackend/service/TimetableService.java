@@ -27,6 +27,7 @@ public class TimetableService {
     private final CourseService courseService;
     private final PurchaseService purchaseService;
     private final CurrentUserService currentUserService;
+    private final PdfIndexService pdfIndexService;
 
     @Transactional(readOnly = true)
     public List<TimetableResponse> listVisible() {
@@ -108,7 +109,9 @@ public class TimetableService {
                 .courseBundle(loadBundle(request.courseId()))
                 .createdBy(ownerId)
                 .build();
-        return toResponse(timetableRepository.save(timetable));
+        Timetable saved = timetableRepository.save(timetable);
+        reindexForSearch(saved);
+        return toResponse(saved);
     }
 
     /**
@@ -144,12 +147,23 @@ public class TimetableService {
         if (request.storagePath() != null) timetable.setStoragePath(request.storagePath());
         if (request.fileName() != null) timetable.setFileName(request.fileName());
         if (request.courseId() != null) timetable.setCourseBundle(loadBundle(request.courseId()));
-        return toResponse(timetableRepository.save(timetable));
+        Timetable saved = timetableRepository.save(timetable);
+        reindexForSearch(saved);
+        return toResponse(saved);
     }
 
     @Transactional
     public void delete(Long id) {
         timetableRepository.delete(require(id));
+        pdfIndexService.removeIndexAsync(PdfIndexService.CAT_TIMETABLE, id);
+    }
+
+    /** Keeps the smart-search index in sync after every write. */
+    private void reindexForSearch(Timetable timetable) {
+        pdfIndexService.reindexAsync(PdfIndexService.CAT_TIMETABLE, timetable.getId(),
+                timetable.getFileUrl(), timetable.getTitle(), timetable.getExamType(),
+                timetable.getCourseBundle() == null ? null : timetable.getCourseBundle().getId(),
+                timetable.getCourseBundle() == null ? null : timetable.getCourseBundle().getTitle());
     }
 
     /**

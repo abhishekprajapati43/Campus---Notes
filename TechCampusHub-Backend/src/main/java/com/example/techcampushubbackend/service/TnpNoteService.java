@@ -27,6 +27,7 @@ public class TnpNoteService {
     private final CourseService courseService;
     private final PurchaseService purchaseService;
     private final CurrentUserService currentUserService;
+    private final PdfIndexService pdfIndexService;
 
     @Transactional(readOnly = true)
     public List<TnpNoteResponse> listVisible() {
@@ -103,7 +104,9 @@ public class TnpNoteService {
                 .courseBundle(loadBundle(request.courseId()))
                 .createdBy(ownerId)
                 .build();
-        return toResponse(tnpNoteRepository.save(note));
+        TnpNote saved = tnpNoteRepository.save(note);
+        reindexForSearch(saved);
+        return toResponse(saved);
     }
 
     /**
@@ -133,12 +136,23 @@ public class TnpNoteService {
         if (request.fileUrl() != null) note.setFileUrl(request.fileUrl());
         if (request.storagePath() != null) note.setStoragePath(request.storagePath());
         if (request.courseId() != null) note.setCourseBundle(loadBundle(request.courseId()));
-        return toResponse(tnpNoteRepository.save(note));
+        TnpNote saved = tnpNoteRepository.save(note);
+        reindexForSearch(saved);
+        return toResponse(saved);
     }
 
     @Transactional
     public void delete(Long id) {
         tnpNoteRepository.delete(require(id));
+        pdfIndexService.removeIndexAsync(PdfIndexService.CAT_TNP, id);
+    }
+
+    /** Keeps the smart-search index in sync after every write. */
+    private void reindexForSearch(TnpNote note) {
+        pdfIndexService.reindexAsync(PdfIndexService.CAT_TNP, note.getId(),
+                note.getFileUrl(), note.getTitle(), note.getTopic(),
+                note.getCourseBundle() == null ? null : note.getCourseBundle().getId(),
+                note.getCourseBundle() == null ? null : note.getCourseBundle().getTitle());
     }
 
     /**

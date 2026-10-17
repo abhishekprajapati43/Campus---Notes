@@ -112,6 +112,48 @@ public class ContentStreamService {
         }
     }
 
+    /**
+     * One-shot, allowlisted download used by the PDF search indexer: same
+     * SSRF guard as the viewer relay, but the bytes are handed back to the
+     * caller instead of being streamed to a response.
+     */
+    public byte[] fetchBytes(String sourceUrl) {
+        if (sourceUrl == null || sourceUrl.isBlank()) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "No file is available for this item");
+        }
+        if (!isAllowedSource(sourceUrl)) {
+            log.warn("Blocked content fetch to non-allowlisted source");
+            throw new ApiException(HttpStatus.BAD_GATEWAY,
+                    "Document storage location is not allowed");
+        }
+
+        try {
+            HttpResponse<byte[]> upstream = httpClient.send(
+                    HttpRequest.newBuilder(URI.create(sourceUrl))
+                            .timeout(Duration.ofSeconds(60))
+                            .header("Accept", "application/pdf, */*")
+                            .GET()
+                            .build(),
+                    HttpResponse.BodyHandlers.ofByteArray());
+
+            int status = upstream.statusCode();
+            if (status != 200) {
+                log.warn("Content fetch upstream answered with status {}", status);
+                throw new ApiException(HttpStatus.BAD_GATEWAY,
+                        "Document could not be loaded right now");
+            }
+            return upstream.body();
+        } catch (IOException e) {
+            log.warn("Content fetch failed: {}", e.getMessage());
+            throw new ApiException(HttpStatus.BAD_GATEWAY,
+                    "Document could not be loaded right now");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ApiException(HttpStatus.BAD_GATEWAY,
+                    "Document could not be loaded right now");
+        }
+    }
+
     /** True when the URL is https on the allowlist (or http on loopback). */
     private boolean isAllowedSource(String url) {
         URI uri;

@@ -21,6 +21,12 @@
 // the document opens fit-width (no horizontal scrolling),
 // and pages are rendered when they approach the viewport
 // (and released again once they scroll far past it).
+//
+// Smart search integration - openPdfViewerAtPage() opens a
+// document directly on the page that matched a search and
+// paints a translucent overlay on every occurrence of the
+// keyword on that page (the canvas is pixel-only, so the
+// highlights are positioned from the text layer transforms).
 // =====================================================
 
 import { API_BASE_URL } from "./config.js";
@@ -63,7 +69,8 @@ const state = {
     scrollHandler: null,
     resizeTimer: null,
     resizeObserver: null,
-    open: false
+    open: false,
+    pendingTarget: null  // { page, keyword } to jump to once loaded
 };
 
 // =====================================================
@@ -377,6 +384,10 @@ function relayout() {
         if (entry.rendered) {
             renderSlot(entry); // redraw visible pages at the new size
         }
+        if (entry.highlightTerm) {
+            // Zoom changed the scale - repaint the search overlays.
+            highlightKeyword(entry, entry.highlightTerm);
+        }
     }
 
     restoreAnchor(anchor);
@@ -501,12 +512,119 @@ export async function openPdfViewer({ category, id, title } = {}) {
         updateLabels();
         updateCurrentPage();
         showLoading(false);
+
+        // Smart search "Open": jump straight to the matching page
+        // and highlight the keyword there.
+        const target = state.pendingTarget;
+        state.pendingTarget = null;
+        if (target) {
+            await applyTarget(target);
+        }
     } catch (error) {
         showError(
             error?.message && /engine/i.test(error.message)
                 ? error.message
                 : "This document could not be opened. It may be damaged."
         );
+    }
+}
+
+/**
+ * Smart search entry point: opens the document and lands on the page
+ * that matched, with every occurrence of the keyword highlighted.
+ */
+export async function openPdfViewerAtPage(
+    { category, id, title } = {},
+    pageNumber = 1,
+    keyword = ""
+) {
+    state.pendingTarget = { page: pageNumber, keyword };
+    await openPdfViewer({ category, id, title });
+}
+
+/** Scroll to the target page and paint the keyword overlays on it. */
+async function applyTarget(target) {
+    if (!target || !state.pages.length) {
+        return;
+    }
+
+    const body = $("pdfViewerBody");
+    const pageNumber = Math.min(
+        Math.max(1, Number(target.page) || 1),
+        state.pages.length
+    );
+    const entry = state.pages[pageNumber - 1];
+    if (!body || !entry) {
+        return;
+    }
+
+    state.currentPage = entry.index;
+    updateLabels();
+    body.scrollTop = Math.max(0, entry.slot.offsetTop - 80);
+
+    if (target.keyword) {
+        await highlightKeyword(entry, target.keyword);
+
+        // Bring the first occurrence into comfortable view.
+        const first = entry.slot.querySelector(".pdf-highlight");
+        if (first) {
+            body.scrollTop = Math.max(
+                0,
+                entry.slot.offsetTop + first.offsetTop - body.clientHeight / 3
+            );
+        }
+    }
+}
+
+/**
+ * Overlay every occurrence of the keyword on one page. The viewer is
+ * canvas-only, so the overlays are positioned from the text layer item
+ * transforms (same maths PDF.js' own text layer uses). The keyword is
+ * stored on the entry so a zoom re-layout repaints the overlays.
+ */
+async function highlightKeyword(entry, keyword) {
+    const term = String(keyword || "").trim().toLowerCase();
+    entry.slot
+        .querySelectorAll(".pdf-highlight")
+        .forEach(overlay => overlay.remove());
+
+    if (!term || !window.pdfjsLib) {
+        entry.highlightTerm = null;
+        return;
+    }
+    entry.highlightTerm = term;
+
+    let textContent;
+    try {
+        textContent = await entry.page.getTextContent();
+    } catch {
+        return; // page gone / viewer closed mid-await
+    }
+
+    const scale = entry.width / entry.rawViewport.width;
+    const viewport = entry.page.getViewport({ scale });
+
+    for (const item of textContent.items) {
+        const text = item.str || "";
+        if (!text.trim() || !text.toLowerCase().includes(term)) {
+            continue;
+        }
+
+        const tx = window.pdfjsLib.Util.transform(
+            viewport.transform,
+            item.transform
+        );
+        const fontHeight = Math.hypot(tx[2], tx[3]);
+
+        const overlay = document.createElement("div");
+        overlay.className = "pdf-highlight absolute pointer-events-none";
+        overlay.style.left = `${tx[4]}px`;
+        overlay.style.top = `${tx[5] - fontHeight}px`;
+        overlay.style.width = `${Math.max(4, (item.width || 0) * scale)}px`;
+        overlay.style.height = `${fontHeight * 1.15}px`;
+        overlay.style.background = "rgba(251, 191, 36, 0.45)";
+        overlay.style.borderRadius = "2px";
+        entry.slot.appendChild(overlay);
     }
 }
 

@@ -15,6 +15,7 @@ import { initFeedback } from "./feedback.js";
 import { initChatbot } from "./chatbot.js";
 import { initFaculty, initHeaderProfileMenu, initChangePasswordModal } from "./faculty.js";
 import { setupPdfViewer } from "./pdfviewer.js";
+import { setupSmartSearch } from "./smartsearch.js";
 
 const PAGE =
     document.body?.dataset?.page || "auth";
@@ -86,6 +87,12 @@ document.addEventListener(
                 // modal + the student card triggers once
                 // (self-guarded, no-ops when the modal is absent).
                 setupPdfViewer();
+
+                // Smart content search on the dashboard: live
+                // full-text search inside uploaded PDFs with
+                // suggestions + history (self-guarded: no-ops
+                // when the smart search box is absent).
+                setupSmartSearch();
 
                 await initFavorites();
                 await initNotifications();

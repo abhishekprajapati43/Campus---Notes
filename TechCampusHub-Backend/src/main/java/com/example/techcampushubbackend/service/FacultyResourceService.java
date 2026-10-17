@@ -31,6 +31,7 @@ public class FacultyResourceService {
     private final FacultyResourceRepository facultyResourceRepository;
     private final CourseService courseService;
     private final CurrentUserService currentUserService;
+    private final PdfIndexService pdfIndexService;
 
     /** Faculty workspace listing - own resources only (admins see all). */
     @Transactional(readOnly = true)
@@ -57,7 +58,9 @@ public class FacultyResourceService {
                 .courseBundle(courseService.requireOwnedBundle(request.courseId()))
                 .createdBy(ownerId)
                 .build();
-        return toResponse(facultyResourceRepository.save(resource));
+        FacultyResource saved = facultyResourceRepository.save(resource);
+        reindexForSearch(saved);
+        return toResponse(saved);
     }
 
     /**
@@ -94,7 +97,17 @@ public class FacultyResourceService {
         if (request.courseId() != null) {
             resource.setCourseBundle(courseService.requireOwnedBundle(request.courseId()));
         }
-        return toResponse(facultyResourceRepository.save(resource));
+        FacultyResource saved = facultyResourceRepository.save(resource);
+        reindexForSearch(saved);
+        return toResponse(saved);
+    }
+
+    /** Keeps the smart-search index in sync after every write. */
+    private void reindexForSearch(FacultyResource resource) {
+        pdfIndexService.reindexAsync(PdfIndexService.CAT_RESOURCES, resource.getId(),
+                resource.getFileUrl(), resource.getTitle(), null,
+                resource.getCourseBundle() == null ? null : resource.getCourseBundle().getId(),
+                resource.getCourseBundle() == null ? null : resource.getCourseBundle().getTitle());
     }
 
     private FacultyResource require(Long id) {

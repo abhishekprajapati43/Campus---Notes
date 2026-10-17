@@ -738,3 +738,22 @@ export function submitCourseReview(courseId, rating, comment) {
         comment: comment || ""
     });
 }
+
+// =====================================================
+// Smart search (content search inside uploaded PDFs)
+// =====================================================
+
+/**
+ * Full-text search across the pre-built PDF page index. Returns ranked
+ * hits: [{ category, contentId, title, subject, courseTitle, pageNumber,
+ * preview, keyword }]. The backend enforces access (free content +
+ * purchased courses only for students) inside the same query.
+ */
+export function smartSearch(query, limit = 20) {
+    return apiGet(`/api/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+}
+
+/** Autocomplete for the smart search box (subjects + document titles). */
+export function smartSearchSuggestions(query) {
+    return apiGet(`/api/search/suggest?q=${encodeURIComponent(query)}`);
+}
