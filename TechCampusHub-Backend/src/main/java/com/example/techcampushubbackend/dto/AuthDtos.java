@@ -143,7 +143,24 @@ public final class AuthDtos {
 
             @Min(value = 1, message = "semester must be >= 1")
             @Max(value = 12, message = "semester must be <= 12")
-            Integer semester) {
+            Integer semester,
+
+            /** FACULTY only: home department, e.g. "Computer Science". */
+            @Size(max = 120, message = "department must be at most 120 characters")
+            String department,
+
+            /** FACULTY only: highest qualification, e.g. "M.Tech". */
+            @Size(max = 120, message = "qualification must be at most 120 characters")
+            String qualification,
+
+            /** FACULTY only: teaching/industry experience, e.g. "5 years". */
+            @Size(max = 60, message = "experience must be at most 60 characters")
+            String experience,
+
+            /** Optional profile photo (Cloudinary URL). */
+            @Size(max = 600, message = "profilePhotoUrl must be at most 600 characters")
+            @Pattern(regexp = "^$|^https?://.*", message = "profilePhotoUrl must be an http(s) URL")
+            String profilePhotoUrl) {
     }
 
     /** JWT-carrying response returned on register/login. */
@@ -179,6 +196,10 @@ public final class AuthDtos {
             String department,
             String qualification,
             String experience,
+            /** FACULTY only: staff id assigned on approval (e.g. "FAC-0007"). */
+            String facultyId,
+            /** Optional profile photo (Cloudinary URL). */
+            String profilePhotoUrl,
             LocalDateTime createdAt) {
     }
 

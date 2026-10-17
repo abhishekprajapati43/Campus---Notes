@@ -69,6 +69,8 @@ public final class PurchaseDtos {
             LocalDateTime validUntil,
             LocalDateTime reviewedAt,
             String rejectionReason,
+            /** Course completion progress (0-100); null when not tracked yet. */
+            Integer progress,
             LocalDateTime createdAt) {
     }
 }

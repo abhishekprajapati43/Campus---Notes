@@ -10,4 +10,7 @@ import java.util.List;
 public interface NoteRepository extends JpaRepository<Note, Long> {
 
     List<Note> findAllByOrderByCreatedAtDesc();
+
+    /** Content uploaded by one faculty member (dashboard counts). */
+    long countByCreatedBy(Long createdBy);
 }

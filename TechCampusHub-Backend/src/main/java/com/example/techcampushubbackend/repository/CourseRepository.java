@@ -15,4 +15,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     List<Course> findAllByOrderBySortOrderAscTitleAsc();
 
     Optional<Course> findBySlugIgnoreCase(String slug);
+
+    /** Courses launched by one faculty member (dashboard counts). */
+    long countByCreatedBy(Long createdBy);
 }

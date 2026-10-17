@@ -13,7 +13,7 @@ import { initNotifications } from "./notifications.js";
 import { initCertificates } from "./certificates.js";
 import { initFeedback } from "./feedback.js";
 import { initChatbot } from "./chatbot.js";
-import { initFaculty } from "./faculty.js";
+import { initFaculty, initHeaderProfileMenu } from "./faculty.js";
 
 const PAGE =
     document.body?.dataset?.page || "auth";
@@ -66,6 +66,12 @@ document.addEventListener(
             // ------------------------------------------------
 
             if (PAGE !== "auth" && PAGE !== "home") {
+                // Header profile menu (photo + name + dropdown):
+                // wired once for every page that renders the
+                // shared header, so faculty chrome can never show
+                // up live without its handlers (self-guarded).
+                initHeaderProfileMenu();
+
                 await initFavorites();
                 await initNotifications();
                 await initCertificates();

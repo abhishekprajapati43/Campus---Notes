@@ -6,7 +6,6 @@ import com.example.techcampushubbackend.entity.Note;
 import com.example.techcampushubbackend.entity.Role;
 import com.example.techcampushubbackend.entity.User;
 import com.example.techcampushubbackend.exception.ResourceNotFoundException;
-import com.example.techcampushubbackend.repository.CourseRepository;
 import com.example.techcampushubbackend.repository.NoteRepository;
 import com.example.techcampushubbackend.repository.UserRepository;
 import com.example.techcampushubbackend.utils.CurrentUserService;
@@ -33,7 +32,7 @@ import static com.example.techcampushubbackend.utils.ContentUtils.resolveTitle;
 public class NoteService {
 
     private final NoteRepository noteRepository;
-    private final CourseRepository courseRepository;
+    private final CourseService courseService;
     private final PurchaseService purchaseService;
     private final CurrentUserService currentUserService;
     private final UserRepository userRepository;
@@ -167,9 +166,12 @@ public class NoteService {
         return update(id, request);
     }
 
+    /**
+     * Bundle resolution enforces ownership: faculty may only link content to
+     * courses they launched; admins may link to any course (403 otherwise).
+     */
     private com.example.techcampushubbackend.entity.Course loadBundle(Long courseId) {
-        return courseId == null ? null : courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+        return courseService.requireOwnedBundle(courseId);
     }
 
     /**

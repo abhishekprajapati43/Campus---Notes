@@ -56,6 +56,15 @@ public class FeedbackService {
                 .toList();
     }
 
+    /** Feedback left on the logged-in faculty's own courses only. */
+    @Transactional(readOnly = true)
+    public List<FeedbackResponse> listOnMyCourses() {
+        User user = currentUserService.requireUser();
+        return feedbackRepository.findOnCoursesOfFaculty(user.getId()).stream()
+                .map(FeedbackService::toResponse)
+                .toList();
+    }
+
     @Transactional
     public void delete(Long id) {
         Feedback feedback = feedbackRepository.findById(id)

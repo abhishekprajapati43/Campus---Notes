@@ -221,6 +221,7 @@ public class PurchaseService {
                 p.getValidUntil(),
                 p.getReviewedAt(),
                 p.getRejectionReason(),
+                p.getProgress(),
                 p.getCreatedAt());
     }
 }

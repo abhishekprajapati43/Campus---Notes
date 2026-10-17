@@ -27,6 +27,11 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
 
     List<Feedback> findByCourseIdOrderByCreatedAtDesc(Long courseId);
 
+    /** Feedback left on any course owned by one faculty member (newest first). */
+    @Query("select f from Feedback f where f.course is not null "
+            + "and f.course.createdBy = :facultyId order by f.createdAt desc")
+    List<Feedback> findOnCoursesOfFaculty(@Param("facultyId") Long facultyId);
+
     /**
      * Average + total count of the reviews left on one course. Course reviews
      * are the rows that carry a course_id. Returns a single row as a list so

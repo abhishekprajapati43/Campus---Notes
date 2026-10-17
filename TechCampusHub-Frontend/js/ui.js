@@ -927,10 +927,12 @@ const ADMIN_HIDDEN_NAV_LINKS = [
 
 //
 // Extra student links faculty accounts do not use; the
-// faculty workspace group replaces them.
+// faculty workspace group replaces them (its own
+// Dashboard link points at faculty.html#dashboard).
 //
 
 const FACULTY_HIDDEN_NAV_LINKS = [
+    "dashboardHomeBtn",
     "coursesBtn",
     "paymentHistoryBtn",
     ...ADMIN_HIDDEN_NAV_LINKS
@@ -949,6 +951,11 @@ export function updateSidebarNavForRole() {
     ].forEach(id => $(id)?.classList.remove("hidden"));
 
     $("sidebarProfileSection")?.classList.remove("hidden");
+
+    // The header profile menu (photo + name + dropdown) is a
+    // faculty-dashboard affordance; every other role keeps
+    // the plain header.
+    $("headerProfileMenu")?.classList.toggle("hidden", !faculty);
 
     if (faculty) {
         FACULTY_HIDDEN_NAV_LINKS.forEach(

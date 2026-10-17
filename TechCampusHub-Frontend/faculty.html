@@ -103,7 +103,129 @@
                             </div>
                         </section>
                         <!-- =================================================
-                 MY COURSES (sidebar hash: faculty.html#course)
+                 STAT CARDS (faculty-owned data only)
+            ================================================== -->
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+                            <article class="card p-5 flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0">
+                                    <i class="fa-solid fa-layer-group"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p id="facultyStatCourses" class="text-2xl font-extrabold text-slate-900">–</p>
+                                    <p class="text-sm text-slate-500 truncate">Total Courses</p>
+                                </div>
+                            </article>
+                            <article class="card p-5 flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center text-xl shrink-0">
+                                    <i class="fa-solid fa-users"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p id="facultyStatStudents" class="text-2xl font-extrabold text-slate-900">–</p>
+                                    <p class="text-sm text-slate-500 truncate">Total Students</p>
+                                </div>
+                            </article>
+                            <article class="card p-5 flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0">
+                                    <i class="fa-solid fa-file-lines"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p id="facultyStatContent" class="text-2xl font-extrabold text-slate-900">–</p>
+                                    <p class="text-sm text-slate-500 truncate">Total Content</p>
+                                </div>
+                            </article>
+                            <article class="card p-5 flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shrink-0">
+                                    <i class="fa-solid fa-cart-shopping"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p id="facultyStatPurchases" class="text-2xl font-extrabold text-slate-900">–</p>
+                                    <p class="text-sm text-slate-500 truncate">Recent Purchases</p>
+                                </div>
+                            </article>
+                        </div>
+                        <!-- =================================================
+                 FACULTY PANEL — tabbed workspace (reuses the
+                 admin tab engine via data-admin-* attributes)
+            ================================================== -->
+                        <div data-admin-scope id="facultyPanel">
+                            <section class="card
+                           p-3
+                           mb-5">
+                                <div data-admin-tabbar class="flex
+                               flex-wrap
+                               gap-2
+                               p-2
+                               bg-slate-100
+                               rounded-2xl">
+                                    <button type="button" data-admin-tab="dashboard" class="admin-tab-btn active px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
+                                        <i class="fa-solid fa-chart-line mr-2"></i>Dashboard
+                                    </button>
+                                    <button type="button" data-admin-tab="courses" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
+                                        <i class="fa-solid fa-layer-group mr-2"></i>My Courses
+                                    </button>
+                                    <button type="button" data-admin-tab="content" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
+                                        <i class="fa-solid fa-cloud-arrow-up mr-2"></i>Add Content
+                                    </button>
+                                    <button type="button" data-admin-tab="notifications" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
+                                        <i class="fa-regular fa-bell mr-2"></i>Notifications
+                                    </button>
+                                    <button type="button" data-admin-tab="certificates" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
+                                        <i class="fa-solid fa-certificate mr-2"></i>Certificates
+                                    </button>
+                                    <button type="button" data-admin-tab="feedback" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
+                                        <i class="fa-solid fa-star mr-2"></i>Feedback
+                                    </button>
+                                    <button type="button" data-admin-tab="users" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
+                                        <i class="fa-solid fa-users mr-2"></i>Users
+                                    </button>
+                                    <button type="button" data-admin-tab="profile" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
+                                        <i class="fa-regular fa-user mr-2"></i>Profile
+                                    </button>
+                                </div>
+                            </section>
+                            <!-- ------------------------------------- DASHBOARD -->
+                            <div data-admin-panel="dashboard">
+                                <section class="card
+                               p-5
+                               md:p-6
+                               mb-5">
+                                    <div class="flex
+                                   items-center
+                                   gap-4
+                                   mb-5">
+                                        <div class="w-12
+                                       h-12
+                                       rounded-xl
+                                       bg-amber-50
+                                       text-amber-600
+                                       flex
+                                       items-center
+                                       justify-center
+                                       text-xl">
+                                            <i class="fa-solid fa-receipt"></i>
+                                        </div>
+                                        <div>
+                                            <h2 class="text-xl
+                                           font-extrabold">
+                                                Recent Purchases
+                                            </h2>
+                                            <p class="text-sm
+                                           text-slate-500">
+                                                Latest purchases of your courses.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <p id="facultyDashboardMessage" aria-live="polite"
+                                       class="text-sm min-h-5 mb-3"></p>
+                                    <div id="facultyRecentPurchases" class="space-y-3">
+                                        <!-- Rendered by js/faculty.js -->
+                                    </div>
+                                </section>
+                            </div>
+                            <!-- -------------------------------------- COURSES -->
+                            <div data-admin-panel="courses" class="hidden">
+                        <!-- =================================================
+                 MY COURSES (sidebar hash: faculty.html#courses)
                  The launched-courses list lives here (not inside
                  the Launch section) so each card can open the
                  content uploaded for that course.
@@ -191,7 +313,7 @@
                                    fa-rocket"></i>
                                 </div>
                                 <div>
-                                    <h2 class="text-xl
+                                    <h2 id="facultyLaunchHeading" class="text-xl
                                    font-extrabold">
                                         Launch Course
                                     </h2>
@@ -346,7 +468,11 @@
                                               placeholder="40 hours of video&#10;Downloadable notes"></textarea>
                                 </div>
                                 <div class="md:col-span-2
-                               lg:col-span-3">
+                               lg:col-span-3
+                               flex
+                               flex-wrap
+                               items-center
+                               gap-3">
                                     <button type="submit" class="bg-blue-600
                                    hover:bg-blue-700
                                    text-white
@@ -357,9 +483,23 @@
                                    transition">
                                         <i class="fa-solid fa-rocket mr-2"></i>Launch Course
                                     </button>
+                                    <button id="cancelCourseEditBtn" type="button"
+                                            class="hidden border border-slate-200
+                                   hover:bg-slate-50
+                                   text-slate-700
+                                   rounded-xl
+                                   font-bold
+                                   px-6
+                                   py-3
+                                   transition">
+                                        Cancel edit
+                                    </button>
                                 </div>
                             </form>
                         </section>
+                            </div>
+                            <!-- ------------------------------------- CONTENT -->
+                            <div data-admin-panel="content" class="hidden">
                         <!-- =================================================
                  CONTENT UPLOAD (category selector + 4 forms)
             ================================================== -->
@@ -407,11 +547,20 @@
                                     <option value="notes">
                                         Notes
                                     </option>
+                                    <option value="videos">
+                                        Videos
+                                    </option>
                                     <option value="tnp">
                                         TNP — Placement
                                     </option>
                                     <option value="pyq">
                                         PYQ — Previous Papers
+                                    </option>
+                                    <option value="assignments">
+                                        Assignments
+                                    </option>
+                                    <option value="other">
+                                        Other Files
                                     </option>
                                     <option value="timetable">
                                         Exam Timetable
@@ -1026,6 +1175,132 @@
                                     </div>
                                 </form>
                             </div>
+                            <!-- =================================================
+                     RESOURCE PANEL (videos / assignments / other files)
+                     One form serves the three kinds added through
+                     POST /api/faculty/resources; the kind comes from
+                     #facultyUploadResourceKind, a hidden field kept in
+                     sync with #facultyUploadCategory by faculty.js.
+                ================================================== -->
+                            <div id="facultyUploadResourcePanel" class="hidden">
+                            <p id="facultyUploadResourceMessage" class="hidden
+                           mb-4
+                           rounded-xl
+                           px-4
+                           py-3
+                           text-sm"></p>
+                            <form id="facultyUploadResourceForm" class="grid
+                               md:grid-cols-2
+                               xl:grid-cols-3
+                               gap-4">
+                                <input type="hidden" id="facultyUploadResourceKind" value="VIDEO">
+                                <div class="filter-group">
+                                    <label for="facultyResourceTitle" class="text-sm
+                               font-semibold
+                               mb-2
+                               block">
+                                        Title
+                                        <span class="text-red-500">
+                                            *
+                                        </span>
+                                    </label>
+                                    <input id="facultyResourceTitle"
+                                           class="input"
+                                           type="text"
+                                           maxlength="200"
+                                           placeholder="Unit 1 — Introduction"
+                                           required>
+                                </div>
+                                <div class="filter-group md:col-span-2">
+                                    <label for="facultyResourceDescription" class="text-sm
+                               font-semibold
+                               mb-2
+                               block">
+                                        Description
+                                        <span class="font-normal
+                                      text-slate-400">
+                                            (optional)
+                                        </span>
+                                    </label>
+                                    <textarea id="facultyResourceDescription"
+                                              class="input"
+                                              rows="2"
+                                              maxlength="600"
+                                              placeholder="What is this resource about?"></textarea>
+                                </div>
+                                <div class="filter-group">
+                                    <label for="facultyResourceCourse" class="text-sm
+                               font-semibold
+                               mb-2
+                               block">
+                                        Course bundle
+                                        <span class="font-normal
+                                      text-slate-400">
+                                            (optional)
+                                        </span>
+                                    </label>
+                                    <select id="facultyResourceCourse" class="input">
+                                        <option value="">
+                                            Free — no bundle
+                                        </option>
+                                    </select>
+                                </div>
+                                <!-- Videos take a link (the storage pipeline
+                                     accepts PDFs/images only) ... -->
+                                <div id="facultyResourceUrlGroup" class="filter-group">
+                                    <label for="facultyResourceUrl" class="text-sm
+                               font-semibold
+                               mb-2
+                               block">
+                                        Video URL
+                                        <span class="text-red-500">
+                                            *
+                                        </span>
+                                    </label>
+                                    <input id="facultyResourceUrl"
+                                           class="input"
+                                           type="url"
+                                           maxlength="600"
+                                           placeholder="https://… (YouTube, Drive, hosted video)">
+                                </div>
+                                <!-- ... while assignments / other files take a
+                                     PDF straight from the same Cloudinary
+                                     pipeline the other forms use. -->
+                                <div id="facultyResourceFileGroup" class="filter-group hidden">
+                                    <label for="facultyResourceFile" class="text-sm
+                               font-semibold
+                               mb-2
+                               block">
+                                        Attach PDF
+                                        <span class="text-red-500">
+                                            *
+                                        </span>
+                                    </label>
+                                    <input id="facultyResourceFile"
+                                           class="input"
+                                           type="file"
+                                           accept="application/pdf">
+                                    <p class="text-xs
+                                   text-slate-500
+                                   mt-2">
+                                        PDF, up to 20 MB.
+                                    </p>
+                                </div>
+                                <div class="md:col-span-2
+                           lg:col-span-3">
+                                    <button id="facultyUploadResourceBtn" type="submit" class="bg-blue-600
+                               hover:bg-blue-700
+                               text-white
+                               rounded-xl
+                               font-bold
+                               px-6
+                               py-3
+                               transition">
+                                        <i class="fa-solid fa-cloud-arrow-up mr-2"></i>Upload
+                                    </button>
+                                </div>
+                            </form>
+                            </div>
                         </section>
                         <!-- =================================================
                  MANAGE CONTENT
@@ -1115,12 +1390,453 @@
                                                hover:bg-slate-50">
                                     <i class="fa-solid fa-calendar-days mr-2"></i>Timetable
                                 </button>
+                                <button type="button"
+                                        data-faculty-manage-category="videos"
+                                        class="faculty-manage-pill px-4 py-2 rounded-xl
+                                               text-sm font-bold border transition
+                                               bg-white text-slate-600 border-slate-200
+                                               hover:bg-slate-50">
+                                    <i class="fa-solid fa-video mr-2"></i>Videos
+                                </button>
+                                <button type="button"
+                                        data-faculty-manage-category="assignments"
+                                        class="faculty-manage-pill px-4 py-2 rounded-xl
+                                               text-sm font-bold border transition
+                                               bg-white text-slate-600 border-slate-200
+                                               hover:bg-slate-50">
+                                    <i class="fa-solid fa-list-check mr-2"></i>Assignments
+                                </button>
+                                <button type="button"
+                                        data-faculty-manage-category="other"
+                                        class="faculty-manage-pill px-4 py-2 rounded-xl
+                                               text-sm font-bold border transition
+                                               bg-white text-slate-600 border-slate-200
+                                               hover:bg-slate-50">
+                                    <i class="fa-solid fa-folder-open mr-2"></i>Other Files
+                                </button>
                             </div>
                             <div id="facultyNotesList" class="grid
                            md:grid-cols-2
                            xl:grid-cols-3
                            gap-4"></div>
                         </section>
+                            </div>
+                            <!-- -------------------------------- NOTIFICATIONS -->
+                            <div data-admin-panel="notifications" class="hidden">
+                                <section class="card
+                               p-5
+                               md:p-6
+                               mb-5">
+                                    <div class="flex
+                                   flex-wrap
+                                   items-center
+                                   justify-between
+                                   gap-4
+                                   mb-5">
+                                        <div class="flex
+                                       items-center
+                                       gap-4">
+                                            <div class="w-12
+                                       h-12
+                                       rounded-xl
+                                       bg-blue-50
+                                       text-blue-600
+                                       flex
+                                       items-center
+                                       justify-center
+                                       text-xl">
+                                                <i class="fa-regular fa-bell"></i>
+                                            </div>
+                                            <div>
+                                                <h2 class="text-xl
+                                           font-extrabold">
+                                                    Notifications
+                                                </h2>
+                                                <p class="text-sm
+                                           text-slate-500">
+                                                    Send updates to students enrolled in your courses.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button id="refreshFacultyNotificationsBtn" type="button"
+                                                class="border border-slate-200 hover:bg-slate-50
+                                                       text-slate-700 font-bold px-5 py-2.5
+                                                       rounded-xl transition">
+                                            <i class="fa-solid fa-arrows-rotate mr-2"></i> Refresh
+                                        </button>
+                                    </div>
+                                    <form id="facultyNotificationForm" class="grid
+                                        md:grid-cols-2
+                                        gap-4
+                                        mb-6">
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 mb-2" for="facultyNotifTitle">
+                                                Title
+                                            </label>
+                                            <input id="facultyNotifTitle" type="text" maxlength="200"
+                                                   class="input" placeholder="Exam schedule update">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 mb-2" for="facultyNotifKind">
+                                                Type
+                                            </label>
+                                            <select id="facultyNotifKind" class="input">
+                                                <option value="INFO">Info</option>
+                                                <option value="UPDATE">Update</option>
+                                                <option value="OFFER">Offer</option>
+                                                <option value="ALERT">Alert</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 mb-2" for="facultyNotifCourse">
+                                                Course (optional)
+                                            </label>
+                                            <select id="facultyNotifCourse" class="input">
+                                                <option value="">All my students</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 mb-2" for="facultyNotifCategory">
+                                                Category
+                                            </label>
+                                            <select id="facultyNotifCategory" class="input">
+                                                <option value="general">General</option>
+                                                <option value="timetable">Timetable</option>
+                                                <option value="course">Course</option>
+                                                <option value="notes">Notes</option>
+                                                <option value="pyq">PYQ</option>
+                                                <option value="tnp">TNP</option>
+                                            </select>
+                                        </div>
+                                        <div class="md:col-span-2">
+                                            <label class="block text-sm font-bold text-slate-700 mb-2" for="facultyNotifMessage">
+                                                Message
+                                            </label>
+                                            <textarea id="facultyNotifMessage" class="input" rows="3"
+                                                      maxlength="4000"
+                                                      placeholder="What should your students know?"></textarea>
+                                        </div>
+                                        <div class="md:col-span-2 flex flex-wrap items-center gap-3">
+                                            <button type="submit" class="bg-blue-600
+                                           hover:bg-blue-700
+                                           text-white
+                                           rounded-xl
+                                           font-bold
+                                           px-6
+                                           py-3
+                                           transition">
+                                                <i class="fa-solid fa-paper-plane mr-2"></i>Send
+                                            </button>
+                                            <p id="facultyNotificationSentCount"
+                                               class="text-sm text-slate-500"></p>
+                                        </div>
+                                    </form>
+                                    <p id="facultyNotificationMessage" aria-live="polite"
+                                       class="text-sm min-h-5 mb-3"></p>
+                                    <div id="facultySentNotifications" class="space-y-3">
+                                        <!-- Rendered by js/faculty.js -->
+                                    </div>
+                                </section>
+                            </div>
+                            <!-- -------------------------------- CERTIFICATES -->
+                            <div data-admin-panel="certificates" class="hidden">
+                                <section class="card
+                               p-5
+                               md:p-6
+                               mb-5">
+                                    <div class="flex
+                                   flex-wrap
+                                   items-center
+                                   justify-between
+                                   gap-4
+                                   mb-5">
+                                        <div class="flex
+                                       items-center
+                                       gap-4">
+                                            <div class="w-12
+                                       h-12
+                                       rounded-xl
+                                       bg-amber-50
+                                       text-amber-600
+                                       flex
+                                       items-center
+                                       justify-center
+                                       text-xl">
+                                                <i class="fa-solid fa-certificate"></i>
+                                            </div>
+                                            <div>
+                                                <h2 class="text-xl
+                                           font-extrabold">
+                                                    Certificates
+                                                </h2>
+                                                <p class="text-sm
+                                           text-slate-500">
+                                                    Certificates issued for your courses and students.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button id="refreshFacultyCertificatesBtn" type="button"
+                                                class="border border-slate-200 hover:bg-slate-50
+                                                       text-slate-700 font-bold px-5 py-2.5
+                                                       rounded-xl transition">
+                                            <i class="fa-solid fa-arrows-rotate mr-2"></i> Refresh
+                                        </button>
+                                    </div>
+                                    <p id="facultyCertificatesMessage" aria-live="polite"
+                                       class="text-sm min-h-5 mb-3"></p>
+                                    <div id="facultyCertificatesList" class="space-y-3">
+                                        <!-- Rendered by js/faculty.js -->
+                                    </div>
+                                </section>
+                            </div>
+                            <!-- ------------------------------------ FEEDBACK -->
+                            <div data-admin-panel="feedback" class="hidden">
+                                <section class="card
+                               p-5
+                               md:p-6
+                               mb-5">
+                                    <div class="flex
+                                   flex-wrap
+                                   items-center
+                                   justify-between
+                                   gap-4
+                                   mb-5">
+                                        <div class="flex
+                                       items-center
+                                       gap-4">
+                                            <div class="w-12
+                                       h-12
+                                       rounded-xl
+                                       bg-violet-50
+                                       text-violet-600
+                                       flex
+                                       items-center
+                                       justify-center
+                                       text-xl">
+                                                <i class="fa-solid fa-star"></i>
+                                            </div>
+                                            <div>
+                                                <h2 class="text-xl
+                                           font-extrabold">
+                                                    Feedback
+                                                </h2>
+                                                <p class="text-sm
+                                           text-slate-500">
+                                                    What students say about your courses.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button id="refreshFacultyFeedbackBtn" type="button"
+                                                class="border border-slate-200 hover:bg-slate-50
+                                                       text-slate-700 font-bold px-5 py-2.5
+                                                       rounded-xl transition">
+                                            <i class="fa-solid fa-arrows-rotate mr-2"></i> Refresh
+                                        </button>
+                                    </div>
+                                    <p id="facultyFeedbackMessage" aria-live="polite"
+                                       class="text-sm min-h-5 mb-3"></p>
+                                    <div id="facultyFeedbackList" class="space-y-3">
+                                        <!-- Rendered by js/faculty.js -->
+                                    </div>
+                                </section>
+                            </div>
+                            <!-- --------------------------------------- USERS -->
+                            <div data-admin-panel="users" class="hidden">
+                                <section class="card
+                               p-5
+                               md:p-6
+                               mb-5">
+                                    <div class="flex
+                                   flex-wrap
+                                   items-center
+                                   justify-between
+                                   gap-4
+                                   mb-5">
+                                        <div class="flex
+                                       items-center
+                                       gap-4">
+                                            <div class="w-12
+                                       h-12
+                                       rounded-xl
+                                       bg-emerald-50
+                                       text-emerald-600
+                                       flex
+                                       items-center
+                                       justify-center
+                                       text-xl">
+                                                <i class="fa-solid fa-users"></i>
+                                            </div>
+                                            <div>
+                                                <h2 class="text-xl
+                                           font-extrabold">
+                                                    Users
+                                                </h2>
+                                                <p class="text-sm
+                                           text-slate-500">
+                                                    Students who purchased your courses (read-only).
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button id="refreshFacultyStudentsBtn" type="button"
+                                                class="border border-slate-200 hover:bg-slate-50
+                                                       text-slate-700 font-bold px-5 py-2.5
+                                                       rounded-xl transition">
+                                            <i class="fa-solid fa-arrows-rotate mr-2"></i> Refresh
+                                        </button>
+                                    </div>
+                                    <p id="facultyStudentsMessage" aria-live="polite"
+                                       class="text-sm min-h-5 mb-3"></p>
+                                    <div class="overflow-x-auto rounded-2xl border border-slate-200">
+                                        <table class="w-full text-left text-sm">
+                                            <thead class="bg-slate-50 text-slate-500">
+                                                <tr>
+                                                    <th class="px-4 py-3 font-bold whitespace-nowrap">Student Name</th>
+                                                    <th class="px-4 py-3 font-bold whitespace-nowrap">Email</th>
+                                                    <th class="px-4 py-3 font-bold whitespace-nowrap">Mobile</th>
+                                                    <th class="px-4 py-3 font-bold whitespace-nowrap">Purchased Course</th>
+                                                    <th class="px-4 py-3 font-bold whitespace-nowrap">Purchase Date</th>
+                                                    <th class="px-4 py-3 font-bold whitespace-nowrap">Progress</th>
+                                                    <th class="px-4 py-3 font-bold whitespace-nowrap">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="facultyStudentsBody" class="divide-y divide-slate-100">
+                                                <!-- Rendered by js/faculty.js -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div id="facultyStudentsEmpty" class="hidden mt-4">
+                                        <div class="rounded-2xl border border-dashed
+                                                    border-gray-300 bg-white p-10
+                                                    text-center shadow-sm">
+                                            <div class="mx-auto mb-4 flex h-14 w-14
+                                                        items-center justify-center
+                                                        rounded-full bg-gray-100">
+                                                <i class="fa-solid fa-users text-slate-400 text-xl"></i>
+                                            </div>
+                                            <p class="text-sm text-slate-500">
+                                                No students have purchased your courses yet.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                            <!-- ------------------------------------ PROFILE -->
+                            <div data-admin-panel="profile" class="hidden">
+                                <section class="card
+                               p-5
+                               md:p-6
+                               mb-5">
+                                    <div class="flex
+                                   items-center
+                                   gap-4
+                                   mb-5">
+                                        <div class="w-12
+                                       h-12
+                                       rounded-xl
+                                       bg-blue-50
+                                       text-blue-600
+                                       flex
+                                       items-center
+                                       justify-center
+                                       text-xl">
+                                            <i class="fa-regular fa-user"></i>
+                                        </div>
+                                        <div>
+                                            <h2 class="text-xl
+                                       font-extrabold">
+                                                Profile
+                                            </h2>
+                                            <p class="text-sm
+                                       text-slate-500">
+                                                Your faculty record on TechCampus_Hub.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <p id="facultyProfileMessage" aria-live="polite"
+                                       class="text-sm min-h-5 mb-3"></p>
+                                    <form id="facultyProfileForm" class="grid
+                                        md:grid-cols-2
+                                        gap-4">
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 mb-2" for="facultyProfileName">
+                                                Full Name
+                                            </label>
+                                            <input id="facultyProfileName" type="text" class="input"
+                                                   maxlength="120" disabled>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 mb-2" for="facultyProfileId">
+                                                Faculty ID
+                                            </label>
+                                            <input id="facultyProfileId" type="text" class="input"
+                                                   disabled>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 mb-2" for="facultyProfileDepartment">
+                                                Department
+                                            </label>
+                                            <input id="facultyProfileDepartment" type="text" class="input"
+                                                   maxlength="120" disabled>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 mb-2" for="facultyProfileQualification">
+                                                Qualification
+                                            </label>
+                                            <input id="facultyProfileQualification" type="text" class="input"
+                                                   maxlength="120" disabled>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 mb-2" for="facultyProfileExperience">
+                                                Experience
+                                            </label>
+                                            <input id="facultyProfileExperience" type="text" class="input"
+                                                   maxlength="120" disabled>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 mb-2" for="facultyProfileEmail">
+                                                Email
+                                            </label>
+                                            <input id="facultyProfileEmail" type="email" class="input"
+                                                   disabled>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 mb-2" for="facultyProfilePhone">
+                                                Mobile
+                                            </label>
+                                            <input id="facultyProfilePhone" type="tel" class="input"
+                                                   maxlength="20" disabled>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-bold text-slate-700 mb-2" for="facultyProfileJoined">
+                                                Joined Date
+                                            </label>
+                                            <input id="facultyProfileJoined" type="text" class="input"
+                                                   disabled>
+                                        </div>
+                                        <div class="md:col-span-2 flex flex-wrap gap-3">
+                                            <button id="facultyProfileEditBtn" type="button"
+                                                    class="border border-slate-200 hover:bg-slate-50
+                                                           text-slate-700 rounded-xl font-bold
+                                                           px-6 py-3 transition">
+                                                <i class="fa-solid fa-pen mr-2"></i>Edit Profile
+                                            </button>
+                                            <button id="facultyProfileChangePasswordBtn" type="button"
+                                                    class="border border-slate-200 hover:bg-slate-50
+                                                           text-slate-700 rounded-xl font-bold
+                                                           px-6 py-3 transition">
+                                                <i class="fa-solid fa-key mr-2"></i>Change Password
+                                            </button>
+                                            <button id="facultyProfileSaveBtn" type="submit"
+                                                    class="hidden bg-blue-600 hover:bg-blue-700
+                                                           text-white rounded-xl font-bold
+                                                           px-6 py-3 transition">
+                                                <i class="fa-solid fa-check mr-2"></i>Save Changes
+                                            </button>
+                                        </div>
+                                    </form>
+                                </section>
+                            </div>
+                        </div>
                     </div>
                 </main>
             </div>
@@ -1363,6 +2079,101 @@
                      max-h-[70vh]
                      overflow-y-auto
                      pr-1"></div>
+            </div>
+        </div>
+        <!-- =====================================================
+         FACULTY CHANGE PASSWORD MODAL
+         Uses the shared auth endpoint; opened from the Profile
+         panel button and the header dropdown.
+    ====================================================== -->
+        <div id="facultyChangePasswordModal" class="hidden fixed inset-0 z-[110] bg-slate-950/50 items-center justify-center p-4">
+            <div class="bg-white rounded-2xl
+                   w-full max-w-md
+                   p-6 shadow-2xl">
+                <div class="flex items-center
+                       justify-between mb-5">
+                    <div>
+                        <p class="text-sm
+                           text-blue-600
+                           font-semibold">
+                            Account
+                        </p>
+                        <h3 class="text-2xl
+                           font-extrabold">
+                            Change Password
+                        </h3>
+                    </div>
+                    <button id="closeFacultyChangePasswordBtn" type="button" aria-label="Close" class="w-10 h-10
+                       rounded-xl
+                       bg-slate-100
+                       hover:bg-slate-200
+                       flex items-center
+                       justify-center">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <p id="facultyChangePasswordMessage" aria-live="polite"
+                   class="text-sm min-h-5 mb-3"></p>
+                <form id="facultyChangePasswordForm" class="space-y-4">
+                    <div>
+                        <label for="facultyCurrentPassword" class="block text-sm
+                           font-semibold mb-2">
+                            Current Password
+                        </label>
+                        <input id="facultyCurrentPassword"
+                               class="input"
+                               type="password"
+                               autocomplete="current-password"
+                               required>
+                    </div>
+                    <div>
+                        <label for="facultyNewPassword" class="block text-sm
+                           font-semibold mb-2">
+                            New Password
+                        </label>
+                        <input id="facultyNewPassword"
+                               class="input"
+                               type="password"
+                               autocomplete="new-password"
+                               minlength="8"
+                               required>
+                    </div>
+                    <div>
+                        <label for="facultyConfirmPassword" class="block text-sm
+                           font-semibold mb-2">
+                            Confirm New Password
+                        </label>
+                        <input id="facultyConfirmPassword"
+                               class="input"
+                               type="password"
+                               autocomplete="new-password"
+                               minlength="8"
+                               required>
+                    </div>
+                    <div class="flex items-center gap-3 pt-2">
+                        <button type="submit" class="bg-blue-600
+                           hover:bg-blue-700
+                           text-white
+                           rounded-xl
+                           font-bold
+                           px-6
+                           py-3
+                           transition">
+                            <i class="fa-solid fa-key mr-2"></i>Update Password
+                        </button>
+                        <button id="cancelFacultyChangePasswordBtn" type="button"
+                                class="border border-slate-200
+                           hover:bg-slate-50
+                           text-slate-700
+                           rounded-xl
+                           font-bold
+                           py-3
+                           px-6
+                           transition">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
         <script src="./js/env.js"></script>

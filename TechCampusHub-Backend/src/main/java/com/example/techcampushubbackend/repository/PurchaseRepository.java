@@ -30,6 +30,20 @@ public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
             + "and p.validUntil > :now order by p.validUntil desc")
     List<Purchase> findActiveByUser(@Param("userId") Long userId, @Param("now") LocalDateTime now);
 
+    /**
+     * Every purchase of a faculty member's courses (any status), newest first.
+     * Powers the faculty dashboard "Recent Purchases" card and the scoped
+     * Users table - faculty can never see purchases of other people's courses.
+     */
+    @Query("select p from Purchase p join p.course c where c.createdBy = :facultyId "
+            + "order by p.createdAt desc")
+    List<Purchase> findFacultyPurchases(@Param("facultyId") Long facultyId);
+
+    /** Distinct students holding any purchase of a faculty member's courses. */
+    @Query("select count(distinct p.user.id) from Purchase p join p.course c "
+            + "where c.createdBy = :facultyId")
+    long countDistinctStudentsByFaculty(@Param("facultyId") Long facultyId);
+
     /** True while the user holds at least one approved, unexpired purchase. */
     boolean existsByUserIdAndStatusAndValidUntilAfter(
             Long userId, PurchaseStatus status, LocalDateTime now);

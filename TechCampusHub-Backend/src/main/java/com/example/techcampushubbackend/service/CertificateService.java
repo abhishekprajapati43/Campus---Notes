@@ -46,6 +46,18 @@ public class CertificateService {
                 .toList();
     }
 
+    /**
+     * Certificates visible to the logged-in faculty: those issued for the faculty's own
+     * courses or to students enrolled in those courses. Never exposes other faculty's data.
+     */
+    @Transactional(readOnly = true)
+    public List<CertificateResponse> listVisibleToMe() {
+        User user = currentUserService.requireUser();
+        return certificateRepository.findVisibleToFaculty(user.getId()).stream()
+                .map(CertificateService::toResponse)
+                .toList();
+    }
+
     @Transactional
     public CertificateResponse create(CertificateRequest request) {
         User owner = null;

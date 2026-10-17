@@ -2658,6 +2658,11 @@ function setupAdminTabs() {
         return;
     }
 
+    // admin.html keeps every panel inside #adminPanel; faculty.html
+    // reuses this same engine inside its own card marked
+    // data-admin-scope, so both dashboards share one tab switcher.
+    const scope = bar.closest("[data-admin-scope]");
+
     const activate = tab => {
         bar.querySelectorAll("[data-admin-tab]").forEach(button => {
             button.classList.toggle(
@@ -2666,14 +2671,16 @@ function setupAdminTabs() {
             );
         });
 
-        document
-            .querySelectorAll("#adminPanel [data-admin-panel]")
-            .forEach(panel => {
-                panel.classList.toggle(
-                    "hidden",
-                    panel.dataset.adminPanel !== tab
-                );
-            });
+        const panels = scope
+            ? scope.querySelectorAll("[data-admin-panel]")
+            : document.querySelectorAll("#adminPanel [data-admin-panel]");
+
+        panels.forEach(panel => {
+            panel.classList.toggle(
+                "hidden",
+                panel.dataset.adminPanel !== tab
+            );
+        });
     };
 
     bar.addEventListener("click", event => {

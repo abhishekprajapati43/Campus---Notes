@@ -2,8 +2,12 @@ package com.example.techcampushubbackend.service;
 
 import com.example.techcampushubbackend.dto.EngagementDtos.NotificationRequest;
 import com.example.techcampushubbackend.dto.EngagementDtos.NotificationResponse;
+import com.example.techcampushubbackend.dto.FacultyDtos.FacultyNotificationRequest;
+import com.example.techcampushubbackend.dto.FacultyDtos.FacultyNotificationSendResponse;
+import com.example.techcampushubbackend.entity.Course;
 import com.example.techcampushubbackend.entity.Notification;
 import com.example.techcampushubbackend.entity.Notification.Kind;
+import com.example.techcampushubbackend.entity.Purchase;
 import com.example.techcampushubbackend.entity.PurchaseStatus;
 import com.example.techcampushubbackend.entity.Role;
 import com.example.techcampushubbackend.entity.User;
@@ -34,6 +38,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final PurchaseRepository purchaseRepository;
+    private final CourseService courseService;
     private final CurrentUserService currentUserService;
 
     @Transactional(readOnly = true)
@@ -78,6 +83,64 @@ public class NotificationService {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification", id));
         notificationRepository.delete(notification);
+    }
+
+    // -------------------------------------------------- faculty workspace
+
+    /**
+     * Faculty send: one targeted notification per student enrolled (approved
+     * purchase) in the caller's own courses - optionally narrowed to a single
+     * owned course. Students of other faculty are never reachable from here.
+     */
+    @Transactional
+    public FacultyNotificationSendResponse sendToMyStudents(FacultyNotificationRequest request) {
+        User sender = currentUserService.requireUser();
+        // Optional narrowing; 403 when the course is not one of the caller's.
+        Course course = courseService.requireOwnedBundle(request.courseId());
+
+        List<User> students = purchaseRepository.findFacultyPurchases(sender.getId()).stream()
+                .filter(purchase -> purchase.getStatus() == PurchaseStatus.APPROVED)
+                .filter(purchase -> course == null
+                        || course.getId().equals(purchase.getCourse().getId()))
+                .map(Purchase::getUser)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toMap(
+                        User::getId, student -> student, (first, second) -> first,
+                        java.util.LinkedHashMap::new))
+                .values().stream()
+                .toList();
+
+        if (students.isEmpty()) {
+            throw new BadRequestException(
+                    "No students are enrolled in your courses yet - nothing to send.");
+        }
+
+        Kind kind = parseKind(request.kind());
+        String category = normalizeCategory(request.category());
+        String title = request.title().trim();
+        String message = request.message() == null ? "" : request.message().trim();
+
+        for (User student : students) {
+            notificationRepository.save(Notification.builder()
+                    .title(title)
+                    .message(message)
+                    .kind(kind)
+                    .category(category)
+                    .audience("all")
+                    .createdBy(sender.getEmail())
+                    .targetUser(student)
+                    .build());
+        }
+        return new FacultyNotificationSendResponse(students.size());
+    }
+
+    /** Notifications the caller sent (faculty "sent" list). */
+    @Transactional(readOnly = true)
+    public List<NotificationResponse> listSentByMe() {
+        User sender = currentUserService.requireUser();
+        return notificationRepository.findByCreatedByOrderByCreatedAtDesc(sender.getEmail()).stream()
+                .map(NotificationService::toResponse)
+                .toList();
     }
 
     /** True when the student has at least one approved, unexpired purchase. */

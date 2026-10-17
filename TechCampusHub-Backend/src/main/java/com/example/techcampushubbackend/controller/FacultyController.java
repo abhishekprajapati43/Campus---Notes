@@ -1,6 +1,7 @@
 package com.example.techcampushubbackend.controller;
 
 import com.example.techcampushubbackend.dto.ApiResponse;
+import com.example.techcampushubbackend.dto.ContentDtos.CertificateResponse;
 import com.example.techcampushubbackend.dto.ContentDtos.FileUploadResponse;
 import com.example.techcampushubbackend.dto.ContentDtos.NoteRequest;
 import com.example.techcampushubbackend.dto.ContentDtos.NoteResponse;
@@ -13,9 +14,22 @@ import com.example.techcampushubbackend.dto.ContentDtos.TnpNoteResponse;
 import com.example.techcampushubbackend.dto.CourseDtos.CourseRequest;
 import com.example.techcampushubbackend.dto.CourseDtos.CourseContentResponse;
 import com.example.techcampushubbackend.dto.CourseDtos.CourseResponse;
+import com.example.techcampushubbackend.dto.EngagementDtos.FeedbackResponse;
+import com.example.techcampushubbackend.dto.EngagementDtos.NotificationResponse;
+import com.example.techcampushubbackend.dto.FacultyDtos.FacultyNotificationRequest;
+import com.example.techcampushubbackend.dto.FacultyDtos.FacultyNotificationSendResponse;
+import com.example.techcampushubbackend.dto.FacultyDtos.FacultyStatsResponse;
+import com.example.techcampushubbackend.dto.FacultyDtos.FacultyStudentResponse;
+import com.example.techcampushubbackend.dto.FacultyDtos.ResourceRequest;
+import com.example.techcampushubbackend.dto.FacultyDtos.ResourceResponse;
+import com.example.techcampushubbackend.service.CertificateService;
 import com.example.techcampushubbackend.service.CloudinaryService;
 import com.example.techcampushubbackend.service.CourseService;
+import com.example.techcampushubbackend.service.FacultyDashboardService;
+import com.example.techcampushubbackend.service.FacultyResourceService;
+import com.example.techcampushubbackend.service.FeedbackService;
 import com.example.techcampushubbackend.service.NoteService;
+import com.example.techcampushubbackend.service.NotificationService;
 import com.example.techcampushubbackend.service.PyqService;
 import com.example.techcampushubbackend.service.TimetableService;
 import com.example.techcampushubbackend.service.TnpNoteService;
@@ -65,6 +79,91 @@ public class FacultyController {
     private final TimetableService timetableService;
     private final CloudinaryService cloudinaryService;
     private final CurrentUserService currentUserService;
+    private final FacultyDashboardService facultyDashboardService;
+    private final FacultyResourceService facultyResourceService;
+    private final NotificationService notificationService;
+    private final CertificateService certificateService;
+    private final FeedbackService feedbackService;
+
+    // -------------------------------------------------------------- dashboard
+
+    @Operation(summary = "Dashboard statistics (faculty: own courses/students/content only)",
+            description = "Powers the four summary cards: Total Courses, Total Students, "
+                    + "Total Content and Recent Purchases - all scoped to the caller.")
+    @GetMapping("/stats")
+    public ResponseEntity<ApiResponse<FacultyStatsResponse>> stats() {
+        return ResponseEntity.ok(ApiResponse.ok(facultyDashboardService.stats()));
+    }
+
+    @Operation(summary = "My students (read-only Users table)",
+            description = "One row per purchase of the caller's courses: student name, email, "
+                    + "mobile, purchased course, purchase date, progress and status. "
+                    + "No mutation is exposed - deletion and role changes stay admin-only.")
+    @GetMapping("/students")
+    public ResponseEntity<ApiResponse<List<FacultyStudentResponse>>> listStudents() {
+        return ResponseEntity.ok(ApiResponse.ok(facultyDashboardService.listStudents()));
+    }
+
+    // ---------------------------------------------------------- notifications
+
+    @Operation(summary = "Send a notification to my students",
+            description = "Delivered only to students with an approved purchase of the caller's "
+                    + "courses; optionally narrowed to one owned course via courseId.")
+    @PostMapping("/notifications")
+    public ResponseEntity<ApiResponse<FacultyNotificationSendResponse>> sendNotification(
+            @Valid @RequestBody FacultyNotificationRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created(notificationService.sendToMyStudents(request)));
+    }
+
+    @Operation(summary = "Notifications I have sent (faculty: own only; admins: all)")
+    @GetMapping("/notifications")
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> listSentNotifications() {
+        return ResponseEntity.ok(ApiResponse.ok(notificationService.listSentByMe()));
+    }
+
+    // ----------------------------------------------------------- certificates
+
+    @Operation(summary = "Certificates visible to me",
+            description = "Certificates issued for the caller's courses or to students "
+                    + "enrolled in them - never other faculty's certificates.")
+    @GetMapping("/certificates")
+    public ResponseEntity<ApiResponse<List<CertificateResponse>>> listCertificates() {
+        return ResponseEntity.ok(ApiResponse.ok(certificateService.listVisibleToMe()));
+    }
+
+    // -------------------------------------------------------------- feedback
+
+    @Operation(summary = "Feedback on my courses (faculty: own only; admins: all)")
+    @GetMapping("/feedback")
+    public ResponseEntity<ApiResponse<List<FeedbackResponse>>> listFeedback() {
+        return ResponseEntity.ok(ApiResponse.ok(feedbackService.listOnMyCourses()));
+    }
+
+    // ------------------------------------------------------------- resources
+
+    @Operation(summary = "Upload a video/assignment/other file (faculty: own courses only)")
+    @PostMapping("/resources")
+    public ResponseEntity<ApiResponse<ResourceResponse>> createResource(
+            @Valid @RequestBody ResourceRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created(facultyResourceService.createAsOwner(
+                        request, currentUserService.requireUser().getId())));
+    }
+
+    @Operation(summary = "List my resources (videos, assignments, other files)")
+    @GetMapping("/resources")
+    public ResponseEntity<ApiResponse<List<ResourceResponse>>> listResources() {
+        return ResponseEntity.ok(ApiResponse.ok(facultyResourceService.listOwn()));
+    }
+
+    @Operation(summary = "Update my resource (faculty: own only -> 403 otherwise; admins: any)",
+            description = "No DELETE route - content deletion is admin-only.")
+    @PutMapping("/resources/{id}")
+    public ResponseEntity<ApiResponse<ResourceResponse>> updateResource(
+            @PathVariable Long id, @Valid @RequestBody ResourceRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(facultyResourceService.updateOwned(id, request)));
+    }
 
     // ------------------------------------------------------------------ notes
 
@@ -106,6 +205,15 @@ public class FacultyController {
     @GetMapping("/courses")
     public ResponseEntity<ApiResponse<List<CourseResponse>>> listCourses() {
         return ResponseEntity.ok(ApiResponse.ok(courseService.listOwn()));
+    }
+
+    @Operation(summary = "Edit / publish-unpublish one of my courses",
+            description = "Faculty may only edit courses they launched (others -> 403); "
+                    + "sending active=false unpublishes the course from the public catalogue.")
+    @PutMapping("/courses/{id}")
+    public ResponseEntity<ApiResponse<CourseResponse>> updateCourse(
+            @PathVariable Long id, @Valid @RequestBody CourseRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok(courseService.updateOwned(id, request)));
     }
 
     @Operation(summary = "Open one of my courses with all of its uploaded content "

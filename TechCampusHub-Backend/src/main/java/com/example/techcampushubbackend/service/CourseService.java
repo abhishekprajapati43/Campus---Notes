@@ -147,6 +147,27 @@ public class CourseService {
     @Transactional
     public CourseResponse update(Long id, CourseRequest request) {
         Course course = require(id);
+        return doUpdate(course, request);
+    }
+
+    /**
+     * Faculty workspace update: a faculty member may only edit (and therefore
+     * publish/unpublish via {@code active}) a course they launched; admins may
+     * edit any course. Non-owners get Spring's AccessDeniedException -> 403.
+     */
+    @Transactional
+    public CourseResponse updateOwned(Long id, CourseRequest request) {
+        User user = currentUserService.requireUser();
+        Course course = require(id);
+        if (user.getRole() != Role.ADMIN
+                && (course.getCreatedBy() == null
+                    || !course.getCreatedBy().equals(user.getId()))) {
+            throw new AccessDeniedException("You can only edit courses you launched");
+        }
+        return doUpdate(course, request);
+    }
+
+    private CourseResponse doUpdate(Course course, CourseRequest request) {
         course.setTitle(request.title().trim());
         if (request.code() != null) course.setCode(trimToNull(request.code()));
         if (request.category() != null) course.setCategory(trimToNull(request.category()));
@@ -163,6 +184,26 @@ public class CourseService {
         if (request.active() != null) course.setActive(request.active());
         Course saved = courseRepository.save(course);
         return toResponse(saved, ratingFor(saved.getId()));
+    }
+
+    /**
+     * Ownership-checked bundle lookup for content uploads: faculty may only
+     * attach notes/TNP/PYQs/timetables/resources to <b>their own</b> courses;
+     * admins may attach to any course. Missing ids -> 404, foreign ids -> 403.
+     */
+    @Transactional(readOnly = true)
+    public Course requireOwnedBundle(Long courseId) {
+        if (courseId == null) {
+            return null;
+        }
+        Course course = require(courseId);
+        User user = currentUserService.requireUser();
+        if (user.getRole() != Role.ADMIN
+                && (course.getCreatedBy() == null
+                    || !course.getCreatedBy().equals(user.getId()))) {
+            throw new AccessDeniedException("You can only attach content to your own courses");
+        }
+        return course;
     }
 
     /** Soft delete: the course is deactivated so existing purchases keep working. */

@@ -6,7 +6,6 @@ import com.example.techcampushubbackend.entity.Role;
 import com.example.techcampushubbackend.entity.TnpNote;
 import com.example.techcampushubbackend.entity.User;
 import com.example.techcampushubbackend.exception.ResourceNotFoundException;
-import com.example.techcampushubbackend.repository.CourseRepository;
 import com.example.techcampushubbackend.repository.TnpNoteRepository;
 import com.example.techcampushubbackend.utils.CurrentUserService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,7 @@ import static com.example.techcampushubbackend.utils.ContentUtils.resolveTitle;
 public class TnpNoteService {
 
     private final TnpNoteRepository tnpNoteRepository;
-    private final CourseRepository courseRepository;
+    private final CourseService courseService;
     private final PurchaseService purchaseService;
     private final CurrentUserService currentUserService;
 
@@ -142,9 +141,12 @@ public class TnpNoteService {
         tnpNoteRepository.delete(require(id));
     }
 
+    /**
+     * Bundle resolution enforces ownership: faculty may only link content to
+     * courses they launched; admins may link to any course (403 otherwise).
+     */
     private com.example.techcampushubbackend.entity.Course loadBundle(Long courseId) {
-        return courseId == null ? null : courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+        return courseService.requireOwnedBundle(courseId);
     }
 
     private TnpNote require(Long id) {

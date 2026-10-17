@@ -67,4 +67,12 @@ public class Purchase extends Auditable {
 
     @Column(name = "rejection_reason", length = 300)
     private String rejectionReason;
+
+    /**
+     * Course completion progress (0-100) for this enrollment. Nullable so the
+     * column can be added to populated tables without a failure; null/0 reads
+     * as "not started" in the faculty Users table.
+     */
+    @Column(name = "progress")
+    private Integer progress;
 }

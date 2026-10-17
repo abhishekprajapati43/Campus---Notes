@@ -10,4 +10,7 @@ import java.util.List;
 public interface TnpNoteRepository extends JpaRepository<TnpNote, Long> {
 
     List<TnpNote> findAllByOrderByCreatedAtDesc();
+
+    /** Content uploaded by one faculty member (dashboard counts). */
+    long countByCreatedBy(Long createdBy);
 }

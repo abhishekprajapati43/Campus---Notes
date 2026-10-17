@@ -15,8 +15,8 @@ const NAV_ID_BY_PAGE = {
     profile: "sidebarProfileBtn",
     admin: "adminNavBtn",
     // faculty.html lives inside the faculty workspace group,
-    // so the Course quick link carries the active state.
-    faculty: "facultyCourseNavBtn",
+    // so the Dashboard quick link carries the active state.
+    faculty: "facultyDashboardNavBtn",
     paymentHistory: "paymentHistoryBtn",
     certificates: "certificatesBtn",
     feedback: "feedbackBtn"

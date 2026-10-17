@@ -65,6 +65,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         // Everything under /api/admin requires the ADMIN role
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Faculty workspace: FACULTY or ADMIN only - students can never
+                        // reach it (mirrors @PreAuthorize on FacultyController: defense in depth)
+                        .requestMatchers("/api/faculty/**").hasAnyRole("ADMIN", "FACULTY")
                         // Health check
                         .requestMatchers("/api/health").permitAll()
                         .anyRequest().authenticated())

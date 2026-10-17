@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -1042,5 +1043,615 @@ class FacultyAuthorizationIntegrationTest {
         mockMvc.perform(get("/api/faculty/courses/999999/content")
                         .header("Authorization", "Bearer " + facultyToken))
                 .andExpect(status().isNotFound());
+    }
+
+    // --------------------------------------------- faculty dashboard (stats)
+
+    /** Creates a course through the faculty workspace and returns its id. */
+    private long createFacultyCourse(String token, String title) throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/faculty/courses")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"%s","priceInr":149.00,"validityDays":60}
+                                """.formatted(title)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        return objectMapper.readTree(result.getResponse().getContentAsString())
+                .path("data").path("id").asLong();
+    }
+
+    /** Registers a plain (always approved) student and returns their JWT. */
+    private String registerStudent(String email) throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Scoped Student","email":"%s","password":"Student@123"}
+                                """.formatted(email)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.role").value("STUDENT"));
+        return login(email, "Student@123");
+    }
+
+    /** Student requests a purchase; admin approves it; returns the purchase id. */
+    private long purchaseAndApprove(String studentJwt, long courseId, String utr) throws Exception {
+        MvcResult purchase = mockMvc.perform(post("/api/purchases")
+                        .header("Authorization", "Bearer " + studentJwt)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"courseId":%d,"utr":"%s"}
+                                """.formatted(courseId, utr)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long purchaseId = objectMapper.readTree(purchase.getResponse().getContentAsString())
+                .path("data").path("id").asLong();
+        mockMvc.perform(post("/api/admin/purchases/%d/approve".formatted(purchaseId))
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("APPROVED"));
+        return purchaseId;
+    }
+
+    /** Reads the $.data payload of GET /api/faculty/stats for a caller. */
+    private JsonNode dashboardStats(String token) throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/faculty/stats")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn();
+        return objectMapper.readTree(result.getResponse().getContentAsString()).path("data");
+    }
+
+    @Test
+    void facultyDashboardStatsAreScopedToOwnCourses() throws Exception {
+        // Deltas, not absolutes: the suite shares one database, so other tests
+        // may already have created courses/students for these accounts.
+        JsonNode ownBefore = dashboardStats(facultyToken);
+        JsonNode peerBefore = dashboardStats(otherFacultyToken);
+
+        long ownCourse = createFacultyCourse(facultyToken, "Stats Owned Course");
+        long otherCourse = createFacultyCourse(otherFacultyToken, "Stats Foreign Course");
+        // A brand-new student so the peer's distinct-student delta is exactly +1.
+        String statsBuyer = registerStudent("faculty.stats.buyer@example.com");
+        purchaseAndApprove(statsBuyer, otherCourse, "UTR-STATS-FOREIGN");
+
+        JsonNode ownAfter = dashboardStats(facultyToken);
+        JsonNode peerAfter = dashboardStats(otherFacultyToken);
+
+        // The owner's course count grows by one; nothing about the foreign
+        // course or its purchase leaks into their numbers.
+        assertEquals(ownBefore.path("totalCourses").asLong() + 1,
+                ownAfter.path("totalCourses").asLong(),
+                "owner must count their own new course");
+        assertEquals(ownBefore.path("totalStudents").asLong(),
+                ownAfter.path("totalStudents").asLong(),
+                "a purchase of another faculty's course must not count");
+        assertEquals(ownBefore.path("recentPurchases").asLong(),
+                ownAfter.path("recentPurchases").asLong(),
+                "recent purchases are scoped to own courses too");
+
+        // The owning peer sees the new course, its buyer and the recent purchase.
+        assertEquals(peerBefore.path("totalCourses").asLong() + 1,
+                peerAfter.path("totalCourses").asLong());
+        assertEquals(peerBefore.path("totalStudents").asLong() + 1,
+                peerAfter.path("totalStudents").asLong());
+        assertEquals(peerBefore.path("recentPurchases").asLong() + 1,
+                peerAfter.path("recentPurchases").asLong());
+
+        // The owner's stats payload never references the foreign course.
+        mockMvc.perform(get("/api/faculty/stats")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recentPurchaseList[*].courseId",
+                        not(hasItem((int) otherCourse))));
+        // The peer's recent list does carry it.
+        mockMvc.perform(get("/api/faculty/stats")
+                        .header("Authorization", "Bearer " + otherFacultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recentPurchaseList[*].courseId",
+                        hasItem((int) otherCourse)));
+
+        // Students are locked out of the whole dashboard (URL rule + method security).
+        mockMvc.perform(get("/api/faculty/stats")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/faculty/students")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isForbidden());
+        // Anonymous callers get 401.
+        mockMvc.perform(get("/api/faculty/stats"))
+                .andExpect(status().isUnauthorized());
+        assertFalse(ownCourse == otherCourse, "sanity: distinct course ids");
+    }
+
+    @Test
+    void facultyStudentTableIsReadOnlyAndScopedToOwnBuyers() throws Exception {
+        String buyer = registerStudent("faculty.table.buyer@example.com");
+        long ownCourse = createFacultyCourse(facultyToken, "Students Owned Course");
+        long otherCourse = createFacultyCourse(otherFacultyToken, "Students Foreign Course");
+        long ownPurchase = purchaseAndApprove(buyer, ownCourse, "UTR-STUDENTS-OWN");
+        long foreignPurchase = purchaseAndApprove(buyer, otherCourse, "UTR-STUDENTS-FOREIGN");
+
+        // The owner's table contains their buyer row with every required column.
+        MvcResult ownerView = mockMvc.perform(get("/api/faculty/students")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode rows = objectMapper.readTree(ownerView.getResponse().getContentAsString())
+                .path("data");
+        JsonNode ownRow = null;
+        for (JsonNode row : rows) {
+            assertFalse(row.path("purchaseId").asLong() == foreignPurchase,
+                    "buyers of another faculty's course must never appear");
+            if (row.path("purchaseId").asLong() == ownPurchase) {
+                ownRow = row;
+            }
+        }
+        org.junit.jupiter.api.Assertions.assertNotNull(ownRow,
+                "the owner's buyer row must be listed");
+        assertEquals("Scoped Student", ownRow.path("studentName").asString());
+        assertEquals("faculty.table.buyer@example.com", ownRow.path("userEmail").asString());
+        assertEquals("Students Owned Course", ownRow.path("courseTitle").asString());
+        assertFalse(ownRow.path("purchaseDate").isMissingNode(), "purchaseDate column required");
+        assertEquals("Active", ownRow.path("accessStatus").asString());
+        assertFalse(ownRow.path("progress").isMissingNode(), "progress column required");
+
+        // The peer faculty member's table does not contain that buyer row.
+        mockMvc.perform(get("/api/faculty/students")
+                        .header("Authorization", "Bearer " + otherFacultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].purchaseId",
+                        not(hasItem((int) ownPurchase))));
+
+        // Read-only: no mutation route exists for these rows at all (no handler
+        // under /api/faculty/students/{id} -> 404, never a successful change).
+        mockMvc.perform(delete("/api/faculty/students/" + ownPurchase)
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(put("/api/faculty/students/" + ownPurchase)
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"REJECTED\"}"))
+                .andExpect(status().isNotFound());
+        // Role/status changes remain behind the admin gate.
+        mockMvc.perform(post("/api/admin/purchases/%d/reject".formatted(ownPurchase))
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"nope\"}"))
+                .andExpect(status().isForbidden());
+        // The purchase itself is untouched.
+        mockMvc.perform(get("/api/purchases/my-courses")
+                        .header("Authorization", "Bearer " + buyer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].courseId", hasItem((int) ownCourse)));
+    }
+
+    // ----------------------------------------------------- faculty resources
+
+    @Test
+    void facultyResourcesFollowTheSameOwnershipContract() throws Exception {
+        long ownCourse = createFacultyCourse(facultyToken, "Resource Owned Course");
+        long otherCourse = createFacultyCourse(otherFacultyToken, "Resource Foreign Course");
+
+        // Create a video resource bundled with an owned course.
+        MvcResult created = mockMvc.perform(post("/api/faculty/resources")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Intro Video","description":"Week 1",
+                                 "kind":"VIDEO","courseId":%d,
+                                 "fileUrl":"https://res.cloudinary.com/demo/video/upload/v1/intro.mp4"}
+                                """.formatted(ownCourse)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.kind").value("VIDEO"))
+                .andExpect(jsonPath("$.data.courseId").value((int) ownCourse))
+                .andReturn();
+        long resourceId = objectMapper.readTree(created.getResponse().getContentAsString())
+                .path("data").path("id").asLong();
+
+        // Listing carries only the caller's own resources.
+        mockMvc.perform(get("/api/faculty/resources")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].id", hasItem((int) resourceId)));
+        mockMvc.perform(get("/api/faculty/resources")
+                        .header("Authorization", "Bearer " + otherFacultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].id", not(hasItem((int) resourceId))));
+
+        // Attaching a resource to someone else's course -> 403.
+        mockMvc.perform(post("/api/faculty/resources")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Hijacked","kind":"ASSIGNMENT","courseId":%d,
+                                 "fileUrl":"https://res.cloudinary.com/demo/raw/upload/h.pdf"}
+                                """.formatted(otherCourse)))
+                .andExpect(status().isForbidden());
+
+        // Updating someone else's resource -> 403 (peer faculty + admin-created).
+        mockMvc.perform(put("/api/faculty/resources/" + resourceId)
+                        .header("Authorization", "Bearer " + otherFacultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Hijacked","kind":"VIDEO",
+                                 "fileUrl":"https://res.cloudinary.com/demo/video/upload/x.mp4"}
+                                """))
+                .andExpect(status().isForbidden());
+
+        // The owner may edit their own resource (partial update keeps kind).
+        mockMvc.perform(put("/api/faculty/resources/" + resourceId)
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Intro Video (Edited)"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("Intro Video (Edited)"))
+                .andExpect(jsonPath("$.data.kind").value("VIDEO"));
+
+        // A bad kind fails with 400; a missing fileUrl too.
+        mockMvc.perform(post("/api/faculty/resources")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Bad Kind","kind":"MALWARE",
+                                 "fileUrl":"https://example.com/x.pdf"}
+                                """))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/faculty/resources")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"No File","kind":"OTHER"}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        // No DELETE route exists under /api/faculty/resources (405)...
+        mockMvc.perform(delete("/api/faculty/resources/" + resourceId)
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isMethodNotAllowed());
+
+        // ...and students are excluded from the whole collection.
+        mockMvc.perform(get("/api/faculty/resources")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/faculty/resources")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Student Resource","kind":"OTHER",
+                                 "fileUrl":"https://example.com/s.pdf"}
+                                """))
+                .andExpect(status().isForbidden());
+    }
+
+    // -------------------------------------------------------- faculty courses
+
+    @Test
+    void facultyCanEditAndPublishTheirOwnCoursesOnly() throws Exception {
+        long ownCourse = createFacultyCourse(facultyToken, "Publish Owned Course");
+        long otherCourse = createFacultyCourse(otherFacultyToken, "Publish Foreign Course");
+
+        // Owner edits their course and unpublishes it (active=false).
+        mockMvc.perform(put("/api/faculty/courses/" + ownCourse)
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Publish Owned Course (Edited)",
+                                 "priceInr":499,"active":false}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("Publish Owned Course (Edited)"))
+                .andExpect(jsonPath("$.data.active").value(false));
+
+        // The same edit on a peer's course -> 403, and nothing changes.
+        mockMvc.perform(put("/api/faculty/courses/" + otherCourse)
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Hijacked","priceInr":1,"active":false}
+                                """))
+                .andExpect(status().isForbidden());
+
+        // Re-publishing works the same way.
+        mockMvc.perform(put("/api/faculty/courses/" + ownCourse)
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Publish Owned Course (Edited)",
+                                 "priceInr":499,"active":true}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.active").value(true));
+
+        // Unknown course -> 404; students are excluded entirely.
+        mockMvc.perform(put("/api/faculty/courses/999999")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Ghost","priceInr":1}
+                                """))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(put("/api/faculty/courses/" + ownCourse)
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Student Edit","priceInr":1}
+                                """))
+                .andExpect(status().isForbidden());
+    }
+
+    // ------------------------------------------------ faculty notifications
+
+    @Test
+    void facultyNotificationReachesOnlyOwnEnrolledStudents() throws Exception {
+        // Fresh students so each audience is exactly this test's data.
+        String mine = registerStudent("faculty.notify.mine@example.com");
+        String theirs = registerStudent("faculty.notify.theirs@example.com");
+
+        long ownCourse = createFacultyCourse(facultyToken, "Notify Owned Course");
+        long otherCourse = createFacultyCourse(otherFacultyToken, "Notify Foreign Course");
+        long emptyCourse = createFacultyCourse(facultyToken, "Notify Empty Course");
+        purchaseAndApprove(mine, ownCourse, "UTR-NOTIFY-OWN");
+        purchaseAndApprove(theirs, otherCourse, "UTR-NOTIFY-FOREIGN");
+
+        // Narrowing to a course the caller does not own -> 403.
+        mockMvc.perform(post("/api/faculty/notifications")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Foreign Broadcast","message":"x","courseId":%d}
+                                """.formatted(otherCourse)))
+                .andExpect(status().isForbidden());
+
+        // Narrowing to one of my OWN courses with nobody enrolled -> 400:
+        // the audience for that course is empty, so there is nothing to send.
+        mockMvc.perform(post("/api/faculty/notifications")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Nobody Yet","message":"x","courseId":%d}
+                                """.formatted(emptyCourse)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("enrolled")));
+
+        // Send narrowed to my own course: exactly my enrolled student.
+        mockMvc.perform(post("/api/faculty/notifications")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"My Broadcast","message":"hello class",
+                                 "kind":"UPDATE","category":"course","courseId":%d}
+                                """.formatted(ownCourse)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.sentCount").value(1));
+
+        // The sender's "sent" list carries it...
+        mockMvc.perform(get("/api/faculty/notifications")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].title", hasItem("My Broadcast")));
+
+        // ...my enrolled student sees it...
+        mockMvc.perform(get("/api/notifications")
+                        .header("Authorization", "Bearer " + mine))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].title", hasItem("My Broadcast")));
+
+        // ...and the other faculty's student never does.
+        mockMvc.perform(get("/api/notifications")
+                        .header("Authorization", "Bearer " + theirs))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].title", not(hasItem("My Broadcast"))));
+
+        // The peer's broadcast reaches only their own enrolled student.
+        mockMvc.perform(post("/api/faculty/notifications")
+                        .header("Authorization", "Bearer " + otherFacultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"Peer Broadcast","message":"hello",
+                                 "courseId":%d}
+                                """.formatted(otherCourse)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.sentCount").value(1));
+
+        mockMvc.perform(get("/api/notifications")
+                        .header("Authorization", "Bearer " + theirs))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].title", hasItem("Peer Broadcast")));
+        mockMvc.perform(get("/api/notifications")
+                        .header("Authorization", "Bearer " + mine))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].title", not(hasItem("Peer Broadcast"))));
+
+        // Each "sent" list is scoped to its own sender - no cross-leak.
+        mockMvc.perform(get("/api/faculty/notifications")
+                        .header("Authorization", "Bearer " + otherFacultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].title", hasItem("Peer Broadcast")))
+                .andExpect(jsonPath("$.data[*].title", not(hasItem("My Broadcast"))));
+
+        // Students may neither send nor read the faculty sent-list.
+        mockMvc.perform(post("/api/faculty/notifications")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Student Spam\"}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/faculty/notifications")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isForbidden());
+    }
+
+    // --------------------------------------- certificates & feedback scope
+
+    @Test
+    void facultySeeCertificatesAndFeedbackOnlyForTheirOwnCourses() throws Exception {
+        long ownCourse = createFacultyCourse(facultyToken, "Scope Owned Course");
+        long otherCourse = createFacultyCourse(otherFacultyToken, "Scope Foreign Course");
+
+        // Admin issues one certificate per course (fileUrl is mandatory).
+        long ownCertId = objectMapper.readTree(
+                        mockMvc.perform(post("/api/admin/certificates")
+                                        .header("Authorization", "Bearer " + adminToken)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content("""
+                                                {"title":"Course Completion",
+                                                 "courseId":%d,
+                                                 "fileUrl":"https://res.cloudinary.com/demo/image/upload/own-cert.pdf"}
+                                                """.formatted(ownCourse)))
+                                .andExpect(status().isCreated())
+                                .andReturn().getResponse().getContentAsString())
+                .path("data").path("id").asLong();
+        long otherCertId = objectMapper.readTree(
+                        mockMvc.perform(post("/api/admin/certificates")
+                                        .header("Authorization", "Bearer " + adminToken)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content("""
+                                                {"title":"Peer Completion",
+                                                 "courseId":%d,
+                                                 "fileUrl":"https://res.cloudinary.com/demo/image/upload/peer-cert.pdf"}
+                                                """.formatted(otherCourse)))
+                                .andExpect(status().isCreated())
+                                .andReturn().getResponse().getContentAsString())
+                .path("data").path("id").asLong();
+
+        // Owner sees exactly their own course's certificate.
+        mockMvc.perform(get("/api/faculty/certificates")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].id", hasItem((int) ownCertId)))
+                .andExpect(jsonPath("$.data[*].id", not(hasItem((int) otherCertId))));
+
+        mockMvc.perform(get("/api/faculty/certificates")
+                        .header("Authorization", "Bearer " + otherFacultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].id", hasItem((int) otherCertId)))
+                .andExpect(jsonPath("$.data[*].id", not(hasItem((int) ownCertId))));
+
+        // Students cannot reach the faculty certificate list (they use /certificates/mine).
+        mockMvc.perform(get("/api/faculty/certificates")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isForbidden());
+
+        // Feedback: the student reviews both courses.
+        mockMvc.perform(post("/api/feedback")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"courseId":%d,"rating":5,"message":"Great course"}
+                                """.formatted(ownCourse)))
+                .andExpect(status().isCreated());
+        mockMvc.perform(post("/api/feedback")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"courseId":%d,"rating":2,"message":"Not for me"}
+                                """.formatted(otherCourse)))
+                .andExpect(status().isCreated());
+
+        // Each faculty member sees reviews of their own courses only.
+        mockMvc.perform(get("/api/faculty/feedback")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].courseId", hasItem((int) ownCourse)))
+                .andExpect(jsonPath("$.data[*].courseId", not(hasItem((int) otherCourse))));
+
+        mockMvc.perform(get("/api/faculty/feedback")
+                        .header("Authorization", "Bearer " + otherFacultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[*].courseId", hasItem((int) otherCourse)))
+                .andExpect(jsonPath("$.data[*].courseId", not(hasItem((int) ownCourse))));
+
+        // Students are excluded from the faculty feedback route.
+        mockMvc.perform(get("/api/faculty/feedback")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isForbidden());
+    }
+
+    // ------------------------------------------------------ profile & logout
+
+    @Test
+    void facultyProfileRoundTripsAndFacultyIdStaysReadOnly() throws Exception {
+        // Resolve the caller's own profile (id + system-assigned faculty id).
+        MvcResult me = mockMvc.perform(get("/api/auth/me")
+                        .header("Authorization", "Bearer " + facultyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.role").value("FACULTY"))
+                .andReturn();
+        JsonNode profile = objectMapper.readTree(me.getResponse().getContentAsString())
+                .path("data");
+        long myUserId = profile.path("id").asLong();
+        // Derive the expected staff id instead of hardcoding a sequence number -
+        // the test database is shared, so raw user ids vary per run.
+        String expectedFacultyId = String.format(java.util.Locale.ROOT,
+                "FAC-%04d", myUserId);
+        assertEquals(expectedFacultyId, profile.path("facultyId").asString(),
+                "approved faculty get FAC-<zero-padded user id>");
+
+        // ...and can edit the profile fields the Profile page exposes.
+        mockMvc.perform(put("/api/auth/profile")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Faculty One","department":"Computer Science",
+                                 "qualification":"Ph.D","experience":"8 years",
+                                 "phone":"9876543210",
+                                 "profilePhotoUrl":"https://res.cloudinary.com/demo/image/upload/avatar.png"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.department").value("Computer Science"))
+                .andExpect(jsonPath("$.data.qualification").value("Ph.D"))
+                .andExpect(jsonPath("$.data.experience").value("8 years"))
+                .andExpect(jsonPath("$.data.profilePhotoUrl").value(
+                        "https://res.cloudinary.com/demo/image/upload/avatar.png"))
+                // The system-assigned id and role never change via profile edits.
+                .andExpect(jsonPath("$.data.facultyId").value(expectedFacultyId))
+                .andExpect(jsonPath("$.data.role").value("FACULTY"));
+
+        // Email is deliberately read-only on this endpoint: an attempted change
+        // is ignored, so the account email stays exactly as registered.
+        mockMvc.perform(put("/api/auth/profile")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Faculty One",
+                                 "email":"hijacked@example.com"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.email").value("faculty.one@example.com"));
+
+        // Change password through the shared auth endpoint, verify the new one
+        // works, then change it back so the suite keeps its original secret.
+        mockMvc.perform(put("/api/auth/change-password")
+                        .header("Authorization", "Bearer " + facultyToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"currentPassword":"Faculty@123","newPassword":"Faculty@456"}
+                                """))
+                .andExpect(status().isOk());
+        String reissued = login("faculty.one@example.com", "Faculty@456");
+        mockMvc.perform(get("/api/auth/me")
+                        .header("Authorization", "Bearer " + reissued))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.role").value("FACULTY"))
+                .andExpect(jsonPath("$.data.facultyId").value(expectedFacultyId));
+
+        // A wrong current password is rejected with 400 before anything changes.
+        mockMvc.perform(put("/api/auth/change-password")
+                        .header("Authorization", "Bearer " + reissued)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"currentPassword":"WrongPass1","newPassword":"Faculty@789"}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        // Restore the original password for the rest of the suite.
+        mockMvc.perform(put("/api/auth/change-password")
+                        .header("Authorization", "Bearer " + reissued)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"currentPassword":"Faculty@456","newPassword":"Faculty@123"}
+                                """))
+                .andExpect(status().isOk());
     }
 }

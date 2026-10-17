@@ -278,6 +278,20 @@ public class AuthService {
         if (request.semester() != null) {
             user.setSemester(request.semester());
         }
+        // Faculty profile details edited from the faculty dashboard.
+        // facultyId and email are deliberately never editable here.
+        if (request.department() != null) {
+            user.setDepartment(blankToNull(request.department()));
+        }
+        if (request.qualification() != null) {
+            user.setQualification(blankToNull(request.qualification()));
+        }
+        if (request.experience() != null) {
+            user.setExperience(blankToNull(request.experience()));
+        }
+        if (request.profilePhotoUrl() != null) {
+            user.setProfilePhotoUrl(blankToNull(request.profilePhotoUrl()));
+        }
         return toUserResponse(userRepository.save(user));
     }
 
@@ -345,6 +359,11 @@ public class AuthService {
         }
 
         user.setRegistrationStatus(status);
+        // Approving a faculty registration assigns the staff id shown on the
+        // faculty profile page (FAC-<zero-padded user id>), once.
+        if (status == RegistrationStatus.APPROVED && user.getFacultyId() == null) {
+            user.setFacultyId(String.format(java.util.Locale.ROOT, "FAC-%04d", user.getId()));
+        }
         userRepository.save(user);
         log.info("Faculty account {} set to {} (by {})", user.getEmail(), status, requestedByUserId);
         return toUserResponse(user);
@@ -389,6 +408,7 @@ public class AuthService {
                 user.getAddress(),
                 user.getGender(), user.getEnrollmentNumber(),
                 user.getDepartment(), user.getQualification(), user.getExperience(),
+                user.getFacultyId(), user.getProfilePhotoUrl(),
                 user.getCreatedAt());
     }
 

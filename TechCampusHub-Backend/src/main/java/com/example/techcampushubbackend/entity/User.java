@@ -109,6 +109,18 @@ public class User extends Auditable {
     @Column(length = 60)
     private String experience;
 
+    /**
+     * Faculty only: staff identifier (e.g. "FAC-0007") assigned automatically
+     * when an administrator approves the registration. Read-only everywhere
+     * except through that approval flow.
+     */
+    @Column(name = "faculty_id", length = 40)
+    private String facultyId;
+
+    /** Profile photo URL (Cloudinary) - optional, any role. */
+    @Column(name = "profile_photo_url", length = 600)
+    private String profilePhotoUrl;
+
     /** Faculty sign-up declaration (privacy/accuracy consent); always false for students. */
     @Column(name = "declaration_accepted", nullable = false)
     @Builder.Default

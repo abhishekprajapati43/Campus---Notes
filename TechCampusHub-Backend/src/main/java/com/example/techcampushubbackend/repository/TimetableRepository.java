@@ -10,4 +10,7 @@ import java.util.List;
 public interface TimetableRepository extends JpaRepository<Timetable, Long> {
 
     List<Timetable> findAllByOrderByCreatedAtDesc();
+
+    /** Content uploaded by one faculty member (dashboard counts). */
+    long countByCreatedBy(Long createdBy);
 }

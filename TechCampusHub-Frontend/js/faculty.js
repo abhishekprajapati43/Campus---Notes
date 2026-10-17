@@ -3,11 +3,21 @@
 // faculty.js
 //
 // Faculty workspace (faculty.html):
+//   - dashboard stats          GET  /api/faculty/stats
 //   - launch a course          POST /api/faculty/courses
 //   - list own courses         GET  /api/faculty/courses
+//   - edit / publish a course  PUT  /api/faculty/courses/{id}
 //   - upload content (PDF)     POST /api/faculty/notes | tnp-notes | pyqs | timetables
-//   - list own content         GET  /api/faculty/notes | tnp-notes | pyqs | timetables
+//   - upload resources         POST /api/faculty/resources  (videos / assignments / other)
+//   - list own content         GET  /api/faculty/notes | tnp-notes | pyqs | timetables | resources
 //   - edit own content         PUT  /api/faculty/notes/{id} | tnp-notes/{id} | pyqs/{id} | timetables/{id}
+//   - my students (read-only)  GET  /api/faculty/students
+//   - notify my students       POST /api/faculty/notifications
+//   - sent notifications       GET  /api/faculty/notifications
+//   - certificates             GET  /api/faculty/certificates
+//   - feedback                 GET  /api/faculty/feedback
+//   - profile / password       GET  /api/auth/me, PUT /api/auth/profile,
+//                                 PUT /api/auth/change-password
 //
 // There is NO removal route under /api/faculty and this
 // module therefore offers no removal affordance at all -
@@ -27,11 +37,13 @@ import {
     apiPost,
     apiPut,
     getStoredUser,
+    setStoredUser,
     normalizeCourse
 } from "./api.js";
 
 import { uploadPdf } from "./storage.js";
 import { formatPrice } from "./courses.js";
+import { logoutUser } from "./ui.js";
 
 // =====================================================
 // Module state
@@ -49,6 +61,26 @@ let facultyTnpItems = [];
 let facultyPyqItems = [];
 let facultyTimetableItems = [];
 
+// Extra resource kinds (videos / assignments / other files),
+// served by GET|POST /api/faculty/resources.
+let facultyResources = [];
+
+// Dashboard-scoped collections, each rendering one tab panel.
+let facultyStats = null;
+let facultyStudents = [];
+let facultySentNotifications = [];
+let facultyCertificates = [];
+let facultyFeedbackItems = [];
+
+// Profile panel state: the form starts read-only and only the
+// editable fields unlock after "Edit Profile" is pressed.
+let facultyProfile = null;
+let profileEditing = false;
+
+// Course being edited through the Launch Course form (null =
+// create mode; set = PUT /api/faculty/courses/{id}).
+let editingCourseId = null;
+
 // Active category in the Manage Content pill row.
 let activeManageCategory = "notes";
 
@@ -60,12 +92,25 @@ const messageTimers = {};
 const PDF_FOLDER = "notes";
 
 // Per-category Cloudinary folders, mirroring the admin
-// panel ("notes", "tnp", "pyq", "timetable" folders).
+// panel ("notes", "tnp", "pyq", "timetable" folders). The
+// three resource kinds upload through the same pipeline
+// into their own folders; videos never touch storage
+// (they use a URL instead).
 const CONTENT_FOLDERS = {
     notes: PDF_FOLDER,
     tnp: "tnp",
     pyq: "pyq",
-    timetable: "timetable"
+    timetable: "timetable",
+    assignments: "assignments",
+    other: "other"
+};
+
+// The three categories served by POST /api/faculty/resources
+// share one upload form; the kind comes from this map.
+const RESOURCE_KIND_BY_CATEGORY = {
+    videos: "VIDEO",
+    assignments: "ASSIGNMENT",
+    other: "OTHER"
 };
 
 // Short labels used in headings, success messages and
@@ -74,7 +119,10 @@ const CATEGORY_LABELS = {
     notes: "Note",
     tnp: "TNP resource",
     pyq: "PYQ",
-    timetable: "Timetable"
+    timetable: "Timetable",
+    videos: "Video",
+    assignments: "Assignment",
+    other: "Other file"
 };
 
 // Section subtitle shown for the selected upload category.
@@ -82,16 +130,24 @@ const UPLOAD_SUBTITLES = {
     notes: "Share a PDF with your students.",
     tnp: "Share placement resources with your students.",
     pyq: "Share previous year papers with your students.",
-    timetable: "Share exam timetables with your students."
+    timetable: "Share exam timetables with your students.",
+    videos: "Share a video link with your students.",
+    assignments: "Share an assignment PDF with your students.",
+    other: "Share any other PDF with your students."
 };
 
 // One message element per upload form, so a message for one
-// category can never show up under another one.
+// category can never show up under another one. The three
+// resource kinds share the single resource form (and its
+// message) because only one panel is ever visible.
 const UPLOAD_MESSAGE_IDS = {
     notes: "uploadNoteMessage",
     tnp: "facultyUploadTnpMessage",
     pyq: "facultyUploadPyqMessage",
-    timetable: "facultyUploadTimetableMessage"
+    timetable: "facultyUploadTimetableMessage",
+    videos: "facultyUploadResourceMessage",
+    assignments: "facultyUploadResourceMessage",
+    other: "facultyUploadResourceMessage"
 };
 
 // =====================================================
@@ -116,6 +172,17 @@ function getNumber(id) {
 
 function getFile(id) {
     return $(id)?.files?.[0] || null;
+}
+
+// Write a value into a field (blank for null/undefined).
+function setValue(id, value) {
+    const element = $(id);
+
+    if (!element) {
+        return;
+    }
+
+    element.value = value ?? "";
 }
 
 function isFacultyUser() {
@@ -229,6 +296,906 @@ function renderWelcome() {
 }
 
 // =====================================================
+// Header profile menu (photo, name, dropdown)
+// =====================================================
+
+function renderHeaderProfile() {
+    const user = getStoredUser() || null;
+    const name = String(
+        user?.name || currentStudent?.name || ""
+    ).trim() || "Faculty";
+
+    const nameTarget = $("headerProfileName");
+
+    if (nameTarget) {
+        nameTarget.textContent = name;
+    }
+
+    const photoTarget = $("headerProfilePhoto");
+
+    if (!photoTarget) {
+        return;
+    }
+
+    const photoUrl = String(
+        user?.profilePhotoUrl
+        || currentStudent?.profilePhotoUrl
+        || ""
+    ).trim();
+
+    if (/^https?:\/\//i.test(photoUrl)) {
+        photoTarget.innerHTML = `
+            <img src="${escapeHtml(photoUrl)}"
+                 alt="${escapeHtml(name)}"
+                 class="h-full w-full object-cover">
+        `;
+    } else {
+        photoTarget.innerHTML =
+            '<i class="fa-solid fa-user"></i>';
+    }
+}
+
+// The dropdown opens on the avatar click and closes on any
+// outside click or Escape. Guarded so wiring runs once even
+// if two boot paths try.
+function setupHeaderProfileMenu() {
+    const button = $("headerProfileBtn");
+    const dropdown = $("headerProfileDropdown");
+
+    if (!button || !dropdown || button.dataset.wired === "true") {
+        return;
+    }
+
+    button.dataset.wired = "true";
+
+    const setOpen = open => {
+        dropdown.classList.toggle("hidden", !open);
+        button.setAttribute(
+            "aria-expanded",
+            String(open)
+        );
+    };
+
+    button.addEventListener("click", event => {
+        event.stopPropagation();
+        setOpen(dropdown.classList.contains("hidden"));
+    });
+
+    // "My Profile" is a plain link to the Profile tab; close the
+    // menu when it (or any item) is chosen.
+    dropdown.addEventListener("click", () => setOpen(false));
+
+    $("headerChangePasswordBtn")?.addEventListener("click", () => {
+        // The modal lives in faculty.html; on any other page a
+        // faculty member may open (notifications, certificates,
+        // profile, …) fall back to the Profile tab that has it.
+        if ($("facultyChangePasswordModal")) {
+            openChangePasswordModal();
+            return;
+        }
+
+        window.location.href = "./faculty.html#profile";
+    });
+
+    $("headerLogoutBtn")?.addEventListener(
+        "click",
+        () => logoutUser()
+    );
+
+    document.addEventListener("click", event => {
+        if (dropdown.classList.contains("hidden")) {
+            return;
+        }
+
+        if (event.target.closest("#headerProfileMenu")) {
+            return;
+        }
+
+        setOpen(false);
+    });
+
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            setOpen(false);
+        }
+    });
+}
+
+// One call site (app.js) wires the menu on every page that
+// renders the shared header partial, so the chrome can never
+// appear live while its handlers are missing.
+export function initHeaderProfileMenu() {
+    renderHeaderProfile();
+    setupHeaderProfileMenu();
+}
+
+// =====================================================
+// Dashboard stats
+// (GET /api/faculty/stats)
+// =====================================================
+
+async function loadFacultyStats() {
+    const stats = await apiGet("/api/faculty/stats");
+
+    facultyStats = stats || null;
+
+    renderFacultyStats();
+    renderRecentPurchases();
+}
+
+function setStatValue(elementId, value) {
+    const target = $(elementId);
+
+    if (!target) {
+        return;
+    }
+
+    target.textContent = String(value ?? 0);
+}
+
+function renderFacultyStats() {
+    if (!facultyStats) {
+        return;
+    }
+
+    setStatValue(
+        "facultyStatCourses",
+        facultyStats.totalCourses
+    );
+    setStatValue(
+        "facultyStatStudents",
+        facultyStats.totalStudents
+    );
+    setStatValue(
+        "facultyStatContent",
+        facultyStats.totalContent
+    );
+    setStatValue(
+        "facultyStatPurchases",
+        facultyStats.recentPurchases
+    );
+}
+
+function purchaseStatusPill(status) {
+    const normalized = String(status || "").toLowerCase();
+
+    const styles = {
+        approved: "bg-emerald-50 text-emerald-700",
+        pending: "bg-amber-50 text-amber-700",
+        rejected: "bg-red-50 text-red-600"
+    };
+
+    const style = styles[normalized]
+        || "bg-slate-100 text-slate-600";
+
+    return `
+        <span class="rounded-lg px-2.5 py-1 text-xs
+                     font-bold ${style}">
+            ${escapeHtml(
+                normalized
+                    ? normalized.charAt(0).toUpperCase()
+                        + normalized.slice(1)
+                    : "Unknown"
+            )}
+        </span>
+    `;
+}
+
+function renderRecentPurchases() {
+    const list = $("facultyRecentPurchases");
+
+    if (!list) {
+        return;
+    }
+
+    const rows = Array.isArray(
+        facultyStats?.recentPurchaseList
+    ) ? facultyStats.recentPurchaseList : [];
+
+    if (!rows.length) {
+        list.innerHTML = emptyStateHtml(
+            "fa-cart-shopping",
+            "No purchases of your courses yet."
+        );
+        return;
+    }
+
+    list.innerHTML = rows.map(purchase => `
+        <div class="rounded-2xl border border-gray-200
+                    bg-white p-4 flex flex-wrap items-center
+                    gap-4 justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="flex h-10 w-10 shrink-0 items-center
+                            justify-center rounded-full
+                            bg-blue-50 text-blue-600">
+                    <i class="fa-solid fa-user-graduate"></i>
+                </div>
+                <div class="min-w-0">
+                    <p class="truncate text-sm font-semibold
+                              text-gray-900">
+                        ${escapeHtml(purchase.userName || "Student")}
+                    </p>
+                    <p class="truncate text-xs text-slate-400">
+                        ${escapeHtml(purchase.courseTitle || "Course")}
+                        · ${escapeHtml(formatDate(
+                            purchase.createdAt
+                        ))}
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-sm font-extrabold
+                             text-blue-600">
+                    ${escapeHtml(formatPrice(
+                        purchase.amountInr
+                    ))}
+                </span>
+                ${purchaseStatusPill(purchase.status)}
+            </div>
+        </div>
+    `).join("");
+}
+
+// =====================================================
+// Users table (GET /api/faculty/students)
+// =====================================================
+//
+// Read-only by design: the backend exposes no mutation
+// route for these rows, so the table renders no actions.
+// =====================================================
+
+async function loadFacultyStudents() {
+    const rows = await apiGet("/api/faculty/students");
+
+    facultyStudents = Array.isArray(rows) ? rows : [];
+
+    renderFacultyStudents();
+}
+
+function accessStatusPill(status) {
+    const normalized = String(status || "").trim().toLowerCase();
+
+    const styles = {
+        active: "bg-emerald-50 text-emerald-700",
+        pending: "bg-amber-50 text-amber-700",
+        expired: "bg-slate-100 text-slate-600",
+        rejected: "bg-red-50 text-red-600"
+    };
+
+    const style = styles[normalized]
+        || "bg-slate-100 text-slate-600";
+
+    const label = String(status || "Unknown");
+
+    return `
+        <span class="rounded-lg px-2.5 py-1 text-xs
+                     font-bold ${style}">
+            ${escapeHtml(label)}
+        </span>
+    `;
+}
+
+function renderFacultyStudents() {
+    const body = $("facultyStudentsBody");
+
+    if (!body) {
+        return;
+    }
+
+    const empty = $("facultyStudentsEmpty");
+
+    if (!facultyStudents.length) {
+        body.innerHTML = "";
+        empty?.classList.remove("hidden");
+        return;
+    }
+
+    empty?.classList.add("hidden");
+
+    body.innerHTML = facultyStudents.map(row => {
+        // Progress is nullable until the backend starts
+        // tracking it; show a dash rather than a fake 0%.
+        const progress = row.progress;
+        const hasProgress = Number.isFinite(Number(progress))
+            && progress !== null;
+
+        const progressHtml = hasProgress ? `
+            <div class="flex items-center gap-2 min-w-[110px]">
+                <div class="h-2 flex-1 rounded-full bg-slate-100
+                            overflow-hidden">
+                    <div class="h-full rounded-full bg-blue-600"
+                         style="width:${Math.min(
+                             100,
+                             Math.max(0, Number(progress))
+                         )}%"></div>
+                </div>
+                <span class="text-xs font-bold
+                             text-slate-600">
+                    ${Number(progress)}%
+                </span>
+            </div>` : `<span class="text-slate-400">–</span>`;
+
+        return `
+            <tr class="align-top">
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <span class="font-semibold
+                                 text-gray-900">
+                        ${escapeHtml(row.studentName || "Student")}
+                    </span>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap
+                           text-slate-600">
+                    ${escapeHtml(row.userEmail || "–")}
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap
+                           text-slate-600">
+                    ${escapeHtml(row.userPhone || "–")}
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap
+                           text-slate-600">
+                    ${escapeHtml(row.courseTitle || "Course")}
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap
+                           text-slate-600">
+                    ${escapeHtml(formatDate(row.purchaseDate))}
+                </td>
+                <td class="px-4 py-3">${progressHtml}</td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    ${accessStatusPill(row.accessStatus)}
+                </td>
+            </tr>
+        `;
+    }).join("");
+}
+
+// =====================================================
+// Notifications (POST|GET /api/faculty/notifications)
+// =====================================================
+
+async function loadSentNotifications() {
+    const rows = await apiGet("/api/faculty/notifications");
+
+    facultySentNotifications = Array.isArray(rows) ? rows : [];
+
+    renderSentNotifications();
+}
+
+function renderSentNotifications() {
+    const list = $("facultySentNotifications");
+
+    if (!list) {
+        return;
+    }
+
+    if (!facultySentNotifications.length) {
+        list.innerHTML = emptyStateHtml(
+            "fa-bell",
+            "You haven't sent any notifications yet."
+        );
+        return;
+    }
+
+    list.innerHTML = facultySentNotifications.map(item => `
+        <div class="rounded-2xl border border-gray-200
+                    bg-white p-4">
+            <div class="flex flex-wrap items-start
+                        justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-sm font-semibold
+                              text-gray-900">
+                        ${escapeHtml(item.title || "Notification")}
+                    </p>
+                    ${item.message ? `
+                    <p class="mt-1 text-sm text-slate-500">
+                        ${escapeHtml(item.message)}
+                    </p>` : ""}
+                </div>
+                <span class="shrink-0 rounded-lg bg-blue-50
+                             px-2.5 py-1 text-xs font-bold
+                             text-blue-700">
+                    ${escapeHtml(item.kind || "INFO")}
+                </span>
+            </div>
+            <p class="mt-2 text-xs text-slate-400">
+                Sent to ${escapeHtml(
+                    item.broadcast
+                        ? "all your students"
+                        : (item.targetUserName || "a student")
+                )} · ${escapeHtml(formatDate(item.createdAt))}
+            </p>
+        </div>
+    `).join("");
+}
+
+async function handleSendNotification(event) {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const button = form?.querySelector('button[type="submit"]');
+
+    const title = getValue("facultyNotifTitle");
+
+    if (!title) {
+        facultyMessage(
+            "facultyNotificationMessage",
+            "Please enter a title.",
+            "error"
+        );
+        return;
+    }
+
+    const courseId = getNumber("facultyNotifCourse");
+
+    const payload = {
+        title,
+        message: getValue("facultyNotifMessage") || null,
+        kind: getValue("facultyNotifKind") || "INFO",
+        category: getValue("facultyNotifCategory") || "general",
+        // null = every student enrolled in any of my courses.
+        courseId: courseId ?? null
+    };
+
+    if (button) {
+        button.disabled = true;
+    }
+
+    try {
+        const result = await apiPost(
+            "/api/faculty/notifications",
+            payload
+        );
+
+        facultyMessage(
+            "facultyNotificationMessage",
+            `Notification sent to ${result?.sentCount ?? 0} student(s).`
+        );
+
+        const countTarget = $("facultyNotificationSentCount");
+
+        if (countTarget) {
+            countTarget.textContent =
+                `Last sent to ${result?.sentCount ?? 0} student(s).`;
+        }
+
+        form?.reset();
+
+        await loadSentNotifications();
+    } catch (error) {
+        console.error("Faculty notification error:", error);
+
+        facultyMessage(
+            "facultyNotificationMessage",
+            errorMessage(error, "Could not send the notification."),
+            "error"
+        );
+    } finally {
+        if (button) {
+            button.disabled = false;
+        }
+    }
+}
+
+// =====================================================
+// Certificates (GET /api/faculty/certificates)
+// =====================================================
+
+async function loadFacultyCertificates() {
+    const rows = await apiGet("/api/faculty/certificates");
+
+    facultyCertificates = Array.isArray(rows) ? rows : [];
+
+    renderFacultyCertificates();
+}
+
+function renderFacultyCertificates() {
+    const list = $("facultyCertificatesList");
+
+    if (!list) {
+        return;
+    }
+
+    if (!facultyCertificates.length) {
+        list.innerHTML = emptyStateHtml(
+            "fa-certificate",
+            "No certificates issued for your courses yet."
+        );
+        return;
+    }
+
+    list.innerHTML = facultyCertificates.map(item => {
+        const fileUrl = typeof item.fileUrl === "string"
+            ? item.fileUrl.trim()
+            : "";
+
+        const canOpen = /^https?:\/\//i.test(fileUrl);
+
+        const openHtml = canOpen ? `
+                    <a href="${escapeHtml(fileUrl)}"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="inline-flex items-center gap-2 rounded-lg bg-blue-50
+                              px-3 py-2 text-sm font-medium text-blue-700 transition
+                              hover:bg-blue-100">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        Open
+                    </a>` : "";
+
+        return `
+            <div class="rounded-2xl border border-gray-200
+                        bg-white p-4 flex flex-wrap items-center
+                        gap-4 justify-between">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="flex h-10 w-10 shrink-0 items-center
+                                justify-center rounded-xl
+                                bg-amber-50 text-amber-600">
+                        <i class="fa-solid fa-certificate"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="truncate text-sm font-semibold
+                                  text-gray-900">
+                            ${escapeHtml(item.title || "Certificate")}
+                        </p>
+                        <p class="truncate text-xs text-slate-400">
+                            ${escapeHtml(item.userName || "Student")}
+                            · ${escapeHtml(item.courseTitle || "Course")}
+                            ${item.certificateNo
+                                ? `· ${escapeHtml(item.certificateNo)}`
+                                : ""}
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-slate-400">
+                        ${escapeHtml(formatDate(item.issuedOn || item.createdAt))}
+                    </span>
+                    ${openHtml}
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+// =====================================================
+// Feedback (GET /api/faculty/feedback)
+// =====================================================
+
+async function loadFacultyFeedback() {
+    const rows = await apiGet("/api/faculty/feedback");
+
+    facultyFeedbackItems = Array.isArray(rows) ? rows : [];
+
+    renderFacultyFeedback();
+}
+
+// Star row shared with the student feedback cards.
+function starsHtml(rating) {
+    const value = Number(rating) || 0;
+
+    let html = "";
+
+    for (let star = 1; star <= 5; star += 1) {
+        html += `<i class="fa-${star <= value ? "solid" : "regular"}
+                    fa-star ${star <= value ? "text-amber-400" : "text-slate-300"}"></i>`;
+    }
+
+    return `<span class="inline-flex gap-0.5 text-xs">${html}</span>`;
+}
+
+function renderFacultyFeedback() {
+    const list = $("facultyFeedbackList");
+
+    if (!list) {
+        return;
+    }
+
+    if (!facultyFeedbackItems.length) {
+        list.innerHTML = emptyStateHtml(
+            "fa-star",
+            "No feedback on your courses yet."
+        );
+        return;
+    }
+
+    list.innerHTML = facultyFeedbackItems.map(item => `
+        <div class="rounded-2xl border border-gray-200
+                    bg-white p-4">
+            <div class="flex flex-wrap items-start
+                        justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-sm font-semibold
+                              text-gray-900">
+                        ${escapeHtml(item.userName || "Student")}
+                    </p>
+                    <p class="text-xs text-slate-400">
+                        ${escapeHtml(item.courseTitle || item.targetLabel || "Website")}
+                        · ${escapeHtml(formatDate(item.createdAt))}
+                    </p>
+                </div>
+                ${starsHtml(item.rating)}
+            </div>
+            ${item.message ? `
+            <p class="mt-3 text-sm text-slate-600">
+                ${escapeHtml(item.message)}
+            </p>` : ""}
+        </div>
+    `).join("");
+}
+
+// =====================================================
+// Profile
+// (GET /api/auth/me, PUT /api/auth/profile)
+// =====================================================
+
+// Fields the form can edit once "Edit Profile" is pressed.
+const PROFILE_EDITABLE_FIELDS = [
+    "facultyProfileName",
+    "facultyProfileDepartment",
+    "facultyProfileQualification",
+    "facultyProfileExperience",
+    "facultyProfilePhone"
+];
+
+// System-managed fields: always read-only (the backend
+// assigns the faculty id, owns the login email and stamps
+// the join date itself).
+const PROFILE_READONLY_FIELDS = [
+    "facultyProfileId",
+    "facultyProfileEmail",
+    "facultyProfileJoined"
+];
+
+async function loadFacultyProfile() {
+    const me = await apiGet("/api/auth/me");
+
+    facultyProfile = me || null;
+
+    renderFacultyProfile();
+}
+
+function applyProfileEditingState() {
+    PROFILE_READONLY_FIELDS.forEach(id => {
+        const field = $(id);
+
+        if (field) {
+            field.disabled = true;
+        }
+    });
+
+    PROFILE_EDITABLE_FIELDS.forEach(id => {
+        const field = $(id);
+
+        if (field) {
+            field.disabled = !profileEditing;
+        }
+    });
+
+    // Save only exists while editing; Edit doubles as the
+    // read-only affordance and disables itself in edit mode.
+    $("facultyProfileSaveBtn")?.classList.toggle(
+        "hidden",
+        !profileEditing
+    );
+
+    const editButton = $("facultyProfileEditBtn");
+
+    if (editButton) {
+        editButton.disabled = profileEditing;
+        editButton.classList.toggle("opacity-50", profileEditing);
+    }
+}
+
+function renderFacultyProfile() {
+    if (!facultyProfile) {
+        return;
+    }
+
+    setValue("facultyProfileName", facultyProfile.name);
+    setValue("facultyProfileId", facultyProfile.facultyId);
+    setValue("facultyProfileDepartment", facultyProfile.department);
+    setValue("facultyProfileQualification", facultyProfile.qualification);
+    setValue("facultyProfileExperience", facultyProfile.experience);
+    setValue("facultyProfileEmail", facultyProfile.email);
+    setValue("facultyProfilePhone", facultyProfile.phone);
+    setValue("facultyProfileJoined", formatDate(facultyProfile.createdAt));
+
+    applyProfileEditingState();
+}
+
+function setProfileEditing(editable) {
+    profileEditing = editable;
+
+    applyProfileEditingState();
+
+    if (editable) {
+        $("facultyProfileName")?.focus();
+    }
+}
+
+async function handleProfileSave(event) {
+    event.preventDefault();
+
+    // Enter submits the form even while read-only; ignore it.
+    if (!profileEditing) {
+        return;
+    }
+
+    const name = getValue("facultyProfileName");
+
+    if (!name) {
+        facultyMessage(
+            "facultyProfileMessage",
+            "Please enter your full name.",
+            "error"
+        );
+        return;
+    }
+
+    const button = $("facultyProfileSaveBtn");
+
+    if (button) {
+        button.disabled = true;
+    }
+
+    // Only the editable fields travel; email, faculty id and
+    // the join date have no update route by design.
+    const payload = {
+        name,
+        phone: getValue("facultyProfilePhone") || null,
+        department: getValue("facultyProfileDepartment") || null,
+        qualification: getValue("facultyProfileQualification") || null,
+        experience: getValue("facultyProfileExperience") || null
+    };
+
+    try {
+        const updated = await apiPut("/api/auth/profile", payload);
+
+        facultyProfile = updated || facultyProfile;
+
+        // Keep the stored session copy (header/sidebar name
+        // and photo) in step with the server response.
+        setStoredUser({
+            ...(getStoredUser() || {}),
+            ...(facultyProfile || {})
+        });
+
+        setProfileEditing(false);
+        renderFacultyProfile();
+        renderWelcome();
+        renderHeaderProfile();
+
+        facultyMessage(
+            "facultyProfileMessage",
+            "Profile updated successfully."
+        );
+    } catch (error) {
+        console.error("Faculty profile save error:", error);
+
+        facultyMessage(
+            "facultyProfileMessage",
+            errorMessage(error, "Could not update your profile."),
+            "error"
+        );
+    } finally {
+        if (button) {
+            button.disabled = false;
+        }
+    }
+}
+
+// =====================================================
+// Change password
+// (PUT /api/auth/change-password)
+// =====================================================
+//
+// One shared modal serves the Profile panel button and the
+// header dropdown item; both routes only ever open it.
+// =====================================================
+
+function openChangePasswordModal() {
+    const modal = $("facultyChangePasswordModal");
+
+    if (!modal) {
+        return;
+    }
+
+    // Never carry a stale error (or a typed password) over
+    // from a previous attempt.
+    $("facultyChangePasswordForm")?.reset();
+    facultyMessage("facultyChangePasswordMessage", "");
+
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+
+    $("facultyCurrentPassword")?.focus();
+}
+
+function closeChangePasswordModal() {
+    const modal = $("facultyChangePasswordModal");
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+
+    $("facultyChangePasswordForm")?.reset();
+    facultyMessage("facultyChangePasswordMessage", "");
+}
+
+async function handleChangePassword(event) {
+    event.preventDefault();
+
+    const currentPassword = getValue("facultyCurrentPassword");
+    const newPassword = getValue("facultyNewPassword");
+    const confirmPassword = getValue("facultyConfirmPassword");
+
+    if (!currentPassword || !newPassword) {
+        facultyMessage(
+            "facultyChangePasswordMessage",
+            "Please fill in both passwords.",
+            "error"
+        );
+        return;
+    }
+
+    if (newPassword.length < 8) {
+        facultyMessage(
+            "facultyChangePasswordMessage",
+            "The new password must be at least 8 characters.",
+            "error"
+        );
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        facultyMessage(
+            "facultyChangePasswordMessage",
+            "The new passwords do not match.",
+            "error"
+        );
+        return;
+    }
+
+    const form = event.currentTarget;
+    const button = form?.querySelector('button[type="submit"]');
+
+    if (button) {
+        button.disabled = true;
+    }
+
+    try {
+        await apiPut("/api/auth/change-password", {
+            currentPassword,
+            newPassword
+        });
+
+        form?.reset();
+
+        facultyMessage(
+            "facultyChangePasswordMessage",
+            "Password updated successfully."
+        );
+
+        // Leave the confirmation visible for a moment, then
+        // close so the success is still readable.
+        window.setTimeout(closeChangePasswordModal, 1200);
+    } catch (error) {
+        console.error("Faculty change password error:", error);
+
+        facultyMessage(
+            "facultyChangePasswordMessage",
+            errorMessage(error, "Could not change the password."),
+            "error"
+        );
+    } finally {
+        if (button) {
+            button.disabled = false;
+        }
+    }
+}
+
+// =====================================================
 // Courses (GET /api/faculty/courses)
 // =====================================================
 
@@ -284,10 +1251,15 @@ function renderFacultyCourses() {
                             ${escapeHtml(meta)}
                         </p>
                     </div>
+                    ${course.is_active ? `
                     <span class="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1
                                  text-xs font-bold text-emerald-700">
                         Live
-                    </span>
+                    </span>` : `
+                    <span class="shrink-0 rounded-full bg-slate-100 px-2.5 py-1
+                                 text-xs font-bold text-slate-600">
+                        Draft
+                    </span>`}
                 </div>
                 <div class="mt-4 flex flex-wrap items-center gap-2">
                     <span class="text-base font-extrabold text-blue-600">
@@ -310,13 +1282,39 @@ function renderFacultyCourses() {
                     <i class="fa-regular fa-folder-open"></i>
                     View content
                 </button>
+                <div class="mt-2 grid grid-cols-2 gap-2">
+                    <button type="button"
+                        data-faculty-edit-course="${escapeHtml(String(course.id ?? ""))}"
+                        class="inline-flex items-center justify-center gap-2
+                               rounded-xl border border-slate-200 px-3 py-2.5
+                               text-sm font-semibold text-slate-700 transition
+                               hover:bg-slate-50">
+                        <i class="fa-solid fa-pen"></i>
+                        Edit
+                    </button>
+                    <button type="button"
+                        data-faculty-toggle-course="${escapeHtml(String(course.id ?? ""))}"
+                        class="inline-flex items-center justify-center gap-2
+                               rounded-xl px-3 py-2.5 text-sm font-semibold
+                               transition ${course.is_active
+                                   ? "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+                                   : "bg-blue-600 text-white hover:bg-blue-700"}">
+                        <i class="fa-solid ${course.is_active
+                            ? "fa-eye-slash"
+                            : "fa-paper-plane"}"></i>
+                        ${course.is_active ? "Unpublish" : "Publish"}
+                    </button>
+                </div>
             </article>
         `;
     }).join("");
 }
 
 // Fill one "My courses" picker with the optional bundles.
-function fillBundleSelect(select) {
+// firstLabel lets a picker frame the empty value its own way
+// (bundle uploads say "Free — no bundle", the notification
+// audience says "All my students").
+function fillBundleSelect(select, firstLabel = "Free — no bundle") {
     if (!select) {
         return;
     }
@@ -331,7 +1329,7 @@ function fillBundleSelect(select) {
 
     select.innerHTML = `
         <option value="">
-            Free — no bundle
+            ${escapeHtml(firstLabel)}
         </option>
         ${options}
     `;
@@ -343,10 +1341,13 @@ function fillBundleSelect(select) {
     select.value = canRestore ? previous : "";
 }
 
-// "My courses" pickers for the optional note / TNP bundles.
+// "My courses" pickers for the optional bundles, the resource
+// form and the notification audience.
 function populateBundleSelect() {
     fillBundleSelect($("noteBundleSelect"));
     fillBundleSelect($("facultyTnpBundle"));
+    fillBundleSelect($("facultyResourceCourse"));
+    fillBundleSelect($("facultyNotifCourse"), "All my students");
 }
 
 // =====================================================
@@ -389,6 +1390,71 @@ async function loadFacultyTimetables() {
     renderActiveManageCategory();
 }
 
+// =====================================================
+// Resources — videos / assignments / other files
+// (GET /api/faculty/resources)
+// =====================================================
+
+async function loadFacultyResources() {
+    const rows = await apiGet("/api/faculty/resources");
+
+    facultyResources = Array.isArray(rows) ? rows : [];
+
+    renderActiveManageCategory();
+}
+
+// Meta line for one resource row (manage cards and the
+// course content viewer share it).
+function resourceMetaLine(item) {
+    const kindLabels = {
+        VIDEO: "Video",
+        ASSIGNMENT: "Assignment",
+        OTHER: "Other file"
+    };
+
+    return [
+        kindLabels[String(item.kind || "").toUpperCase()] || "Resource",
+        item.fileName || ""
+    ].filter(Boolean).join(" · ");
+}
+
+// The three resource categories render from one collection,
+// filtered by kind to match the active pill.
+function renderFacultyResources() {
+    const list = $("facultyNotesList");
+
+    if (!list) {
+        return;
+    }
+
+    const kind = RESOURCE_KIND_BY_CATEGORY[activeManageCategory];
+
+    const rows = kind
+        ? facultyResources.filter(
+            item => String(item.kind || "").toUpperCase() === kind
+        )
+        : [];
+
+    if (!rows.length) {
+        list.innerHTML = emptyStateHtml(
+            "fa-photo-film",
+            "No resources in this category yet."
+        );
+        return;
+    }
+
+    list.innerHTML = rows.map(item => contentCardHtml(item, {
+        iconClass: "fa-solid fa-photo-film",
+        titleFallback: "Untitled resource",
+        metaLine: resourceMetaLine(item),
+        // The link may be a video page, not a PDF.
+        linkLabel: "Open",
+        // Resources have no edit form of their own; editing
+        // stays with the four original content categories.
+        hideEdit: true
+    })).join("");
+}
+
 // Reload whichever collection the success message is about.
 function reloadFacultyContent(category) {
     switch (category) {
@@ -398,6 +1464,10 @@ function reloadFacultyContent(category) {
             return loadFacultyPyqs();
         case "timetable":
             return loadFacultyTimetables();
+        case "videos":
+        case "assignments":
+        case "other":
+            return loadFacultyResources();
         default:
             return loadFacultyNotes();
     }
@@ -526,6 +1596,11 @@ function renderActiveManageCategory() {
         case "timetable":
             renderFacultyTimetable();
             break;
+        case "videos":
+        case "assignments":
+        case "other":
+            renderFacultyResources();
+            break;
         default:
             // Notes keep their original card rendering.
             renderFacultyNotes();
@@ -568,6 +1643,8 @@ function contentCardHtml(item, options) {
     // View only exists when there is a stored file.
     const canView = /^https?:\/\//i.test(fileUrl);
 
+    // Videos and files alike: PDFs say "View PDF", link
+    // resources say "Open" (set per group / caller).
     const viewHtml = canView ? `
                     <a href="${escapeHtml(fileUrl)}"
                        target="_blank"
@@ -576,7 +1653,7 @@ function contentCardHtml(item, options) {
                               px-3 py-2 text-sm font-medium text-blue-700 transition
                               hover:bg-blue-100">
                         <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                        View PDF
+                        ${escapeHtml(options.linkLabel || "View PDF")}
                     </a>` : "";
 
     const metaHtml = metaLine ? `
@@ -619,6 +1696,7 @@ function contentCardHtml(item, options) {
                 ${bundleBadge}
                 <div class="mt-4 flex flex-wrap items-center gap-2">
                     ${viewHtml}
+                    ${options.hideEdit ? "" : `
                     <button type="button"
                         class="faculty-edit-btn inline-flex items-center gap-2
                                rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium
@@ -626,7 +1704,7 @@ function contentCardHtml(item, options) {
                         data-note-id="${escapeHtml(String(item.id ?? ""))}">
                         <i class="fa-solid fa-pen"></i>
                         Edit
-                    </button>
+                    </button>`}
                 </div>
             </article>
         `;
@@ -976,11 +2054,24 @@ const COURSE_CONTENT_GROUPS = [
         titleFallback: "Untitled timetable",
         itemsKey: "timetables",
         metaLine: timetableMetaLine
+    },
+    {
+        // Injected client-side in openCourseContent(): the
+        // endpoint predates /api/faculty/resources, so the
+        // three resource kinds are merged in from the loaded
+        // owner-scoped collection instead of a backend field.
+        heading: "Videos, Assignments & Files",
+        iconClass: "fa-solid fa-photo-film",
+        titleFallback: "Untitled resource",
+        itemsKey: "resources",
+        metaLine: resourceMetaLine,
+        // The link may be a video page, not a PDF.
+        linkLabel: "Open"
     }
 ];
 
 // Read-only sibling of contentCardHtml(): same card look,
-// but only the View PDF link - never Edit / delete buttons.
+// but only the View / Open link - never Edit / delete buttons.
 function courseContentCardHtml(item, options) {
     const title = item.title || options.titleFallback;
     const metaLine = String(options.metaLine(item) || "").trim();
@@ -1004,7 +2095,7 @@ function courseContentCardHtml(item, options) {
                               px-3 py-2 text-sm font-medium text-blue-700 transition
                               hover:bg-blue-100">
                         <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                        View PDF
+                        ${escapeHtml(options.linkLabel || "View PDF")}
                     </a>
                 </div>` : "";
 
@@ -1127,6 +2218,14 @@ async function openCourseContent(courseId) {
             title.textContent = data?.course?.title || "Course Content";
         }
 
+        // Merge in this course's resources (videos /
+        // assignments / other files) from the collection
+        // loaded at startup; unattached ("free") resources
+        // belong to no course viewer.
+        data.resources = facultyResources.filter(
+            item => String(item.courseId ?? "") === String(courseId)
+        );
+
         renderCourseContentBody(data);
     } catch (error) {
         console.error("Faculty course content loading error:", error);
@@ -1211,34 +2310,65 @@ async function handleLaunchCourse(event) {
         highlights: highlights.length ? highlights : null
     };
 
+    // Edit mode keeps the publish state: only the fields the
+    // form owns travel with the request, everything else is
+    // left untouched server-side.
+    const editing = editingCourseId
+        ? findCourse(editingCourseId)
+        : null;
+
+    if (editing) {
+        payload.active = !!editing.is_active;
+    }
+
     if (button) {
         button.disabled = true;
     }
 
     try {
-        const created = await apiPost(
-            "/api/faculty/courses",
-            payload
-        );
+        if (editing) {
+            await apiPut(
+                `/api/faculty/courses/${encodeURIComponent(String(editing.id))}`,
+                payload
+            );
 
-        facultyMessage(
-            "launchCourseMessage",
-            "Course launched successfully. It is live now."
-        );
+            facultyMessage(
+                "launchCourseMessage",
+                "Course updated successfully."
+            );
+        } else {
+            const created = await apiPost(
+                "/api/faculty/courses",
+                payload
+            );
 
+            facultyMessage(
+                "launchCourseMessage",
+                "Course launched successfully. It is live now."
+            );
+
+            if (created) {
+                dispatchRefresh();
+            }
+        }
+
+        // Back to create mode either way.
+        editingCourseId = null;
         form?.reset();
+        setLaunchFormMode(null);
 
         await loadFacultyCourses();
-
-        if (created) {
-            dispatchRefresh();
-        }
     } catch (error) {
         console.error("Launch course error:", error);
 
         facultyMessage(
             "launchCourseMessage",
-            errorMessage(error, "Could not launch the course."),
+            errorMessage(
+                error,
+                editing
+                    ? "Could not update the course."
+                    : "Could not launch the course."
+            ),
             "error"
         );
     } finally {
@@ -1635,6 +2765,138 @@ async function handleUploadTimetable(event) {
 }
 
 // =====================================================
+// Resource upload (videos / assignments / other files)
+// url (videos) or uploadPdf() (the rest), then
+// POST /api/faculty/resources
+// =====================================================
+
+async function handleUploadResource(event) {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const button = $("facultyUploadResourceBtn");
+    const messageElement = UPLOAD_MESSAGE_IDS.videos;
+
+    const kind = getValue("facultyUploadResourceKind") || "VIDEO";
+    const title = getValue("facultyResourceTitle");
+
+    if (!title) {
+        facultyMessage(
+            messageElement,
+            "Please enter a title.",
+            "error"
+        );
+        return;
+    }
+
+    const isVideo = kind === "VIDEO";
+    const file = getFile("facultyResourceFile");
+    const url = getValue("facultyResourceUrl");
+
+    if (isVideo && !/^https?:\/\//i.test(url)) {
+        facultyMessage(
+            messageElement,
+            "Please enter a valid video URL (https://…).",
+            "error"
+        );
+        return;
+    }
+
+    if (!isVideo && !file) {
+        facultyMessage(
+            messageElement,
+            "Please select a PDF file.",
+            "error"
+        );
+        return;
+    }
+
+    if (button) {
+        button.disabled = true;
+    }
+
+    try {
+        let fileUrl = null;
+        let storagePath = null;
+        let fileName = null;
+
+        if (isVideo) {
+            // Videos are links only - the storage pipeline
+            // accepts PDFs and images, never video bytes.
+            fileUrl = url;
+        } else {
+            facultyMessage(
+                messageElement,
+                "Uploading PDF to Cloudinary…",
+                "success",
+                0
+            );
+
+            // Browser -> Cloudinary (same pipeline as admin).
+            const uploaded = await uploadPdf(
+                file,
+                CONTENT_FOLDERS[kind === "ASSIGNMENT"
+                    ? "assignments"
+                    : "other"]
+            );
+
+            fileUrl = uploaded?.file_url || null;
+            storagePath = uploaded?.cloudinary_public_id || null;
+            fileName = uploaded?.file_name || file?.name || null;
+
+            if (!fileUrl) {
+                throw new Error(
+                    "Upload succeeded, but no file URL was returned."
+                );
+            }
+        }
+
+        const payload = {
+            title,
+            description: getValue("facultyResourceDescription") || null,
+            kind,
+            fileUrl,
+            storagePath,
+            fileName,
+            // Optional bundle this resource unlocks.
+            courseId: getNumber("facultyResourceCourse")
+        };
+
+        await apiPost("/api/faculty/resources", payload);
+
+        form?.reset();
+
+        // The reset clears the hidden kind field too; put the
+        // visible row back in sync with the chosen category.
+        syncResourceFormForCategory(
+            $("facultyUploadCategory")?.value || "videos"
+        );
+
+        facultyMessage(
+            messageElement,
+            isVideo
+                ? "Video link saved successfully."
+                : "File uploaded successfully."
+        );
+
+        await loadFacultyResources();
+        dispatchRefresh();
+    } catch (error) {
+        console.error("Faculty resource upload error:", error);
+
+        facultyMessage(
+            messageElement,
+            errorMessage(error, "Could not upload the resource."),
+            "error"
+        );
+    } finally {
+        if (button) {
+            button.disabled = false;
+        }
+    }
+}
+
+// =====================================================
 // Upload category selector — swaps the four upload forms
 // =====================================================
 //
@@ -1646,11 +2908,18 @@ async function handleUploadTimetable(event) {
 function updateFacultyUploadCategoryPanel() {
     const category = $("facultyUploadCategory")?.value || "notes";
 
+    // The three resource kinds share one panel, so they all
+    // resolve to the same key.
+    const panelKey = RESOURCE_KIND_BY_CATEGORY[category]
+        ? "resource"
+        : category;
+
     const panels = {
         notes: $("facultyUploadNotesPanel"),
         tnp: $("facultyUploadTnpPanel"),
         pyq: $("facultyUploadPyqPanel"),
-        timetable: $("facultyUploadTimetablePanel")
+        timetable: $("facultyUploadTimetablePanel"),
+        resource: $("facultyUploadResourcePanel")
     };
 
     Object.entries(panels).forEach(([name, panel]) => {
@@ -1658,8 +2927,12 @@ function updateFacultyUploadCategoryPanel() {
             return;
         }
 
-        panel.classList.toggle("hidden", name !== category);
+        panel.classList.toggle("hidden", name !== panelKey);
     });
+
+    if (panelKey === "resource") {
+        syncResourceFormForCategory(category);
+    }
 
     // Subtitle follows the selected category.
     const subtitle = $("facultyUploadSubtitle");
@@ -1667,6 +2940,59 @@ function updateFacultyUploadCategoryPanel() {
     if (subtitle) {
         subtitle.textContent = UPLOAD_SUBTITLES[category]
             || UPLOAD_SUBTITLES.notes;
+    }
+}
+
+// Videos take a URL (the storage pipeline accepts PDFs
+// only), while assignments / other files take a PDF. Swap
+// the visible row, the required flags and the hidden kind
+// field together so the form can never send a half-filled
+// payload.
+function syncResourceFormForCategory(category) {
+    const kind = RESOURCE_KIND_BY_CATEGORY[category] || "VIDEO";
+
+    const kindField = $("facultyUploadResourceKind");
+
+    if (kindField) {
+        kindField.value = kind;
+    }
+
+    const isVideo = kind === "VIDEO";
+
+    $("facultyResourceUrlGroup")?.classList.toggle("hidden", !isVideo);
+    $("facultyResourceFileGroup")?.classList.toggle("hidden", isVideo);
+
+    const urlInput = $("facultyResourceUrl");
+    const fileInput = $("facultyResourceFile");
+
+    if (urlInput) {
+        urlInput.required = isVideo;
+    }
+
+    if (fileInput) {
+        fileInput.required = !isVideo;
+    }
+
+    // A URL typed for a video must not travel with a
+    // later file-based upload (and vice versa).
+    if (isVideo && fileInput) {
+        fileInput.value = "";
+    }
+
+    if (!isVideo && urlInput) {
+        urlInput.value = "";
+    }
+
+    const uploadButton = $("facultyUploadResourceBtn");
+
+    if (uploadButton) {
+        const icon = isVideo
+            ? "fa-solid fa-link"
+            : "fa-solid fa-cloud-arrow-up";
+        const label = isVideo ? "Save video link" : "Upload";
+
+        uploadButton.innerHTML =
+            `<i class="${icon} mr-2"></i>${label}`;
     }
 }
 
@@ -1813,21 +3139,72 @@ async function handleEditSubmit(event) {
 }
 
 // =====================================================
-// Sidebar-hash scrolling
+// Sidebar-hash tab switching
 // =====================================================
 //
-// The shared sidebar links to ./faculty.html#course | #upload |
-// #launch | #manage - short hashes that match no element id, so
-// the browser's native anchor jump is a no-op. Map each hash to
-// the real section id and scroll by hand instead.
+// The shared sidebar links to ./faculty.html#dashboard |
+// #courses | #content | … - short hashes that match no
+// element id, so the browser's native anchor jump is a no-op.
+// Map each hash to the matching tab (the tab engine is the
+// same one admin.html uses) and, for the legacy section
+// hashes kept alive from the first workspace layout, scroll
+// to the section inside that tab.
 // =====================================================
 
-const FACULTY_SECTION_HASHES = {
+const FACULTY_TAB_BY_HASH = {
+    // Canonical hashes (sidebar + header dropdown links).
+    dashboard: "dashboard",
+    courses: "courses",
+    content: "content",
+    notifications: "notifications",
+    certificates: "certificates",
+    feedback: "feedback",
+    users: "users",
+    profile: "profile",
+    // Legacy section hashes from the pre-tab layout.
+    course: "courses",
+    launch: "courses",
+    upload: "content",
+    manage: "content"
+};
+
+// Legacy hashes keep their finer-grained landing spot.
+const FACULTY_SCROLL_TARGET_BY_HASH = {
     course: "facultyCourseSection",
     launch: "facultyLaunchSection",
     upload: "facultyUploadSection",
     manage: "facultyManageSection"
 };
+
+// Sidebar entry that mirrors each tab (the Profile tab is
+// reached through the header dropdown, so it maps to none).
+const FACULTY_NAV_ID_BY_TAB = {
+    dashboard: "facultyDashboardNavBtn",
+    courses: "facultyCourseNavBtn",
+    content: "facultyUploadNavBtn",
+    notifications: "facultyNotificationsNavBtn",
+    certificates: "facultyCertificatesNavBtn",
+    feedback: "facultyFeedbackNavBtn",
+    users: "facultyUsersNavBtn"
+};
+
+function markFacultyNavLink(tab) {
+    const navId = FACULTY_NAV_ID_BY_TAB[tab];
+
+    if (!navId) {
+        return;
+    }
+
+    // Same scope layout.js uses in markActiveNav(), so the
+    // highlight can never disagree with the page-level one.
+    document
+        .querySelectorAll("#sidebar .nav-item")
+        .forEach(item => {
+            item.classList.remove("active");
+        });
+
+    $(navId)?.classList.add("active");
+}
 
 function scrollToFacultyHash() {
     const hash = String(window.location.hash || "").replace(/^#/, "");
@@ -1836,16 +3213,34 @@ function scrollToFacultyHash() {
         return;
     }
 
-    const sectionId = FACULTY_SECTION_HASHES[hash];
+    const tab = FACULTY_TAB_BY_HASH[hash];
 
-    if (!sectionId) {
+    if (!tab) {
         return;
     }
+
+    // Clicking the tab button reuses the shared tab engine
+    // (admin.html's setupAdminTabs); a click on the already
+    // active button is a harmless no-op.
+    const tabButton = document.querySelector(
+        `[data-admin-tab="${tab}"]`
+    );
+
+    if (tabButton && !tabButton.classList.contains("active")) {
+        tabButton.click();
+    }
+
+    markFacultyNavLink(tab);
+
+    const sectionId = FACULTY_SCROLL_TARGET_BY_HASH[hash];
+    const target = sectionId
+        ? $(sectionId)
+        : $("facultyPanel");
 
     // "instant" (not "smooth"): the stylesheet sets a global
     // scroll-behavior:smooth, and layering a JS-smooth scroll on top
     // of it makes long jumps stall and land late.
-    $(sectionId)?.scrollIntoView({
+    target?.scrollIntoView({
         behavior: "instant",
         block: "start"
     });
@@ -1935,10 +3330,30 @@ function handleContentListClick(event) {
     openEditModal(activeManageCategory, item);
 }
 
-// "View content" buttons live in the course cards rendered
-// into #facultyCoursesList (My Courses section) and open the
-// read-only viewer for that course.
+// "View content", "Edit" and "Publish/Unpublish" buttons all
+// live in the course cards rendered into #facultyCoursesList
+// (My Courses section).
 function handleCourseListClick(event) {
+    const editButton = event.target.closest(
+        "[data-faculty-edit-course]"
+    );
+
+    if (editButton) {
+        startCourseEdit(editButton.dataset.facultyEditCourse);
+        return;
+    }
+
+    const toggleButton = event.target.closest(
+        "[data-faculty-toggle-course]"
+    );
+
+    if (toggleButton) {
+        toggleCourseActive(
+            toggleButton.dataset.facultyToggleCourse
+        );
+        return;
+    }
+
     const button = event.target.closest(
         "[data-faculty-open-course]"
     );
@@ -1956,6 +3371,189 @@ function handleCourseListClick(event) {
     openCourseContent(courseId);
 }
 
+// =====================================================
+// Course editing (My Courses)
+// =====================================================
+//
+// Editing reuses the Launch Course form: "Edit" prefills it
+// and switches the submit into PUT /api/faculty/courses/{id}
+// mode; "Cancel edit" (or a fresh submit) returns it to
+// POST /api/faculty/courses create mode.
+// =====================================================
+
+function findCourse(courseId) {
+    const wanted = String(courseId ?? "");
+
+    return facultyCourses.find(
+        course => String(course.id) === wanted
+    ) || null;
+}
+
+// The submit button doubles as "Launch Course" /
+// "Save Changes"; its label always follows the mode.
+function setLaunchFormMode(course) {
+    const form = $("launchCourseForm");
+    const submitButton = form?.querySelector('button[type="submit"]');
+    const cancelButton = $("cancelCourseEditBtn");
+    const heading = $("facultyLaunchHeading");
+
+    if (course) {
+        if (submitButton) {
+            submitButton.innerHTML =
+                '<i class="fa-solid fa-check mr-2"></i>Save Changes';
+        }
+
+        cancelButton?.classList.remove("hidden");
+
+        if (heading) {
+            heading.textContent = "Edit Course";
+        }
+    } else {
+        if (submitButton) {
+            submitButton.innerHTML =
+                '<i class="fa-solid fa-rocket mr-2"></i>Launch Course';
+        }
+
+        cancelButton?.classList.add("hidden");
+
+        if (heading) {
+            heading.textContent = "Launch Course";
+        }
+    }
+}
+
+function startCourseEdit(courseId) {
+    const course = findCourse(courseId);
+
+    if (!course) {
+        return;
+    }
+
+    editingCourseId = course.id;
+
+    // Prefill every field the form owns; untouched fields
+    // (thumbnail, slug, sort order) are simply not sent on
+    // update, so the backend keeps their current values.
+    setValue("launchCourseTitle", course.title);
+    setValue("launchCourseCode", course.code);
+    setValue("launchCourseCategory", course.category);
+    setValue("launchCourseDescription", course.description);
+    setValue("launchCoursePrice", course.price_inr);
+    setValue("launchCourseMrp", course.mrp_inr);
+    setValue("launchCourseValidity", course.validity_days);
+    setValue(
+        "launchCourseHighlights",
+        Array.isArray(course.highlights)
+            ? course.highlights.join("\n")
+            : ""
+    );
+
+    setLaunchFormMode(course);
+
+    facultyMessage(
+        "launchCourseMessage",
+        `Editing “${course.title || "Untitled course"}” — submit to save your changes.`,
+        "success",
+        0
+    );
+
+    // The form sits under the course list in the same panel;
+    // bring it into view so the edit context is obvious.
+    $("facultyLaunchSection")?.scrollIntoView({
+        behavior: "instant",
+        block: "start"
+    });
+}
+
+function cancelCourseEdit() {
+    editingCourseId = null;
+
+    $("launchCourseForm")?.reset();
+    setLaunchFormMode(null);
+
+    facultyMessage("launchCourseMessage", "");
+}
+
+// Publish / unpublish sends the course's current data back
+// with active flipped. Fields the form cannot represent are
+// either sent as-is (mrp) or omitted (nulls leave the stored
+// value untouched on the backend).
+async function toggleCourseActive(courseId) {
+    const course = findCourse(courseId);
+
+    if (!course) {
+        return;
+    }
+
+    const nextActive = !course.is_active;
+
+    const payload = {
+        title: course.title || "Untitled course",
+        code: course.code || null,
+        category: course.category || null,
+        description: course.description || null,
+        priceInr: Number(course.price_inr) || 0,
+        // Always applied server-side: send the current value
+        // so the existing discount survives the toggle.
+        mrpInr: course.mrp_inr,
+        validityDays: Number(course.validity_days) || 365,
+        highlights: Array.isArray(course.highlights)
+            && course.highlights.length
+            ? course.highlights
+            : null,
+        active: nextActive
+    };
+
+    try {
+        await apiPut(
+            `/api/faculty/courses/${encodeURIComponent(String(course.id))}`,
+            payload
+        );
+
+        facultyMessage(
+            "facultyCourseMessage",
+            nextActive
+                ? "Course published — it is live now."
+                : "Course unpublished — students can no longer buy it."
+        );
+
+        await loadFacultyCourses();
+        dispatchRefresh();
+    } catch (error) {
+        console.error("Faculty course update error:", error);
+
+        facultyMessage(
+            "facultyCourseMessage",
+            errorMessage(error, "Could not update the course."),
+            "error"
+        );
+    }
+}
+
+// Guarded one-shot reload behind a panel's Refresh button:
+// clears the old message, then reports the outcome in the
+// same element the loaders use.
+async function refreshCollection(load, messageElementId, label) {
+    facultyMessage(messageElementId, "");
+
+    try {
+        await load();
+
+        facultyMessage(
+            messageElementId,
+            `${label.charAt(0).toUpperCase() + label.slice(1)} refreshed.`
+        );
+    } catch (error) {
+        console.error(`Faculty ${label} refresh error:`, error);
+
+        facultyMessage(
+            messageElementId,
+            errorMessage(error, `Could not load your ${label}.`),
+            "error"
+        );
+    }
+}
+
 export function setupFacultyEvents() {
     if (eventsWired) {
         return;
@@ -1963,9 +3561,18 @@ export function setupFacultyEvents() {
 
     eventsWired = true;
 
+    // The header profile menu is wired by initHeaderProfileMenu()
+    // (app.js) for every page, not just this one.
+
     $("launchCourseForm")?.addEventListener(
         "submit",
         handleLaunchCourse
+    );
+
+    // Edit mode leaves via its own button (submit always saves).
+    $("cancelCourseEditBtn")?.addEventListener(
+        "click",
+        cancelCourseEdit
     );
 
     // ---- Upload (one form per category) ----
@@ -1992,6 +3599,12 @@ export function setupFacultyEvents() {
     $("facultyUploadTimetableForm")?.addEventListener(
         "submit",
         handleUploadTimetable
+    );
+
+    // One shared form for videos / assignments / other files.
+    $("facultyUploadResourceForm")?.addEventListener(
+        "submit",
+        handleUploadResource
     );
 
     // ---- Manage Content (category pills) ----
@@ -2042,6 +3655,91 @@ export function setupFacultyEvents() {
         }
     );
 
+    // ---- Notifications panel ----
+    $("facultyNotificationForm")?.addEventListener(
+        "submit",
+        handleSendNotification
+    );
+
+    $("refreshFacultyNotificationsBtn")?.addEventListener(
+        "click",
+        () => refreshCollection(
+            loadSentNotifications,
+            "facultyNotificationMessage",
+            "notifications"
+        )
+    );
+
+    // ---- Refresh buttons on the other panels ----
+    $("refreshFacultyStudentsBtn")?.addEventListener(
+        "click",
+        () => refreshCollection(
+            loadFacultyStudents,
+            "facultyStudentsMessage",
+            "users"
+        )
+    );
+
+    $("refreshFacultyCertificatesBtn")?.addEventListener(
+        "click",
+        () => refreshCollection(
+            loadFacultyCertificates,
+            "facultyCertificatesMessage",
+            "certificates"
+        )
+    );
+
+    $("refreshFacultyFeedbackBtn")?.addEventListener(
+        "click",
+        () => refreshCollection(
+            loadFacultyFeedback,
+            "facultyFeedbackMessage",
+            "feedback"
+        )
+    );
+
+    // ---- Profile panel ----
+    $("facultyProfileForm")?.addEventListener(
+        "submit",
+        handleProfileSave
+    );
+
+    $("facultyProfileEditBtn")?.addEventListener(
+        "click",
+        () => setProfileEditing(true)
+    );
+
+    $("facultyProfileChangePasswordBtn")?.addEventListener(
+        "click",
+        openChangePasswordModal
+    );
+
+    // ---- Change password modal ----
+    $("facultyChangePasswordForm")?.addEventListener(
+        "submit",
+        handleChangePassword
+    );
+
+    $("closeFacultyChangePasswordBtn")?.addEventListener(
+        "click",
+        closeChangePasswordModal
+    );
+
+    $("cancelFacultyChangePasswordBtn")?.addEventListener(
+        "click",
+        closeChangePasswordModal
+    );
+
+    // Click on the dimmed backdrop closes the modal.
+    $("facultyChangePasswordModal")?.addEventListener(
+        "click",
+        event => {
+            if (event.target === event.currentTarget) {
+                closeChangePasswordModal();
+            }
+        }
+    );
+
     // Sidebar hashes (#course, #launch, …) never match an
     // element id, so the native anchor jump never fires while
     // already on faculty.html - scroll to the section by hand.
@@ -2074,6 +3772,15 @@ export function setupFacultyEvents() {
             return;
         }
 
+        // The change password modal shares the stage next.
+        const changePasswordModal = $("facultyChangePasswordModal");
+
+        if (changePasswordModal
+            && !changePasswordModal.classList.contains("hidden")) {
+            closeChangePasswordModal();
+            return;
+        }
+
         const modal = $("facultyEditModal");
 
         if (modal && !modal.classList.contains("hidden")) {
@@ -2092,6 +3799,8 @@ export async function initFaculty() {
         return;
     }
 
+    // The header profile menu (render + wire) already ran via
+    // initHeaderProfileMenu() in app.js - one owner, every page.
     renderWelcome();
     setupFacultyEvents();
 
@@ -2117,32 +3826,86 @@ export async function initFaculty() {
         );
     }
 
-    // All four content collections load up front so the
-    // Manage Content pills switch instantly; each one is
-    // guarded on its own so one bad endpoint cannot hide
-    // the rest of the page.
-    const contentLoaders = [
-        { label: "notes", load: loadFacultyNotes },
-        { label: "TNP resources", load: loadFacultyTnp },
-        { label: "previous year papers", load: loadFacultyPyqs },
-        { label: "exam timetables", load: loadFacultyTimetables }
+    // Every remaining panel loads up front so its tab switches
+    // instantly; each loader is guarded on its own so one bad
+    // endpoint cannot blank the rest of the page. The message
+    // element matches the panel the loader renders.
+    const panelLoaders = [
+        {
+            label: "dashboard stats",
+            message: "facultyDashboardMessage",
+            load: loadFacultyStats
+        },
+        {
+            label: "users",
+            message: "facultyStudentsMessage",
+            load: loadFacultyStudents
+        },
+        {
+            label: "notifications",
+            message: "facultyNotificationMessage",
+            load: loadSentNotifications
+        },
+        {
+            label: "certificates",
+            message: "facultyCertificatesMessage",
+            load: loadFacultyCertificates
+        },
+        {
+            label: "feedback",
+            message: "facultyFeedbackMessage",
+            load: loadFacultyFeedback
+        },
+        {
+            label: "profile",
+            message: "facultyProfileMessage",
+            load: loadFacultyProfile
+        },
+        // The content collections back the Manage Content
+        // pills (and the course content viewer).
+        {
+            label: "notes",
+            message: "facultyManageMessage",
+            load: loadFacultyNotes
+        },
+        {
+            label: "TNP resources",
+            message: "facultyManageMessage",
+            load: loadFacultyTnp
+        },
+        {
+            label: "previous year papers",
+            message: "facultyManageMessage",
+            load: loadFacultyPyqs
+        },
+        {
+            label: "exam timetables",
+            message: "facultyManageMessage",
+            load: loadFacultyTimetables
+        },
+        {
+            label: "videos, assignments & files",
+            message: "facultyManageMessage",
+            load: loadFacultyResources
+        }
     ];
 
-    await Promise.all(contentLoaders.map(async ({ label, load }) => {
+    await Promise.all(panelLoaders.map(async ({ label, message, load }) => {
         try {
             await load();
         } catch (error) {
             console.error(`Faculty ${label} loading error:`, error);
 
             facultyMessage(
-                "facultyManageMessage",
+                message,
                 errorMessage(error, `Could not load your ${label}.`),
                 "error"
             );
         }
     }));
 
-    // Deep link from the sidebar (./faculty.html#course …):
-    // wait until the sections exist so the jump lands correctly.
+    // Deep link from the sidebar (./faculty.html#users …):
+    // wait until every panel exists so the tab switch and the
+    // jump land correctly.
     scrollToFacultyHash();
 }

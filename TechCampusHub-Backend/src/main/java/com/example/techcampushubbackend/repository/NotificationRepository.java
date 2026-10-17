@@ -18,5 +18,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     List<Notification> findAllByOrderByCreatedAtDesc();
 
+    /** Notifications a sender broadcast (faculty "sent" list). */
+    List<Notification> findByCreatedByOrderByCreatedAtDesc(String createdBy);
+
     long deleteByTargetUserId(Long userId);
 }
