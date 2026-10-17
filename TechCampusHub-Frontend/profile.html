@@ -214,6 +214,129 @@
                                     </p>
                                 </div>
                             </div>
+                            <!-- Profile message: same behaviour as the
+                                 faculty Profile panel message -->
+                            <p id="studentProfileMessage" aria-live="polite"
+                               class="hidden text-sm min-h-5 mb-3"></p>
+                            <!-- =============================================
+                 EDIT PROFILE FORM
+                 Mirrors the faculty Profile form, but stays
+                 hidden until "Edit Profile" is pressed so the
+                 cards above keep displaying the record. Only
+                 the fields the backend accepts travel on save
+                 (name / phone / course / semester); the rest
+                 are read-only, exactly like the faculty panel.
+            ============================================== -->
+                            <form id="studentProfileForm" class="hidden
+                                   grid
+                                   grid-cols-1
+                                   md:grid-cols-2
+                                   gap-4
+                                   pt-5
+                                   border-t border-slate-200"
+                                  data-profile-role="student">
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileName">
+                                        Full Name
+                                    </label>
+                                    <input id="studentProfileName" type="text" class="input"
+                                           maxlength="120" disabled>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileEmail">
+                                        Email
+                                    </label>
+                                    <input id="studentProfileEmail" type="email" class="input"
+                                           disabled>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfilePhone">
+                                        Mobile Number
+                                    </label>
+                                    <input id="studentProfilePhone" type="tel" class="input"
+                                           maxlength="20" disabled>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileGender">
+                                        Gender
+                                    </label>
+                                    <input id="studentProfileGender" type="text" class="input"
+                                           disabled>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileAddress">
+                                        Address
+                                    </label>
+                                    <input id="studentProfileAddress" type="text" class="input"
+                                           disabled>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileRegistered">
+                                        Registration Date
+                                    </label>
+                                    <input id="studentProfileRegistered" type="text" class="input"
+                                           disabled>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileCourse">
+                                        Course
+                                    </label>
+                                    <input id="studentProfileCourse" type="text" class="input"
+                                           maxlength="60" disabled>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileSemester">
+                                        Semester
+                                    </label>
+                                    <input id="studentProfileSemester" type="number" class="input"
+                                           min="1" max="12" disabled>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-700 mb-2" for="studentProfileEnrollment">
+                                        Roll / Enrollment Number
+                                    </label>
+                                    <input id="studentProfileEnrollment" type="text" class="input"
+                                           disabled>
+                                </div>
+                            </form>
+                            <!-- =============================================
+                 PROFILE ACTIONS
+                 Same look as the faculty Profile panel buttons.
+                 Save owns the form above via the form attribute,
+                 so the row stays visible while the form is
+                 hidden.
+            ============================================== -->
+                            <div class="mt-6
+                                        pt-5
+                                        border-t border-slate-200
+                                        flex
+                                        flex-wrap
+                                        gap-3"
+                                 data-profile-role="student">
+                                <button id="studentProfileEditBtn" type="button"
+                                        class="border border-slate-200 hover:bg-slate-50
+                                               text-slate-700 rounded-xl font-bold
+                                               px-6 py-3 transition">
+                                    <i class="fa-solid fa-pen mr-2"></i>Edit Profile
+                                </button>
+                                <!-- Same id as the faculty panel button: the
+                                     shared change-password modal wiring in
+                                     initChangePasswordModal() binds exactly
+                                     this id on every page. -->
+                                <button id="facultyProfileChangePasswordBtn" type="button"
+                                        class="border border-slate-200 hover:bg-slate-50
+                                               text-slate-700 rounded-xl font-bold
+                                               px-6 py-3 transition">
+                                    <i class="fa-solid fa-key mr-2"></i>Change Password
+                                </button>
+                                <button id="studentProfileSaveBtn" type="submit"
+                                        form="studentProfileForm"
+                                        class="hidden bg-blue-600 hover:bg-blue-700
+                                               text-white rounded-xl font-bold
+                                               px-6 py-3 transition">
+                                    <i class="fa-solid fa-check mr-2"></i>Save Changes
+                                </button>
+                            </div>
                         </section>
                     </div>
                 </main>

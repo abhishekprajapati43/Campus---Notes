@@ -4,7 +4,7 @@
 // =====================================================
 
 import { setupEvents } from "./events.js";
-import { initializeApp, handleCategoryChange } from "./ui.js";
+import { initializeApp, handleCategoryChange, initStudentProfileEditing } from "./ui.js";
 import { renderLayout } from "./layout.js";
 import { getSession } from "./auth.js";
 import { refreshOwnership } from "./courses.js";
@@ -76,6 +76,11 @@ document.addEventListener(
                 // Shared change-password modal (header dropdown
                 // + faculty Profile panel button).
                 initChangePasswordModal();
+
+                // Student Profile page: Edit Profile + save
+                // against the same backend validation (self-
+                // guarded: no-ops on pages without the form).
+                initStudentProfileEditing();
 
                 // Secure in-app PDF viewer: wires the shared
                 // modal + the student card triggers once

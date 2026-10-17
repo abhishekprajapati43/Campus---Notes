@@ -103,6 +103,22 @@ import {
 
 
 
+import {
+
+    apiGet,
+
+    apiPut,
+
+    getStoredUser,
+
+    setStoredUser,
+
+    normalizeUser
+
+} from "./api.js";
+
+
+
 
 
 // =====================================================
@@ -740,6 +756,320 @@ function applyProfileRoleCards(isFaculty) {
                 !visible
             );
         });
+}
+
+// =====================================================
+// Profile page: Edit Profile + save
+// (PUT /api/auth/profile)
+// =====================================================
+//
+// Same behaviour as the faculty Profile panel, but the
+// student profile page keeps its read-only cards: the form
+// opens on "Edit Profile" and closes again after a
+// successful save. Only the fields the backend accepts
+// travel on save (name / phone / course / semester); email,
+// gender, address, the registration date and the roll
+// number have no update route by design, exactly like the
+// faculty panel. Wiring is self-guarded, so every page
+// without the form no-ops.
+// =====================================================
+
+const STUDENT_PROFILE_READ_ONLY_FIELDS = [
+    "studentProfileEmail",
+    "studentProfileGender",
+    "studentProfileAddress",
+    "studentProfileRegistered",
+    "studentProfileEnrollment"
+];
+
+const STUDENT_PROFILE_EDITABLE_FIELDS = [
+    "studentProfileName",
+    "studentProfilePhone",
+    "studentProfileCourse",
+    "studentProfileSemester"
+];
+
+let studentProfileEditing = false;
+
+let studentProfileWired = false;
+
+let studentProfileMessageTimer = null;
+
+//
+// Same look/behaviour as the faculty panel message:
+// textContent only, success/error class toggle, auto-hide.
+//
+
+function studentProfileMessage(message, type = "success", hideAfter = 5000) {
+    const container = $("studentProfileMessage");
+
+    if (!container) {
+        if (message && type === "error") {
+            console.error(message);
+        }
+
+        return;
+    }
+
+    window.clearTimeout(studentProfileMessageTimer);
+    studentProfileMessageTimer = null;
+
+    if (!message) {
+        container.classList.add("hidden");
+        container.textContent = "";
+        return;
+    }
+
+    container.textContent = String(message);
+    container.className = "mb-4 rounded-xl px-4 py-3 text-sm";
+
+    if (type === "error") {
+        container.classList.add(
+            "bg-red-50",
+            "text-red-700",
+            "border",
+            "border-red-200"
+        );
+    } else {
+        container.classList.add(
+            "bg-green-50",
+            "text-green-700",
+            "border",
+            "border-green-200"
+        );
+    }
+
+    container.classList.remove("hidden");
+
+    if (hideAfter > 0) {
+        studentProfileMessageTimer = window.setTimeout(() => {
+            container.classList.add("hidden");
+        }, hideAfter);
+    }
+}
+
+function studentProfileGetValue(id) {
+    return String($(id)?.value || "").trim();
+}
+
+function studentProfileSetValue(id, value) {
+    const element = $(id);
+
+    if (!element) {
+        return;
+    }
+
+    element.value = value ?? "";
+}
+
+function applyStudentProfileEditingState() {
+    STUDENT_PROFILE_READ_ONLY_FIELDS.forEach(id => {
+        const field = $(id);
+
+        if (field) {
+            field.disabled = true;
+        }
+    });
+
+    STUDENT_PROFILE_EDITABLE_FIELDS.forEach(id => {
+        const field = $(id);
+
+        if (field) {
+            field.disabled = !studentProfileEditing;
+        }
+    });
+
+    // The form only exists while editing; the read-only
+    // cards above keep displaying the record otherwise.
+    $("studentProfileForm")?.classList.toggle(
+        "hidden",
+        !studentProfileEditing
+    );
+
+    // Save only exists while editing; Edit disables itself
+    // in edit mode (same affordance as the faculty panel).
+    $("studentProfileSaveBtn")?.classList.toggle(
+        "hidden",
+        !studentProfileEditing
+    );
+
+    const editButton = $("studentProfileEditBtn");
+
+    if (editButton) {
+        editButton.disabled = studentProfileEditing;
+        editButton.classList.toggle("opacity-50", studentProfileEditing);
+    }
+}
+
+function setStudentProfileEditing(editable) {
+    studentProfileEditing = editable;
+
+    applyStudentProfileEditingState();
+
+    if (editable) {
+        $("studentProfileName")?.focus();
+    }
+}
+
+function prefillStudentProfileForm(student) {
+    if (!student) {
+        return;
+    }
+
+    const semester = student.semester || "";
+
+    const enrollment =
+        (student.enrollment_number || student.id) ?? "";
+
+    studentProfileSetValue("studentProfileName", student.name || "");
+    studentProfileSetValue("studentProfileEmail", student.email || "");
+    studentProfileSetValue("studentProfilePhone", student.phone || "");
+    studentProfileSetValue("studentProfileGender", student.gender || "");
+    studentProfileSetValue("studentProfileAddress", student.address || "");
+    studentProfileSetValue(
+        "studentProfileRegistered",
+        formatRegistrationDate(student.created_at)
+    );
+    studentProfileSetValue("studentProfileCourse", student.course || "");
+    studentProfileSetValue("studentProfileSemester", semester);
+    studentProfileSetValue("studentProfileEnrollment", enrollment);
+}
+
+async function handleStudentProfileSave(event) {
+    event.preventDefault();
+
+    // Enter submits the form even while hidden/read-only; ignore it.
+    if (!studentProfileEditing) {
+        return;
+    }
+
+    const name = studentProfileGetValue("studentProfileName");
+
+    if (!name) {
+        studentProfileMessage(
+            "Please enter your full name.",
+            "error"
+        );
+        return;
+    }
+
+    const button = $("studentProfileSaveBtn");
+
+    if (button) {
+        button.disabled = true;
+    }
+
+    const semesterRaw =
+        studentProfileGetValue("studentProfileSemester");
+
+    // Only the editable fields travel; everything else is
+    // validated (or deliberately immutable) server-side.
+    const payload = {
+        name,
+        phone: studentProfileGetValue("studentProfilePhone") || null,
+        course: studentProfileGetValue("studentProfileCourse") || null,
+        semester: semesterRaw ? Number(semesterRaw) : null
+    };
+
+    try {
+        const response = await apiPut("/api/auth/profile", payload);
+
+        // Backend payload uses camelCase (createdAt,
+        // enrollmentNumber); normalize it to the shape the
+        // cards render from.
+        const updated = response ? normalizeUser(response) : null;
+
+        const next = updated || currentStudent;
+
+        // Keep the in-memory and stored session copies (header
+        // name, cards) in step with the server response.
+        setCurrentStudent(next);
+
+        setStoredUser({
+            ...(getStoredUser() || {}),
+            ...(next || {})
+        });
+
+        // Re-render the read-only cards above the form.
+        updateStudentProfileUI(next);
+
+        // Header dropdown name (renderHeaderProfile is not
+        // exported and ui.js must not import faculty.js -
+        // faculty.js already imports this module).
+        const headerName = $("headerProfileName");
+
+        if (headerName) {
+            headerName.textContent =
+                String(next?.name || "").trim() || "Student";
+        }
+
+        setStudentProfileEditing(false);
+
+        studentProfileMessage("Profile updated successfully.");
+    } catch (error) {
+        console.error("Student profile save error:", error);
+
+        studentProfileMessage(
+            error?.message || "Could not update your profile.",
+            "error"
+        );
+    } finally {
+        if (button) {
+            button.disabled = false;
+        }
+    }
+}
+
+export function initStudentProfileEditing() {
+    const form = $("studentProfileForm");
+
+    if (!form || studentProfileWired) {
+        return;
+    }
+
+    studentProfileWired = true;
+
+    $("studentProfileEditBtn")?.addEventListener(
+        "click",
+        async () => {
+            // Refresh from the backend first so the form never
+            // prefills from a stale session cache; fall back to
+            // the cached copy when the refresh fails (saving
+            // still revalidates server-side).
+            let source = currentStudent || getStoredUser() || null;
+
+            try {
+                const fresh = await apiGet("/api/auth/me");
+
+                if (fresh) {
+                    source = normalizeUser(fresh);
+
+                    setCurrentStudent(source);
+
+                    setStoredUser({
+                        ...(getStoredUser() || {}),
+                        ...source
+                    });
+
+                    updateStudentProfileUI(source);
+                }
+            } catch (error) {
+                console.error("Student profile refresh error:", error);
+            }
+
+            prefillStudentProfileForm(source);
+
+            setStudentProfileEditing(true);
+        }
+    );
+
+    form.addEventListener(
+        "submit",
+        handleStudentProfileSave
+    );
+
+    // Start in read-only view state (cards only).
+    setStudentProfileEditing(false);
 }
 
 // =====================================================
