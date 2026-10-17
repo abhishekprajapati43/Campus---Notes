@@ -199,6 +199,67 @@ function offerPriceFor(course) {
     return discounted > 0 ? Math.round(discounted * 100) / 100 : null;
 }
 
+// =====================================================
+// 1+1 offer announcement banner
+// =====================================================
+//
+// Awareness strip above the course grid. Tells every signed-in
+// student the offer rule up front ("buy one course, your second
+// one is 50% off"), flips to a highlighted live state while they
+// are at the second-course stage, and stays visible afterwards
+// as a plain program announcement. Hidden for faculty/admin and
+// whenever the offer snapshot is unavailable (logged out,
+// backend down). Display only - eligibility comes from the
+// backend and the server re-checks it on every purchase.
+// =====================================================
+
+function renderOfferBanner() {
+    const banner = $("courseOfferBanner");
+
+    if (!banner) {
+        return;
+    }
+
+    // Role comes from the live state binding when auth init has
+    // finished, or from the stored session otherwise (render can
+    // race the async /me call). Casing varies between the two.
+    const role = String(
+        currentUserRole || getStoredUser()?.role || ""
+    ).toLowerCase();
+
+    if (!offerCache || role === "faculty" || role === "admin") {
+        banner.classList.add("hidden");
+
+        return;
+    }
+
+    const title = $("courseOfferBannerTitle");
+    const text = $("courseOfferBannerText");
+    const pill = $("courseOfferBannerPill");
+    const eligible = offerCache.eligible === true;
+
+    if (eligible) {
+        title.textContent =
+            "Your 50% OFF second-course offer is ready to use!";
+        text.textContent =
+            "You already own one course - every other course below that " +
+            "you have not bought yet is half price, applied automatically " +
+            "at checkout.";
+        pill.classList.remove("hidden");
+    } else {
+        title.textContent =
+            "1+1 Offer - buy one course, get 50% OFF on your second";
+        text.textContent =
+            "Purchase your first course and get it approved. Your next " +
+            "different course then automatically costs half price at " +
+            "checkout - no coupon needed.";
+
+        pill.classList.add("hidden");
+    }
+
+    banner.classList.remove("hidden");
+}
+
 function localRead(key, fallback) {
     try {
         const raw = window.localStorage.getItem(key);
@@ -772,6 +833,9 @@ async function renderCourseGrid() {
 
     // 1+1 second-course offer snapshot (cached; no-ops offline).
     await loadOffer();
+
+    // Offer awareness strip above the grid (states follow offerCache).
+    renderOfferBanner();
 
     if (!courses.length) {
         grid.innerHTML = `
