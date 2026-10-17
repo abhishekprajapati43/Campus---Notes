@@ -44,6 +44,7 @@ import {
 import { uploadPdf } from "./storage.js";
 import { formatPrice } from "./courses.js";
 import { logoutUser } from "./ui.js";
+import { activateAdminPanel } from "./events.js";
 
 // =====================================================
 // Module state
@@ -3319,16 +3320,11 @@ function scrollToFacultyHash() {
         return;
     }
 
-    // Clicking the tab button reuses the shared tab engine
-    // (admin.html's setupAdminTabs); a click on the already
-    // active button is a harmless no-op.
-    const tabButton = document.querySelector(
-        `[data-admin-tab="${tab}"]`
-    );
-
-    if (tabButton && !tabButton.classList.contains("active")) {
-        tabButton.click();
-    }
+    // The horizontal tab bar is gone - the sidebar (plus the
+    // header profile menu) is the only navigation. Switch the
+    // panels through the shared engine instead of clicking a
+    // tab button that no longer exists.
+    activateAdminPanel(tab);
 
     markFacultyNavLink(tab);
 

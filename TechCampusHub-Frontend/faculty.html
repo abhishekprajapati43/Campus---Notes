@@ -144,45 +144,13 @@
                             </article>
                         </div>
                         <!-- =================================================
-                 FACULTY PANEL — tabbed workspace (reuses the
-                 admin tab engine via data-admin-* attributes)
+                 FACULTY PANEL — the horizontal tab bar is gone;
+                 the left sidebar (plus the header profile menu)
+                 is the only navigation and drives the panels
+                 below through the shared panel switcher
+                 (js/faculty.js -> activateAdminPanel)
             ================================================== -->
                         <div data-admin-scope id="facultyPanel">
-                            <section class="card
-                           p-3
-                           mb-5">
-                                <div data-admin-tabbar class="flex
-                               flex-wrap
-                               gap-2
-                               p-2
-                               bg-slate-100
-                               rounded-2xl">
-                                    <button type="button" data-admin-tab="dashboard" class="admin-tab-btn active px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
-                                        <i class="fa-solid fa-chart-line mr-2"></i>Dashboard
-                                    </button>
-                                    <button type="button" data-admin-tab="courses" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
-                                        <i class="fa-solid fa-layer-group mr-2"></i>My Courses
-                                    </button>
-                                    <button type="button" data-admin-tab="content" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
-                                        <i class="fa-solid fa-cloud-arrow-up mr-2"></i>Add Content
-                                    </button>
-                                    <button type="button" data-admin-tab="notifications" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
-                                        <i class="fa-regular fa-bell mr-2"></i>Notifications
-                                    </button>
-                                    <button type="button" data-admin-tab="certificates" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
-                                        <i class="fa-solid fa-certificate mr-2"></i>Certificates
-                                    </button>
-                                    <button type="button" data-admin-tab="feedback" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
-                                        <i class="fa-solid fa-star mr-2"></i>Feedback
-                                    </button>
-                                    <button type="button" data-admin-tab="users" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
-                                        <i class="fa-solid fa-users mr-2"></i>Users
-                                    </button>
-                                    <button type="button" data-admin-tab="profile" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white transition">
-                                        <i class="fa-regular fa-user mr-2"></i>Profile
-                                    </button>
-                                </div>
-                            </section>
                             <!-- ------------------------------------- DASHBOARD -->
                             <div data-admin-panel="dashboard">
                                 <section class="card

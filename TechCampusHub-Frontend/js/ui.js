@@ -783,7 +783,8 @@ export function updateAdminNavVisibility() {
         "adminNavBtn",
         "adminUsersNavBtn",
         "adminFacultyNavBtn",
-        "adminPaymentsNavBtn"
+        "adminPaymentsNavBtn",
+        "adminSettingsNavBtn"
     ].forEach(id => $(id)?.classList.toggle("hidden", !admin));
 }
 

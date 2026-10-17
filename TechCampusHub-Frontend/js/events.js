@@ -2181,6 +2181,34 @@ function setupAuthStateListener() {
 // =====================================================
 
 // =====================================================
+// Admin/faculty panel switcher
+// =====================================================
+// Both dashboards stack their modules as [data-admin-panel]
+// sections: admin.html keeps them inside #adminPanel,
+// faculty.html wraps them in [data-admin-scope] (#facultyPanel).
+// Show exactly one panel at a time.
+//
+// Exported for faculty.js: that page no longer carries a
+// horizontal tab bar, so its sidebar hashes drive the panels
+// through this function instead of clicking a tab button.
+// =====================================================
+
+export function activateAdminPanel(tab) {
+    const panels = document.querySelector("[data-admin-scope]")
+        ? document.querySelectorAll(
+            "[data-admin-scope] [data-admin-panel]"
+        )
+        : document.querySelectorAll("#adminPanel [data-admin-panel]");
+
+    panels.forEach(panel => {
+        panel.classList.toggle(
+            "hidden",
+            panel.dataset.adminPanel !== tab
+        );
+    });
+}
+
+// =====================================================
 // Admin panel tabs (admin.html)
 // =====================================================
 
@@ -2188,14 +2216,13 @@ function setupAdminTabs() {
     const bar = document.querySelector("[data-admin-tabbar]");
 
     if (!bar) {
+        // faculty.html: no tab bar anymore - the sidebar hashes
+        // (faculty.js) switch the panels via activateAdminPanel().
         return;
     }
 
-    // admin.html keeps every panel inside #adminPanel; faculty.html
-    // reuses this same engine inside its own card marked
-    // data-admin-scope, so both dashboards share one tab switcher.
-    const scope = bar.closest("[data-admin-scope]");
-
+    // admin.html keeps every panel inside #adminPanel; the shared
+    // switcher above resolves the scope for both dashboards.
     const activate = tab => {
         bar.querySelectorAll("[data-admin-tab]").forEach(button => {
             button.classList.toggle(
@@ -2204,16 +2231,7 @@ function setupAdminTabs() {
             );
         });
 
-        const panels = scope
-            ? scope.querySelectorAll("[data-admin-panel]")
-            : document.querySelectorAll("#adminPanel [data-admin-panel]");
-
-        panels.forEach(panel => {
-            panel.classList.toggle(
-                "hidden",
-                panel.dataset.adminPanel !== tab
-            );
-        });
+        activateAdminPanel(tab);
     };
 
     bar.addEventListener("click", event => {
@@ -2241,22 +2259,25 @@ function setupAdminTabs() {
     // DEEP LINKS (admin.html only)
     // =====================================================
     //
-    // Users / Manage Faculty / Payments no longer live in the
-    // top tab bar - the sidebar carries them and links to
-    // admin.html#users | #faculty | #payments. Honour those
-    // hashes on load and on every hash change (back/forward,
-    // clicking another sidebar quick link), activating the
-    // matching panel exactly like the old tab click did.
-    // faculty.html keeps its own hash engine (faculty.js).
+    // Users / Manage Faculty / Payments / Settings no longer
+    // live in the top tab bar - the sidebar carries them and
+    // links to admin.html#users | #faculty | #payments |
+    // #settings. Honour those hashes on load and on every hash
+    // change (back/forward, clicking another sidebar quick
+    // link), activating the matching panel exactly like the
+    // old tab click did. faculty.html keeps its own hash
+    // engine (faculty.js).
     // =====================================================
 
     const isAdminPage = document.body?.dataset.page === "admin";
 
-    const panelExists = tab => Array.from(
-        scope
-            ? scope.querySelectorAll("[data-admin-panel]")
-            : document.querySelectorAll("#adminPanel [data-admin-panel]")
-    ).some(panel => panel.dataset.adminPanel === tab);
+    // Same panel resolution the shared switcher above uses.
+    const pagePanels = () => document.querySelector("[data-admin-scope]")
+        ? document.querySelectorAll("[data-admin-scope] [data-admin-panel]")
+        : document.querySelectorAll("#adminPanel [data-admin-panel]");
+
+    const panelExists = tab => Array.from(pagePanels())
+        .some(panel => panel.dataset.adminPanel === tab);
 
     const tabFromHash = () => {
         const hash = String(window.location.hash || "")
