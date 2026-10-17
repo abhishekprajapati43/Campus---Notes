@@ -822,6 +822,26 @@ function statusBadge(courseId) {
     return "";
 }
 
+// =====================================================
+// Course validity (pre-purchase visibility)
+// =====================================================
+
+/**
+ * "30 Days" / "365 Days" / "Lifetime Access" straight from the
+ * course row - admins and faculty set validity_days per course,
+ * so nothing here is hardcoded. A missing/zero value only occurs
+ * on legacy or local-fallback courses and reads as lifetime.
+ */
+export function courseValidityLabel(course) {
+    const days = Number(course?.validity_days);
+
+    if (!Number.isFinite(days) || days <= 0) {
+        return "Lifetime Access";
+    }
+
+    return `${days} Day${days === 1 ? "" : "s"}`;
+}
+
 async function renderCourseGrid() {
     const grid = $("courseGrid");
 
@@ -962,6 +982,9 @@ async function renderCourseGrid() {
                                 ? `<span class="text-sm font-bold text-slate-400
                                             line-through mr-2">${escapeHtml(formatAmount(course.price_inr))}</span>`
                                 : ""}${escapeHtml(price)}
+                        </p>
+                        <p class="mt-1 text-xs font-bold text-slate-500">
+                            <i class="fa-regular fa-clock mr-1"></i>Validity: ${escapeHtml(courseValidityLabel(course))}
                         </p>
                     </div>
                     <button type="button"
@@ -1428,13 +1451,6 @@ async function renderAdminPurchases() {
         } else if (row.status === "approved") {
             actions = `
                 <div class="flex gap-2">
-                    <button type="button"
-                        class="validity-purchase-btn rounded-lg bg-indigo-50 hover:bg-indigo-100
-                               text-indigo-700 text-xs font-bold px-3 py-2"
-                        title="Set or modify the expiry date"
-                        data-purchase-id="${escapeHtml(String(row.id))}">
-                        <i class="fa-regular fa-calendar mr-1"></i>Validity
-                    </button>
                     <button type="button"
                         class="extend-purchase-btn rounded-lg bg-blue-50 hover:bg-blue-100
                                text-blue-700 text-xs font-bold px-3 py-2"
