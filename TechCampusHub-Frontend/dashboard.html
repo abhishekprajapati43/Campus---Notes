@@ -64,16 +64,19 @@
                         <section class="card
                        p-5
                        md:p-6
-                       mb-5
-                       flex
-                       flex-col
-                       items-center
-                       text-center
-                       gap-5">
+                       mb-5">
                             <div class="flex
+                           flex-col
+                           md:flex-row
+                           md:items-center
+                           justify-between
+                           gap-5">
+                                <!-- Left: welcome block (unchanged) -->
+                                <div class="flex
                            items-center
-                           gap-4">
-                                <div class="w-14
+                           gap-4
+                           text-center">
+                                    <div class="w-14
                                h-14
                                rounded-2xl
                                bg-blue-50
@@ -82,29 +85,87 @@
                                justify-center
                                text-blue-700
                                text-2xl">
-                                    <i class="fa-solid
+                                        <i class="fa-solid
                                    fa-graduation-cap"></i>
-                                </div>
-                                <div>
-                                    <p class="text-slate-500
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-500
                                    text-sm">
-                                        Welcome Back
-                                    </p>
-                                    <h2 id="profileNameWelcome" class="text-2xl
+                                            Welcome Back
+                                        </p>
+                                        <h2 id="profileNameWelcome" class="text-2xl
                                    md:text-3xl
                                    font-extrabold">
-                                        Student!
-                                    </h2>
-                                    <p class="text-slate-500
+                                            Student!
+                                        </h2>
+                                        <p class="text-slate-500
                                    mt-1">
-                                        Keep learning,
-                                keep growing.
-                                    </p>
-                                    <p id="dashboardAccessLine"
-                                       class="text-xs font-bold mt-2
-                                              text-slate-400">
-                                    </p>
+                                            Keep learning,
+                                    keep growing.
+                                        </p>
+                                        <p id="dashboardAccessLine"
+                                           class="text-xs font-bold mt-2
+                                                  text-slate-400">
+                                        </p>
+                                    </div>
                                 </div>
+                                <!-- Right: AI Chatbot (moved here from the quick-
+                                     access grid; same id, so the existing
+                                     chatbot.js wiring keeps working) -->
+                                <button id="openGeminiBtn" type="button"
+                                    class="resource-card
+                                   flex
+                                   items-center
+                                   gap-4
+                                   rounded-2xl
+                                   border border-slate-200
+                                   bg-white
+                                   px-4
+                                   py-3
+                                   hover:bg-slate-50
+                                   transition
+                                   text-left
+                                   w-full
+                                   md:w-auto
+                                   shrink-0">
+                                    <span class="w-12
+                                   h-12
+                                   rounded-xl
+                                   bg-gradient-to-br
+                                   from-violet-500
+                                   to-fuchsia-500
+                                   text-white
+                                   flex
+                                   items-center
+                                   justify-center
+                                   text-xl
+                                   shrink-0">
+                                        <i class="fa-solid
+                                   fa-robot"></i>
+                                    </span>
+                                    <span class="min-w-0">
+                                        <span class="block
+                                   font-extrabold">
+                                            AI Chatbot
+                                        </span>
+                                        <span class="block
+                                   text-xs
+                                   text-slate-500">
+                                            Ask Google Gemini for study help
+                                        </span>
+                                    </span>
+                                    <span class="ml-2
+                                   rounded-xl
+                                   bg-violet-600
+                                   text-white
+                                   px-4
+                                   py-2
+                                   text-sm
+                                   font-bold
+                                   whitespace-nowrap">
+                                        Start Chat
+                                    </span>
+                                </button>
                             </div>
                         </section>
                         <!-- =================================================
@@ -121,11 +182,14 @@
                                 data-category="notes"
                                 class="resource-card
                            card
-                           p-5
+                           p-4
                            text-left"
                                 type="button"
                             >
-                                <div class="w-12
+                                <div class="flex
+                           items-center
+                           gap-3">
+                                    <div class="w-12
                                h-12
                                rounded-xl
                                bg-blue-50
@@ -133,22 +197,23 @@
                                flex
                                items-center
                                justify-center
-                               text-xl">
-                                    <i class="fa-regular
+                               text-xl
+                               shrink-0">
+                                        <i class="fa-regular
                                    fa-file-lines"></i>
+                                    </div>
+                                    <h3 class="font-extrabold
+                               text-lg">
+                                        Notes
+                                    </h3>
                                 </div>
-                                <h3 class="font-extrabold
-                               text-lg
-                               mt-4">
-                                    Notes
-                                </h3>
                                 <p class="text-sm
                                text-slate-500
                                mt-1">
                                     Access your study materials
                                 </p>
                                 <div class="text-blue-600
-                               mt-4">
+                               mt-3">
                                     <i class="fa-solid
                                    fa-arrow-right"></i>
                                 </div>
@@ -159,11 +224,14 @@
                                 data-category="tnp"
                                 class="resource-card
                            card
-                           p-5
+                           p-4
                            text-left"
                                 type="button"
                             >
-                                <div class="w-12
+                                <div class="flex
+                           items-center
+                           gap-3">
+                                    <div class="w-12
                                h-12
                                rounded-xl
                                bg-emerald-50
@@ -171,22 +239,23 @@
                                flex
                                items-center
                                justify-center
-                               text-xl">
-                                    <i class="fa-solid
+                               text-xl
+                               shrink-0">
+                                        <i class="fa-solid
                                    fa-briefcase"></i>
+                                    </div>
+                                    <h3 class="font-extrabold
+                               text-lg">
+                                        TNP
+                                    </h3>
                                 </div>
-                                <h3 class="font-extrabold
-                               text-lg
-                               mt-4">
-                                    TNP
-                                </h3>
                                 <p class="text-sm
                                text-slate-500
                                mt-1">
                                     Training & placement resources
                                 </p>
                                 <div class="text-emerald-600
-                               mt-4">
+                               mt-3">
                                     <i class="fa-solid
                                    fa-arrow-right"></i>
                                 </div>
@@ -197,11 +266,14 @@
                                 data-category="pyq"
                                 class="resource-card
                            card
-                           p-5
+                           p-4
                            text-left"
                                 type="button"
                             >
-                                <div class="w-12
+                                <div class="flex
+                           items-center
+                           gap-3">
+                                    <div class="w-12
                                h-12
                                rounded-xl
                                bg-violet-50
@@ -209,22 +281,23 @@
                                flex
                                items-center
                                justify-center
-                               text-xl">
-                                    <i class="fa-solid
+                               text-xl
+                               shrink-0">
+                                        <i class="fa-solid
                                    fa-book-open"></i>
+                                    </div>
+                                    <h3 class="font-extrabold
+                               text-lg">
+                                        PYQ
+                                    </h3>
                                 </div>
-                                <h3 class="font-extrabold
-                               text-lg
-                               mt-4">
-                                    PYQ
-                                </h3>
                                 <p class="text-sm
                                text-slate-500
                                mt-1">
                                     Previous year questions
                                 </p>
                                 <div class="text-violet-600
-                               mt-4">
+                               mt-3">
                                     <i class="fa-solid
                                    fa-arrow-right"></i>
                                 </div>
@@ -235,11 +308,14 @@
                                 data-category="timetable"
                                 class="resource-card
                            card
-                           p-5
+                           p-4
                            text-left"
                                 type="button"
                             >
-                                <div class="w-12
+                                <div class="flex
+                           items-center
+                           gap-3">
+                                    <div class="w-12
                                h-12
                                rounded-xl
                                bg-amber-50
@@ -247,60 +323,23 @@
                                flex
                                items-center
                                justify-center
-                               text-xl">
-                                    <i class="fa-regular
+                               text-xl
+                               shrink-0">
+                                        <i class="fa-regular
                                    fa-calendar-days"></i>
+                                    </div>
+                                    <h3 class="font-extrabold
+                               text-lg">
+                                        Exam Timetable
+                                    </h3>
                                 </div>
-                                <h3 class="font-extrabold
-                               text-lg
-                               mt-4">
-                                    Exam Timetable
-                                </h3>
                                 <p class="text-sm
                                text-slate-500
                                mt-1">
                                     View your exam schedule
                                 </p>
                                 <div class="text-amber-600
-                               mt-4">
-                                    <i class="fa-solid
-                                   fa-arrow-right"></i>
-                                </div>
-                            </button>
-                            <!-- =================================================
-                 AI CHATBOT
-            ================================================== -->
-                            <button id="openGeminiBtn" type="button"
-                                class="resource-card
-                           card
-                           p-5
-                           text-left">
-                                <div class="w-12
-                               h-12
-                               rounded-xl
-                               bg-gradient-to-br
-                               from-violet-500
-                               to-fuchsia-500
-                               text-white
-                               flex
-                               items-center
-                               justify-center
-                               text-xl">
-                                    <i class="fa-solid
-                                   fa-robot"></i>
-                                </div>
-                                <h3 class="font-extrabold
-                               text-lg
-                               mt-4">
-                                    AI Chatbot
-                                </h3>
-                                <p class="text-sm
-                               text-slate-500
-                               mt-1">
-                                    Ask Google Gemini for study help
-                                </p>
-                                <div class="text-violet-600
-                               mt-4">
+                               mt-3">
                                     <i class="fa-solid
                                    fa-arrow-right"></i>
                                 </div>
