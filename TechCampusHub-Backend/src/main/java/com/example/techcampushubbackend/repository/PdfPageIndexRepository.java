@@ -63,4 +63,24 @@ public interface PdfPageIndexRepository extends JpaRepository<PdfPageIndex, Long
             + "where pdf_title is not null and pdf_title ilike :pattern "
             + "order by pdf_title limit 8", nativeQuery = true)
     List<String> suggestTitles(@Param("pattern") String pattern);
+
+    /**
+     * Subject suggestions restricted to free pages + the given course
+     * bundles: autocomplete must never reveal a restricted document's
+     * subject to a student who cannot open it.
+     */
+    @Query(value = "select distinct subject from pdf_page_index "
+            + "where subject is not null and subject ilike :pattern "
+            + "and (course_id is null or course_id in (:courseIds)) "
+            + "order by subject limit 8", nativeQuery = true)
+    List<String> suggestSubjectsAccessible(@Param("pattern") String pattern,
+            @Param("courseIds") Collection<Long> courseIds);
+
+    /** Document-title suggestions with the same access restriction. */
+    @Query(value = "select distinct pdf_title from pdf_page_index "
+            + "where pdf_title is not null and pdf_title ilike :pattern "
+            + "and (course_id is null or course_id in (:courseIds)) "
+            + "order by pdf_title limit 8", nativeQuery = true)
+    List<String> suggestTitlesAccessible(@Param("pattern") String pattern,
+            @Param("courseIds") Collection<Long> courseIds);
 }

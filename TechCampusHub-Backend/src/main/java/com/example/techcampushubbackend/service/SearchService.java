@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -73,6 +74,11 @@ public class SearchService {
     /**
      * Autocomplete for the search box: subjects and document titles that
      * contain the typed fragment ("oop" -> OOP, OOPS Concepts, ...).
+     *
+     * <p>Same access rule as the search itself: students only ever see
+     * suggestions drawn from free documents and course bundles they hold
+     * an approved, unexpired purchase of, so autocomplete can never leak
+     * the name or subject of a restricted PDF. Staff see everything.
      */
     @Transactional(readOnly = true)
     public List<String> suggest(String query) {
@@ -82,9 +88,21 @@ public class SearchService {
         }
 
         String pattern = "%" + escapeLike(fragment.toLowerCase(Locale.ROOT)) + "%";
-        Set<String> merged = new LinkedHashSet<>(
-                pdfPageIndexRepository.suggestSubjects(pattern));
-        merged.addAll(pdfPageIndexRepository.suggestTitles(pattern));
+        User user = currentUserService.requireUser();
+
+        Collection<String> subjects;
+        Collection<String> titles;
+        if (user.getRole() == Role.ADMIN || user.getRole() == Role.FACULTY) {
+            subjects = pdfPageIndexRepository.suggestSubjects(pattern);
+            titles = pdfPageIndexRepository.suggestTitles(pattern);
+        } else {
+            List<Long> accessible = accessibleCourseIds(user.getId());
+            subjects = pdfPageIndexRepository.suggestSubjectsAccessible(pattern, accessible);
+            titles = pdfPageIndexRepository.suggestTitlesAccessible(pattern, accessible);
+        }
+
+        Set<String> merged = new LinkedHashSet<>(subjects);
+        merged.addAll(titles);
 
         return merged.stream().limit(MAX_SUGGESTIONS).toList();
     }
