@@ -2,22 +2,25 @@
 // TechCampus_Hub
 // pdfviewer.js
 // =====================================================
-// Secure in-app PDF viewer used by the student resource
+// Secure in-app PDF reader used by the student resource
 // cards (notes, PYQs, TNP resources, timetables).
 //
 // The document NEVER arrives as a direct storage URL: its
 // bytes are fetched from the authenticated backend relay
 // (GET /api/content/{category}/{id}/pdf - JWT travels in
 // the Authorization header) and handed to PDF.js as an
-// in-memory buffer that renders each page onto a canvas.
-// Consequences:
+// in-memory buffer. Consequences:
 //   - the storage URL is unknown to the browser,
-//   - the stream URL itself is useless without the JWT: it
-//     cannot be opened in a tab or embedded in an iframe,
+//   - the stream URL itself is useless without the JWT,
 //   - there is no download / print / save control anywhere,
-//   - the right-click menu is disabled while the viewer is
-//     open, and Ctrl+S / Ctrl+P / Ctrl+Shift+S are swallowed
-//     so the browser can raise no save/print dialog.
+//   - the right-click menu and Ctrl/Cmd+S/P/Shift+S are
+//     blocked while the viewer is open.
+//
+// Reading model - a normal continuous-scroll PDF reader:
+// every page is one canvas inside a single vertical stack,
+// the document opens fit-width (no horizontal scrolling),
+// and pages are rendered when they approach the viewport
+// (and released again once they scroll far past it).
 // =====================================================
 
 import { API_BASE_URL } from "./config.js";
@@ -35,17 +38,31 @@ const STREAM_CATEGORY = {
     timetable: "timetables"
 };
 
-const MIN_SCALE = 0.5;
-const MAX_SCALE = 4;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 3;
 const ZOOM_STEP = 0.25;
+
+// Horizontal breathing room (px-4 on the scroll area) that fit
+// width leaves free so no horizontal scrollbar ever appears.
+const FIT_GUTTER = 32;
+
+// Pages this close to the viewport get rendered; pages further
+// away release their canvas again (keeps big PDFs cheap).
+const RENDER_MARGIN = 800;
+const RELEASE_MARGIN = 2400;
 
 const state = {
     ready: false,        // modal + global guards wired
     pdfjsPromise: null,  // lazy <script> load of PDF.js
     doc: null,           // loaded PDFDocumentProxy
-    page: 1,
-    scale: 1,
-    renderTask: null,
+    pages: [],           // one entry per PDF page (slot + canvas + proxy)
+    zoom: 1,             // 1 = fit width
+    currentPage: 1,
+    ioRender: null,
+    ioRelease: null,
+    scrollHandler: null,
+    resizeTimer: null,
+    resizeObserver: null,
     open: false
 };
 
@@ -81,7 +98,7 @@ function loadPdfJs() {
 }
 
 // =====================================================
-// Viewer state helpers
+// Viewer chrome
 // =====================================================
 
 function showLoading(show) {
@@ -98,32 +115,51 @@ function showError(message) {
     errorBox?.classList.remove("hidden");
 }
 
-function clearCanvas() {
-    const canvas = $("pdfViewerCanvas");
-    if (!canvas) {
-        return;
+/** Page indicator + zoom label (100% = fit width). */
+function updateLabels() {
+    const pageNum = $("pdfViewerPageNum");
+    const pageCount = $("pdfViewerPageCount");
+    const zoomLabel = $("pdfViewerZoomLabel");
+    if (pageNum) {
+        pageNum.textContent = String(state.currentPage);
     }
-    const context = canvas.getContext("2d");
-    if (context) {
-        context.clearRect(0, 0, canvas.width, canvas.height);
+    if (pageCount) {
+        pageCount.textContent = String(state.doc ? state.doc.numPages : 0);
     }
-    canvas.width = 0;
-    canvas.height = 0;
-    canvas.style.width = "";
-    canvas.style.height = "";
-    canvas.classList.add("hidden");
+    if (zoomLabel) {
+        zoomLabel.textContent = `${Math.round(state.zoom * 100)}%`;
+    }
 }
 
-/** Cancel any pending render, destroy the document, reset the chrome. */
+/** Cancel every observer, render and listener; destroy the document. */
 function resetViewer() {
-    if (state.renderTask) {
-        try {
-            state.renderTask.cancel();
-        } catch {
-            // already finished
-        }
-        state.renderTask = null;
+    if (state.ioRender) {
+        state.ioRender.disconnect();
+        state.ioRender = null;
     }
+    if (state.ioRelease) {
+        state.ioRelease.disconnect();
+        state.ioRelease = null;
+    }
+    if (state.scrollHandler) {
+        $("pdfViewerBody")?.removeEventListener("scroll", state.scrollHandler);
+        state.scrollHandler = null;
+    }
+    if (state.resizeTimer) {
+        clearTimeout(state.resizeTimer);
+        state.resizeTimer = null;
+    }
+    if (state.resizeObserver) {
+        state.resizeObserver.disconnect();
+        state.resizeObserver = null;
+    }
+
+    for (const entry of state.pages) {
+        cancelRender(entry);
+    }
+    state.pages = [];
+    $("pdfViewerPages")?.replaceChildren();
+
     if (state.doc) {
         try {
             state.doc.destroy();
@@ -133,105 +169,273 @@ function resetViewer() {
         state.doc = null;
     }
 
-    state.page = 1;
-    state.scale = 1;
-    clearCanvas();
+    state.zoom = 1;
+    state.currentPage = 1;
+    updateLabels();
     $("pdfViewerError")?.classList.add("hidden");
-    if ($("pdfViewerPageNum")) {
-        $("pdfViewerPageNum").textContent = "0";
-    }
-    if ($("pdfViewerPageCount")) {
-        $("pdfViewerPageCount").textContent = "0";
-    }
-    if ($("pdfViewerZoomLabel")) {
-        $("pdfViewerZoomLabel").textContent = "100%";
-    }
     showLoading(false);
 }
 
 // =====================================================
-// Rendering
+// Page slots, rendering, releasing
 // =====================================================
 
-async function renderPage(page) {
-    const canvas = $("pdfViewerCanvas");
-    const context = canvas?.getContext("2d");
-    if (!canvas || !context) {
-        return;
-    }
-
-    if (state.renderTask) {
+function cancelRender(entry) {
+    if (entry.task) {
         try {
-            state.renderTask.cancel();
+            entry.task.cancel();
         } catch {
             // already finished
         }
-        state.renderTask = null;
+        entry.task = null;
     }
+}
 
+/** Draw (or redraw) one page canvas at the slot's current width. */
+async function renderSlot(entry) {
+    cancelRender(entry);
+
+    const scale = entry.width / entry.rawViewport.width;
+    const viewport = entry.page.getViewport({ scale });
     const dpr = window.devicePixelRatio || 1;
-    const viewport = page.getViewport({ scale: state.scale });
 
-    canvas.width = Math.floor(viewport.width * dpr);
-    canvas.height = Math.floor(viewport.height * dpr);
-    canvas.style.width = `${Math.floor(viewport.width)}px`;
-    canvas.style.height = `${Math.floor(viewport.height)}px`;
-    canvas.classList.remove("hidden");
+    // The canvas is CSS-sized by its slot (absolute inset-0); only the
+    // backing store follows the device pixel ratio here.
+    entry.canvas.width = Math.floor(viewport.width * dpr);
+    entry.canvas.height = Math.floor(viewport.height * dpr);
 
-    state.renderTask = page.render({
-        canvasContext: context,
+    entry.task = entry.page.render({
+        canvasContext: entry.canvas.getContext("2d"),
         viewport,
         transform: dpr === 1 ? null : [dpr, 0, 0, dpr, 0, 0]
     });
 
     try {
-        await state.renderTask.promise;
+        await entry.task.promise;
     } catch {
-        // Render was cancelled by a newer render or a closed viewer.
+        // Cancelled by a release, a re-layout or a closed viewer.
         return;
     }
-    state.renderTask = null;
+    entry.task = null;
+    entry.rendered = true;
+    entry.canvas.classList.remove("hidden");
+}
 
-    const pageNum = $("pdfViewerPageNum");
-    const zoomLabel = $("pdfViewerZoomLabel");
-    if (pageNum) {
-        pageNum.textContent = String(state.page);
+/** Free the pixels of a page that scrolled far away. */
+function releaseSlot(entry) {
+    cancelRender(entry);
+    if (!entry.rendered) {
+        return;
     }
-    if (zoomLabel) {
-        zoomLabel.textContent = `${Math.round(state.scale * 100)}%`;
+    entry.rendered = false;
+    entry.canvas.classList.add("hidden");
+    entry.canvas.width = 0;
+    entry.canvas.height = 0;
+}
+
+/** Create one sized slot (aspect-ratio placeholder) per PDF page. */
+async function buildPageStack() {
+    const pagesRoot = $("pdfViewerPages");
+    if (!pagesRoot) {
+        return;
+    }
+    pagesRoot.replaceChildren();
+    state.pages = [];
+
+    for (let index = 1; index <= state.doc.numPages; index += 1) {
+        const page = await state.doc.getPage(index);
+        const rawViewport = page.getViewport({ scale: 1 });
+
+        const slot = document.createElement("div");
+        slot.className = "relative bg-white shadow-md";
+        slot.style.aspectRatio =
+            `${rawViewport.width} / ${rawViewport.height}`;
+
+        const canvas = document.createElement("canvas");
+        canvas.className = "absolute inset-0 hidden w-full h-full";
+        slot.appendChild(canvas);
+        pagesRoot.appendChild(slot);
+
+        state.pages.push({
+            index,
+            page,
+            rawViewport,
+            slot,
+            canvas,
+            width: 0,
+            rendered: false,
+            task: null
+        });
     }
 }
 
-async function goToPage(number) {
-    if (!state.doc) {
-        return;
-    }
-    const target = Math.min(Math.max(1, number), state.doc.numPages);
-    if (target === state.page) {
-        return;
-    }
-    state.page = target;
-    showLoading(true);
-    try {
-        await renderPage(await state.doc.getPage(target));
-    } finally {
-        showLoading(false);
-    }
+function entryFor(slot) {
+    return state.pages.find(entry => entry.slot === slot) || null;
 }
 
-async function applyZoom(delta) {
-    if (!state.doc) {
+function setupObservers() {
+    const body = $("pdfViewerBody");
+    if (!body) {
         return;
     }
-    state.scale = Math.min(
-        MAX_SCALE,
-        Math.max(MIN_SCALE, state.scale + delta)
+
+    state.ioRender = new IntersectionObserver(entries => {
+        for (const observed of entries) {
+            if (!observed.isIntersecting) {
+                continue;
+            }
+            const entry = entryFor(observed.target);
+            if (entry && !entry.rendered && !entry.task) {
+                renderSlot(entry);
+            }
+        }
+    }, { root: body, rootMargin: `${RENDER_MARGIN}px 0px` });
+
+    state.ioRelease = new IntersectionObserver(entries => {
+        for (const observed of entries) {
+            if (observed.isIntersecting) {
+                continue;
+            }
+            const entry = entryFor(observed.target);
+            if (entry) {
+                releaseSlot(entry);
+            }
+        }
+    }, { root: body, rootMargin: `${RELEASE_MARGIN}px 0px` });
+
+    for (const entry of state.pages) {
+        state.ioRender.observe(entry.slot);
+        state.ioRelease.observe(entry.slot);
+    }
+
+    // Re-fit whenever the reading area itself changes size (scrollbar
+    // appearing/disappearing, sidebar toggles, window resizes).
+    state.resizeObserver = new ResizeObserver(() => {
+        if (state.open && state.pages.length) {
+            relayout();
+        }
+    });
+    state.resizeObserver.observe(body);
+}
+
+// =====================================================
+// Fit-width layout + zoom (100% = fit width)
+// =====================================================
+
+/** The page currently at the top of the reading area + scroll fraction. */
+function captureAnchor() {
+    const body = $("pdfViewerBody");
+    if (!body || !state.pages.length) {
+        return null;
+    }
+    const marker = body.scrollTop + 80;
+    let anchor = state.pages[0];
+    for (const entry of state.pages) {
+        if (entry.slot.offsetTop <= marker) {
+            anchor = entry;
+        } else {
+            break;
+        }
+    }
+    return {
+        entry: anchor,
+        fraction:
+            (body.scrollTop - anchor.slot.offsetTop)
+            / Math.max(1, anchor.slot.offsetHeight)
+    };
+}
+
+function restoreAnchor(anchor) {
+    if (!anchor) {
+        return;
+    }
+    const body = $("pdfViewerBody");
+    if (!body) {
+        return;
+    }
+    const top = anchor.entry.slot.offsetTop
+        + anchor.fraction * anchor.entry.slot.offsetHeight;
+    body.scrollTop = Math.max(0, top - 80);
+}
+
+/** Fit-width layout: every slot spans the reading area, zoom multiplies. */
+function relayout() {
+    const body = $("pdfViewerBody");
+    if (!body || !state.pages.length) {
+        return;
+    }
+
+    const anchor = captureAnchor();
+    const width = Math.round(
+        Math.max(240, body.clientWidth - FIT_GUTTER) * state.zoom
     );
-    try {
-        await renderPage(await state.doc.getPage(state.page));
-    } catch {
-        // document was closed mid-zoom
+
+    for (const entry of state.pages) {
+        entry.width = width;
+        // CSS width drives the slot; aspect-ratio derives its height.
+        entry.slot.style.width = `${width}px`;
+        if (entry.rendered) {
+            renderSlot(entry); // redraw visible pages at the new size
+        }
     }
+
+    restoreAnchor(anchor);
+    updateLabels();
+    updateCurrentPage();
+}
+
+function applyZoom(delta) {
+    if (!state.doc) {
+        return;
+    }
+    state.zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, state.zoom + delta));
+    relayout();
+}
+
+// =====================================================
+// Page indicator (follows the scroll position)
+// =====================================================
+
+function updateCurrentPage() {
+    const body = $("pdfViewerBody");
+    if (!body || !state.pages.length) {
+        return;
+    }
+    const marker = body.scrollTop + 80;
+    let current = state.pages[0];
+    for (const entry of state.pages) {
+        if (entry.slot.offsetTop <= marker) {
+            current = entry;
+        } else {
+            break;
+        }
+    }
+    if (current.index !== state.currentPage) {
+        state.currentPage = current.index;
+        const pageNum = $("pdfViewerPageNum");
+        if (pageNum) {
+            pageNum.textContent = String(state.currentPage);
+        }
+    }
+}
+
+function setupScrollIndicator() {
+    const body = $("pdfViewerBody");
+    if (!body) {
+        return;
+    }
+    let ticking = false;
+    state.scrollHandler = () => {
+        if (ticking) {
+            return;
+        }
+        ticking = true;
+        requestAnimationFrame(() => {
+            ticking = false;
+            updateCurrentPage();
+        });
+    };
+    body.addEventListener("scroll", state.scrollHandler, { passive: true });
 }
 
 // =====================================================
@@ -289,21 +493,13 @@ export async function openPdfViewer({ category, id, title } = {}) {
         const data = await response.arrayBuffer();
         state.doc = await pdfjsLib.getDocument({ data }).promise;
 
-        state.page = 1;
-        const firstPage = await state.doc.getPage(1);
-        const rawViewport = firstPage.getViewport({ scale: 1 });
-        const body = $("pdfViewerBody");
-        const available = Math.max(
-            240,
-            (body?.clientWidth || 640) - 48
-        );
-        state.scale = Math.min(1.5, Math.max(0.5, available / rawViewport.width));
-
-        if ($("pdfViewerPageCount")) {
-            $("pdfViewerPageCount").textContent = String(state.doc.numPages);
-        }
-
-        await renderPage(firstPage);
+        state.currentPage = 1;
+        await buildPageStack();
+        setupObservers();
+        setupScrollIndicator();
+        relayout(); // fit width; the observers paint what is visible
+        updateLabels();
+        updateCurrentPage();
         showLoading(false);
     } catch (error) {
         showError(
@@ -342,24 +538,31 @@ export function setupPdfViewer() {
     state.ready = true;
 
     $("pdfViewerCloseBtn")?.addEventListener("click", closePdfViewer);
-    $("pdfViewerPrevBtn")?.addEventListener("click", () =>
-        goToPage(state.page - 1)
-    );
-    $("pdfViewerNextBtn")?.addEventListener("click", () =>
-        goToPage(state.page + 1)
-    );
     $("pdfViewerZoomOutBtn")?.addEventListener("click", () =>
         applyZoom(-ZOOM_STEP)
     );
     $("pdfViewerZoomInBtn")?.addEventListener("click", () =>
         applyZoom(ZOOM_STEP)
     );
-
-    // Clicks on the dimmed backdrop close the viewer.
-    modal.addEventListener("click", event => {
-        if (event.target === modal) {
-            closePdfViewer();
+    // The zoom label doubles as "back to fit width".
+    $("pdfViewerZoomLabel")?.addEventListener("click", () => {
+        if (state.doc) {
+            state.zoom = 1;
+            relayout();
         }
+    });
+
+    // Fullscreen modal: keep fit-width correct across window resizes.
+    window.addEventListener("resize", () => {
+        if (!state.open) {
+            return;
+        }
+        clearTimeout(state.resizeTimer);
+        state.resizeTimer = setTimeout(() => {
+            if (state.open) {
+                relayout();
+            }
+        }, 150);
     });
 
     // Card triggers anywhere on the page:

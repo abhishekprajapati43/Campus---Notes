@@ -434,9 +434,13 @@
 
             <!-- =========================================================
      SECURE PDF VIEWER MODAL (shared)
-     Renders documents sent by the authenticated backend relay
-     (GET /api/content/{category}/{id}/pdf) onto a canvas with
-     PDF.js, so:
+     Fullscreen continuous-scroll reader for documents sent by
+     the authenticated backend relay
+     (GET /api/content/{category}/{id}/pdf), rendered page by
+     page onto canvases with PDF.js:
+       - all pages stack vertically and scroll continuously,
+         like a normal PDF reader (no page-by-page navigation),
+       - it opens fit-width automatically (no horizontal scroll),
        - the storage URL never reaches the browser,
        - the stream URL itself needs the JWT (no direct links),
        - there is no download / print / save control anywhere,
@@ -444,16 +448,14 @@
          are disabled while the viewer is open.
      Opened from the student resource cards (js/pdfviewer.js).
 ========================================================= -->
-            <div id="pdfViewerModal" class="hidden fixed inset-0 z-[130] bg-slate-950/75 items-center justify-center p-4">
-                <div class="bg-white rounded-2xl
-                       w-full max-w-4xl
-                       h-[85vh]
-                       shadow-2xl overflow-hidden
+            <div id="pdfViewerModal" class="hidden fixed inset-0 z-[130] bg-slate-900">
+                <div class="w-full h-full
+                       overflow-hidden
                        flex flex-col">
                     <!-- Header: document title + close -->
                     <div class="flex items-center justify-between
-                                gap-4 px-5 py-4
-                                border-b border-slate-200">
+                                shrink-0 gap-4 px-5 py-3
+                                bg-white border-b border-slate-200">
                         <div class="flex items-center gap-3 min-w-0">
                             <span class="w-10 h-10 shrink-0
                                   rounded-xl bg-red-50 text-red-600
@@ -478,30 +480,15 @@
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
-                    <!-- Toolbar: page navigation + zoom -->
+                    <!-- Toolbar: page position + zoom (100% = fit width) -->
                     <div class="flex items-center justify-between flex-wrap
-                                gap-3 px-5 py-3
-                                bg-slate-50 border-b border-slate-200">
-                        <div class="flex items-center gap-2">
-                            <button id="pdfViewerPrevBtn" type="button" aria-label="Previous page"
-                                    class="w-9 h-9 rounded-lg
-                                       bg-white border border-slate-200
-                                       hover:bg-slate-100
-                                       flex items-center justify-center">
-                                <i class="fa-solid fa-chevron-left"></i>
-                            </button>
-                            <span class="text-sm text-slate-600 font-medium px-1">
-                                Page <span id="pdfViewerPageNum">0</span>
-                                of <span id="pdfViewerPageCount">0</span>
-                            </span>
-                            <button id="pdfViewerNextBtn" type="button" aria-label="Next page"
-                                    class="w-9 h-9 rounded-lg
-                                       bg-white border border-slate-200
-                                       hover:bg-slate-100
-                                       flex items-center justify-center">
-                                <i class="fa-solid fa-chevron-right"></i>
-                            </button>
-                        </div>
+                                gap-3 px-5 py-2
+                                bg-white border-b border-slate-200
+                                shrink-0">
+                        <span class="text-sm text-slate-600 font-medium">
+                            Page <span id="pdfViewerPageNum">0</span>
+                            of <span id="pdfViewerPageCount">0</span>
+                        </span>
                         <div class="flex items-center gap-2">
                             <button id="pdfViewerZoomOutBtn" type="button" aria-label="Zoom out"
                                     class="w-9 h-9 rounded-lg
@@ -510,10 +497,14 @@
                                        flex items-center justify-center">
                                 <i class="fa-solid fa-minus"></i>
                             </button>
-                            <span id="pdfViewerZoomLabel" class="text-sm
-                                  text-slate-600 font-medium w-14 text-center">
+                            <button id="pdfViewerZoomLabel" type="button"
+                                    title="Fit width"
+                                    class="w-16 h-9 rounded-lg
+                                       bg-white border border-slate-200
+                                       hover:bg-slate-100
+                                       text-sm text-slate-600 font-medium">
                                 100%
-                            </span>
+                            </button>
                             <button id="pdfViewerZoomInBtn" type="button" aria-label="Zoom in"
                                     class="w-9 h-9 rounded-lg
                                        bg-white border border-slate-200
@@ -523,12 +514,12 @@
                             </button>
                         </div>
                     </div>
-                    <!-- Page canvas + loading/error states -->
+                    <!-- Continuous page stack + loading/error states -->
                     <div id="pdfViewerBody" class="relative flex-1 min-h-0
                                 overflow-auto bg-slate-200
-                                flex justify-center p-4 select-none">
-                        <canvas id="pdfViewerCanvas" class="hidden bg-white
-                               shadow-lg select-none"></canvas>
+                                px-4 py-4 select-none">
+                        <div id="pdfViewerPages" class="flex flex-col
+                             items-center gap-4"></div>
                         <div id="pdfViewerLoading" class="hidden absolute inset-0
                              bg-slate-100/80
                              flex items-center justify-center">
