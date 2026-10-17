@@ -1142,10 +1142,12 @@ export function updateAdminNavVisibility() {
 //   quick-link group (Course / Launch Course / Content
 //   Upload / Manage Content); the generic student entries
 //   and the plain Faculty entry are gone.
-// - Administrators keep Dashboard, Courses, Payment
-//   History, Admin Panel and Logout but lose the
-//   Notifications / Favorites / Certificates / Feedback
-//   entries.
+// - Administrators keep Dashboard, Courses, Admin Panel
+//   and Logout but lose the Notifications / Favorites /
+//   Certificates / Feedback entries and the student
+//   Payment History link (payment approval and records
+//   live in the admin panel's Payments module; the
+//   payment-history.html page itself still works).
 //
 // The Profile accordion was removed from the sidebar for
 // every role; profile access lives in the header profile
@@ -1164,7 +1166,11 @@ const ADMIN_HIDDEN_NAV_LINKS = [
     "notificationsBtn",
     "favoritesBtn",
     "certificatesBtn",
-    "feedbackBtn"
+    "feedbackBtn",
+    // Payment History is a student-facing store page;
+    // admins approve and review payments inside
+    // admin.html#payments instead.
+    "paymentHistoryBtn"
 ];
 
 //
@@ -1176,7 +1182,6 @@ const ADMIN_HIDDEN_NAV_LINKS = [
 const FACULTY_HIDDEN_NAV_LINKS = [
     "dashboardHomeBtn",
     "coursesBtn",
-    "paymentHistoryBtn",
     ...ADMIN_HIDDEN_NAV_LINKS
 ];
 
