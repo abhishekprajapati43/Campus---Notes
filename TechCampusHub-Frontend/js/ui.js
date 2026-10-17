@@ -772,16 +772,19 @@ export function updateAdminProfileUI(
 
 
 export function updateAdminNavVisibility() {
-    const navLink = $("adminNavBtn");
+    const admin = isAdminRole();
 
-    if (!navLink) {
-        return;
-    }
-
-    navLink.classList.toggle(
-        "hidden",
-        !isAdminRole()
-    );
+    //
+    // Admin Panel plus its three quick links (Users /
+    // Manage Faculty / Payments) - all admin-only, mirroring
+    // the panel they open on admin.html.
+    //
+    [
+        "adminNavBtn",
+        "adminUsersNavBtn",
+        "adminFacultyNavBtn",
+        "adminPaymentsNavBtn"
+    ].forEach(id => $(id)?.classList.toggle("hidden", !admin));
 }
 
 

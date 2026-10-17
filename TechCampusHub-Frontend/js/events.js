@@ -2224,14 +2224,72 @@ function setupAdminTabs() {
         }
 
         activate(button.dataset.adminTab);
+
+        // Leaving a deep-linked panel (admin.html#users|#faculty|
+        // #payments): drop the sidebar hash so a reload lands on
+        // the tab just clicked instead of the linked module.
+        if (isAdminPage && window.location.hash) {
+            history.replaceState(
+                null,
+                "",
+                window.location.pathname
+            );
+        }
     });
 
-    // Open the tab marked active in the HTML (Content).
+    // =====================================================
+    // DEEP LINKS (admin.html only)
+    // =====================================================
+    //
+    // Users / Manage Faculty / Payments no longer live in the
+    // top tab bar - the sidebar carries them and links to
+    // admin.html#users | #faculty | #payments. Honour those
+    // hashes on load and on every hash change (back/forward,
+    // clicking another sidebar quick link), activating the
+    // matching panel exactly like the old tab click did.
+    // faculty.html keeps its own hash engine (faculty.js).
+    // =====================================================
+
+    const isAdminPage = document.body?.dataset.page === "admin";
+
+    const panelExists = tab => Array.from(
+        scope
+            ? scope.querySelectorAll("[data-admin-panel]")
+            : document.querySelectorAll("#adminPanel [data-admin-panel]")
+    ).some(panel => panel.dataset.adminPanel === tab);
+
+    const tabFromHash = () => {
+        const hash = String(window.location.hash || "")
+            .replace(/^#/, "");
+
+        return hash && panelExists(hash) ? hash : null;
+    };
+
+    // Open the tab marked active in the HTML (Content) unless a
+    // sidebar deep link names another panel.
     const initial =
         bar.querySelector("[data-admin-tab].active") ||
         bar.querySelector("[data-admin-tab]");
 
-    activate(initial ? initial.dataset.adminTab : "content");
+    let initialTab = initial ? initial.dataset.adminTab : "content";
+
+    if (isAdminPage && tabFromHash()) {
+        initialTab = tabFromHash();
+    }
+
+    activate(initialTab);
+
+    if (isAdminPage) {
+        window.addEventListener("hashchange", () => {
+            // The listener outlives admin.html only in theory,
+            // but guard anyway once the panel is gone.
+            if (!document.getElementById("adminPanel")) {
+                return;
+            }
+
+            activate(tabFromHash() || "content");
+        });
+    }
 }
 
 export function setupEvents() {

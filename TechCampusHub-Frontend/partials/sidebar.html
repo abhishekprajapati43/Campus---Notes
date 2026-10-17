@@ -189,6 +189,26 @@
                                 Admin Panel
                             </span>
                         </a>
+                        <!-- Admin Panel quick links (admins only): open the
+                             matching admin.html module via its hash -->
+                        <a id="adminUsersNavBtn" href="./admin.html#users" class="nav-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <i class="fa-solid fa-users w-5"></i>
+                            <span class="nav-label font-semibold">
+                                Users
+                            </span>
+                        </a>
+                        <a id="adminFacultyNavBtn" href="./admin.html#faculty" class="nav-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <i class="fa-solid fa-user-check w-5"></i>
+                            <span id="facultyTabLabel" class="nav-label font-semibold">
+                                Manage Faculty
+                            </span>
+                        </a>
+                        <a id="adminPaymentsNavBtn" href="./admin.html#payments" class="nav-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <i class="fa-solid fa-indian-rupee-sign w-5"></i>
+                            <span class="nav-label font-semibold">
+                                Payments
+                            </span>
+                        </a>
                         <!-- Faculty Workspace (faculty/admin only) -->
                         <a id="facultyNavBtn" href="./faculty.html" class="nav-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl">
                             <i class="fa-solid fa-chalkboard-user w-5"></i>
