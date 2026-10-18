@@ -10,7 +10,7 @@
 // Storage: backend /api/feedback (+ /api/admin/feedback).
 // =====================================================
 
-import { $, escapeHtml, formatDate } from "./helpers.js";
+import { $, escapeHtml, formatDate, getIdentity, updateNoticeBox } from "./helpers.js";
 import { currentStudent } from "./state.js";
 import { loadCourses } from "./courses.js";
 import { loadNotes, notes } from "./data.js";
@@ -19,7 +19,6 @@ import {
     apiGet,
     apiPost,
     apiDelete,
-    getStoredUser,
     normalizeFeedback
 } from "./api.js";
 
@@ -40,16 +39,6 @@ let selectedRating = 0;
 // =====================================================
 // Helpers
 // =====================================================
-
-async function getIdentity() {
-    const user = getStoredUser() || null;
-
-    return {
-        id: user?.id || null,
-        email: user?.email || currentStudent?.email || "",
-        name: user?.name || currentStudent?.name || ""
-    };
-}
 
 export function starHtml(rating) {
     const value = Math.max(1, Math.min(5, Number(rating) || 0));
@@ -356,24 +345,9 @@ async function handleFeedbackSubmit(event) {
 // =====================================================
 
 function adminMessage(text, type = "info") {
-    const box = $("feedbackAdminMessage");
-
-    if (!box) {
-        return;
-    }
-
-    box.textContent = text || "";
-    box.className = "text-sm min-h-5 mb-3 px-4 py-3 rounded-xl";
-
-    if (!text) {
-        return;
-    }
-
-    if (type === "error") {
-        box.classList.add("bg-red-50", "text-red-700");
-    } else {
-        box.classList.add("bg-emerald-50", "text-emerald-700");
-    }
+    updateNoticeBox("feedbackAdminMessage", text, type, {
+        infoClasses: ["bg-emerald-50", "text-emerald-700"]
+    });
 }
 
 async function renderAdminFeedbackList() {

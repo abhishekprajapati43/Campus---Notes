@@ -12,7 +12,7 @@
 // (premium = approved, unexpired purchase) per caller.
 // =====================================================
 
-import { $, escapeHtml, formatDate } from "./helpers.js";
+import { $, escapeHtml, formatDate, updateNoticeBox } from "./helpers.js";
 import { currentUserRole } from "./state.js";
 import { refreshOwnership, hasActivePremium } from "./courses.js";
 
@@ -308,24 +308,9 @@ export async function renderNotificationsPage() {
 // =====================================================
 
 function adminMessage(text, type = "info") {
-    const box = $("notificationAdminMessage");
-
-    if (!box) {
-        return;
-    }
-
-    box.textContent = text || "";
-    box.className = "text-sm min-h-5 mb-3 px-4 py-3 rounded-xl";
-
-    if (!text) {
-        return;
-    }
-
-    if (type === "error") {
-        box.classList.add("bg-red-50", "text-red-700");
-    } else {
-        box.classList.add("bg-emerald-50", "text-emerald-700");
-    }
+    updateNoticeBox("notificationAdminMessage", text, type, {
+        infoClasses: ["bg-emerald-50", "text-emerald-700"]
+    });
 }
 
 async function renderAdminNotificationList() {

@@ -11,7 +11,7 @@
 // storefront still renders.
 // =====================================================
 
-import { $, escapeHtml, formatDate } from "./helpers.js";
+import { $, escapeHtml, formatDate, getIdentity, updateNoticeBox } from "./helpers.js";
 import { currentUserRole, currentStudent } from "./state.js";
 
 import {
@@ -103,6 +103,15 @@ let purchasesCache = [];          // current user's purchases
 let ownershipLoaded = false;
 let offerCache = null;            // 1+1 second-course offer snapshot
 let offerLoaded = false;
+
+// refreshOwnership() is fanned out by several independent boot-time
+// renders (dashboard access line, purchase table, notification
+// filtering) that all need the same snapshot - coalesce concurrent
+// callers into ONE request and skip redundant refetches while the
+// snapshot is fresh. Purchase mutations pass { force: true }.
+let ownershipInFlight = null;
+let ownershipLastLoadedAt = 0;
+const OWNERSHIP_FRESH_MS = 10000;
 
 // =====================================================
 // Helpers
@@ -278,16 +287,6 @@ function localWrite(key, value) {
         console.error("Local storage write failed:", error);
         return false;
     }
-}
-
-async function getIdentity() {
-    const user = getStoredUser() || null;
-
-    return {
-        id: user?.id || null,
-        email: user?.email || currentStudent?.email || "",
-        name: user?.name || currentStudent?.name || ""
-    };
 }
 
 // =====================================================
@@ -510,7 +509,7 @@ export async function deleteCourse(courseId) {
 // Purchases — current user
 // =====================================================
 
-export async function refreshOwnership() {
+async function fetchOwnership() {
     ownershipLoaded = true;
     purchasesCache = [];
     // Purchases drive the 1+1 offer eligibility; re-fetch it on
@@ -520,6 +519,7 @@ export async function refreshOwnership() {
     const identity = await getIdentity();
 
     if (!identity.id) {
+        ownershipLastLoadedAt = Date.now();
         return purchasesCache;
     }
 
@@ -537,7 +537,30 @@ export async function refreshOwnership() {
         );
     }
 
+    ownershipLastLoadedAt = Date.now();
     return purchasesCache;
+}
+
+export async function refreshOwnership({ force = false } = {}) {
+    // Concurrent callers share ONE in-flight request; a snapshot
+    // younger than OWNERSHIP_FRESH_MS is served without refetching.
+    if (ownershipInFlight) {
+        return ownershipInFlight;
+    }
+
+    if (
+        !force
+        && ownershipLastLoadedAt
+        && Date.now() - ownershipLastLoadedAt < OWNERSHIP_FRESH_MS
+    ) {
+        return purchasesCache;
+    }
+
+    ownershipInFlight = fetchOwnership().finally(() => {
+        ownershipInFlight = null;
+    });
+
+    return ownershipInFlight;
 }
 
 export function getPurchaseFor(courseId) {
@@ -632,7 +655,8 @@ export async function submitPurchase({ course, utr }) {
 
     const row = normalizePurchase(data);
 
-    await refreshOwnership();
+    // A new purchase changes ownership - bypass the freshness window.
+    await refreshOwnership({ force: true });
 
     return row;
 }
@@ -1196,26 +1220,9 @@ export async function renderPaymentHistory() {
 }
 
 function coursesMessage(text, type = "info") {
-    const box = $("coursesPageMessage");
-
-    if (!box) {
-        return;
-    }
-
-    box.textContent = text || "";
-    box.className = "text-sm min-h-5 mb-4 px-4 py-3 rounded-xl";
-
-    if (!text) {
-        return;
-    }
-
-    if (type === "error") {
-        box.classList.add("bg-red-50", "text-red-700");
-    } else if (type === "success") {
-        box.classList.add("bg-emerald-50", "text-emerald-700");
-    } else {
-        box.classList.add("bg-slate-100", "text-slate-600");
-    }
+    updateNoticeBox("coursesPageMessage", text, type, {
+        baseClasses: "text-sm min-h-5 mb-4 px-4 py-3 rounded-xl"
+    });
 }
 
 // =====================================================
@@ -1378,24 +1385,9 @@ function setupBuyModalEvents() {
 // =====================================================
 
 function purchasesAdminMessage(text, type = "info") {
-    const box = $("purchaseAdminMessage");
-
-    if (!box) {
-        return;
-    }
-
-    box.textContent = text || "";
-    box.className = "text-sm min-h-5 mb-3 px-4 py-3 rounded-xl";
-
-    if (!text) {
-        return;
-    }
-
-    if (type === "error") {
-        box.classList.add("bg-red-50", "text-red-700");
-    } else {
-        box.classList.add("bg-emerald-50", "text-emerald-700");
-    }
+    updateNoticeBox("purchaseAdminMessage", text, type, {
+        infoClasses: ["bg-emerald-50", "text-emerald-700"]
+    });
 }
 
 async function renderAdminPurchases() {
@@ -2118,24 +2110,9 @@ async function handleUpiSave() {
 // =====================================================
 
 function courseAdminMessage(text, type = "info") {
-    const box = $("courseAdminMessage");
-
-    if (!box) {
-        return;
-    }
-
-    box.textContent = text || "";
-    box.className = "text-sm min-h-5 mb-3 px-4 py-3 rounded-xl";
-
-    if (!text) {
-        return;
-    }
-
-    if (type === "error") {
-        box.classList.add("bg-red-50", "text-red-700");
-    } else {
-        box.classList.add("bg-emerald-50", "text-emerald-700");
-    }
+    updateNoticeBox("courseAdminMessage", text, type, {
+        infoClasses: ["bg-emerald-50", "text-emerald-700"]
+    });
 }
 
 async function renderAdminCourseList() {
@@ -2354,11 +2331,18 @@ async function handleCourseListClick(event) {
 }
 
 export function setupCourseAdmin() {
+    // Idempotent: never attach the form handlers twice.
+    if (setupCourseAdmin.wired) {
+        return;
+    }
+
     const form = $("courseAdminForm");
 
     if (!form) {
         return;
     }
+
+    setupCourseAdmin.wired = true;
 
     form.addEventListener("submit", handleCourseFormSubmit);
 

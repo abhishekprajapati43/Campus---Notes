@@ -32,11 +32,6 @@
             cursor: pointer;
         }
 
-        .glass {
-            background: rgba(102, 97, 199, 0.94);
-            backdrop-filter: blur(12px);
-        }
-
         .sidebar {
             background:
                 linear-gradient(180deg,
@@ -254,10 +249,6 @@
                 display: none;
             }
 
-            .sidebar-profile-details {
-                display: none;
-            }
-
             .main-area {
                 margin-left: 76px !important;
             }
@@ -289,57 +280,11 @@
         }
 
         /* =====================================================
-   ADMIN LOGIN ICON
-===================================================== */
-
-        .admin-login-icon {
-            width: 42px;
-            height: 42px;
-
-            border-radius: 12px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            background: rgba(255, 255, 255, 0.12);
-            border: 1px solid rgba(255, 255, 255, 0.20);
-
-            color: white;
-
-            transition:
-                background .2s ease,
-                transform .2s ease;
-        }
-
-        .admin-login-icon:hover {
-            background: rgba(255, 255, 255, 0.22);
-            transform: translateY(-1px);
-        }
-
-
-        /* =====================================================
    ADMIN LOGIN MODAL
 ===================================================== */
 
         .admin-modal {
             backdrop-filter: blur(5px);
-        }
-
-        .admin-step {
-            animation: adminStepIn .2s ease;
-        }
-
-        @keyframes adminStepIn {
-            from {
-                opacity: 0;
-                transform: translateY(8px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         /* =====================================================

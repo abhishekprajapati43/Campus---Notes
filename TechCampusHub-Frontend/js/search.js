@@ -63,22 +63,3 @@ export function getFilteredPyq() {
 export function getFilteredTimetable() {
     return timetableItems;
 }
-
-
-// --------------------------------------------------
-// Legacy hooks (kept as no-ops so existing call
-
-// sites in ui.js / events.js keep working)
-// --------------------------------------------------
-
-export function updateSearchUI() {
-}
-
-export function updateAllSearchSubjects() {
-}
-
-export function populateSearchDropdowns() {
-}
-
-export async function refreshSearch() {
-}

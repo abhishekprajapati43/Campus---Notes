@@ -9,14 +9,13 @@
 // Storage: backend /api/favorites (itemType NOTE/TNP_NOTE).
 // =====================================================
 
-import { $, escapeHtml, formatDate } from "./helpers.js";
+import { $, escapeHtml, formatDate, getIdentity } from "./helpers.js";
 import { currentStudent } from "./state.js";
 
 import {
     apiGet,
     apiPost,
     apiDelete,
-    getStoredUser,
     normalizeFavorite,
     FAVORITE_CATEGORY_TO_TYPE
 } from "./api.js";
@@ -31,20 +30,6 @@ const FAV_CATEGORIES = ["notes", "tnp"];
 let favoritesCache = [];
 let favoritesLoaded = false;
 let eventsWired = false;
-
-// =====================================================
-// Helpers
-// =====================================================
-
-async function getIdentity() {
-    const user = getStoredUser() || null;
-
-    return {
-        id: user?.id || null,
-        email: user?.email || currentStudent?.email || "",
-        name: user?.name || currentStudent?.name || ""
-    };
-}
 
 // =====================================================
 // Storage
@@ -362,12 +347,14 @@ export function setupFavoriteEvents() {
 export async function initFavorites() {
     setupFavoriteEvents();
 
-    await loadFavorites(true);
+    if ($("favoritesList")) {
+        // The page renderer force-loads its own fresh snapshot -
+        // don't fetch /api/favorites twice on the favorites page.
+        await renderFavoritesPage();
+    } else {
+        await loadFavorites(true);
+    }
 
     syncFavoriteButtons();
     updateFavoritesBadge();
-
-    if ($("favoritesList")) {
-        await renderFavoritesPage();
-    }
 }

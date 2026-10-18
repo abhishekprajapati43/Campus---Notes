@@ -10,9 +10,154 @@
 
 import { courseStructure } from "./config.js";
 
+import { getStoredUser } from "./api.js";
+
+import { currentStudent } from "./state.js";
 
 
 
+
+
+// =====================================================
+
+// Current Identity
+
+// =====================================================
+
+// Shared by the data modules (favorites, feedback,
+
+// purchases) to resolve "who is asking" before they
+
+// hit the API.
+
+export async function getIdentity() {
+
+    const user = getStoredUser() || null;
+
+    return {
+        id: user?.id || null,
+        email: user?.email || currentStudent?.email || "",
+        name: user?.name || currentStudent?.name || ""
+    };
+}
+
+// =====================================================
+
+// Inline Notice Boxes
+
+// =====================================================
+
+//
+// Shared body of the per-panel message lines (course
+// admin, purchases, certificates, feedback, notifications,
+// admin users): reset the box to its base classes, then
+// colour it by kind. Panels differ only in element id,
+// padding and whether an informational message reads as
+// success-green or neutral slate.
+//
+
+export function updateNoticeBox(
+    boxId,
+    text,
+    type = "info",
+    {
+        baseClasses = "text-sm min-h-5 mb-3 px-4 py-3 rounded-xl",
+        infoClasses = ["bg-slate-100", "text-slate-600"]
+    } = {}
+) {
+    const box = $(boxId);
+
+    if (!box) {
+        return;
+    }
+
+    box.textContent = text || "";
+
+    box.className = baseClasses;
+
+    if (!text) {
+        return;
+    }
+
+    if (type === "error") {
+        box.classList.add("bg-red-50", "text-red-700");
+    } else if (type === "success") {
+        box.classList.add("bg-emerald-50", "text-emerald-700");
+    } else {
+        box.classList.add(...infoClasses);
+    }
+}
+
+// =====================================================
+
+// Timed Banner Messages
+
+// =====================================================
+
+//
+// Shared body of the panel banner used by the admin
+// dashboard, the faculty workspace and the student
+// profile: textContent only, success/error class toggle,
+// auto-hide after `hideAfter` ms (0 keeps it visible).
+// `timers` is a per-caller map keyed by element id so
+// concurrent banners never clobber each other.
+//
+
+export function showTimedMessage(
+    elementId,
+    message,
+    type = "success",
+    hideAfter = 5000,
+    timers = {}
+) {
+    const container = $(elementId);
+
+    if (!container) {
+        if (message && type === "error") {
+            console.error(message);
+        }
+
+        return;
+    }
+
+    window.clearTimeout(timers[elementId]);
+
+    timers[elementId] = null;
+
+    if (!message) {
+        container.classList.add("hidden");
+        container.textContent = "";
+        return;
+    }
+
+    container.textContent = String(message);
+
+    container.className = "mb-4 rounded-xl px-4 py-3 text-sm";
+
+    if (type === "error") {
+        container.classList.add(
+            "bg-red-50",
+            "text-red-700",
+            "border",
+            "border-red-200"
+        );
+    } else {
+        container.classList.add(
+            "bg-green-50",
+            "text-green-700",
+            "border",
+            "border-green-200"
+        );
+    }
+
+    container.classList.remove("hidden");
+
+    if (hideAfter > 0) {
+        timers[elementId] = window.setTimeout(() => {
+            container.classList.add("hidden");
+        }, hideAfter);
+    }
+}
 
 // =====================================================
 

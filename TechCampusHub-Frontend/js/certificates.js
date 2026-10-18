@@ -11,7 +11,7 @@
 // /api/admin/certificates/links.
 // =====================================================
 
-import { $, escapeHtml } from "./helpers.js";
+import { $, escapeHtml, updateNoticeBox } from "./helpers.js";
 
 import {
     apiGet,
@@ -199,24 +199,9 @@ export async function renderCertificatesPage() {
 // =====================================================
 
 function adminMessage(text, type = "info") {
-    const box = $("certificateAdminMessage");
-
-    if (!box) {
-        return;
-    }
-
-    box.textContent = text || "";
-    box.className = "text-sm min-h-5 mb-3 px-4 py-3 rounded-xl";
-
-    if (!text) {
-        return;
-    }
-
-    if (type === "error") {
-        box.classList.add("bg-red-50", "text-red-700");
-    } else {
-        box.classList.add("bg-emerald-50", "text-emerald-700");
-    }
+    updateNoticeBox("certificateAdminMessage", text, type, {
+        infoClasses: ["bg-emerald-50", "text-emerald-700"]
+    });
 }
 
 async function renderAdminCertificateList() {

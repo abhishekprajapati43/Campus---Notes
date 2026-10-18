@@ -12,8 +12,6 @@ export const API_BASE_URL =
         window.__API_BASE_URL__) ||
     "http://localhost:8080";
 
-export const ADMIN_EMAIL = "admin@college.com";
-
 export const courseStructure = {
 
     MCA: {

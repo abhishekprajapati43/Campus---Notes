@@ -35,7 +35,9 @@ import {
 
     updatePyqFields,
 
-    updateTimetableFields
+    updateTimetableFields,
+
+    showTimedMessage
 
 } from "./helpers.js";
 
@@ -83,15 +85,6 @@ import {
 
 
 
-import {
-
-    updateSearchUI,
-
-    updateAllSearchSubjects,
-
-    populateSearchDropdowns
-
-} from "./search.js";
 
 
 
@@ -798,7 +791,7 @@ let studentProfileEditing = false;
 
 let studentProfileWired = false;
 
-let studentProfileMessageTimer = null;
+const studentProfileTimers = {};
 
 // Editable values captured on entering edit mode, so
 // Cancel can restore them without a server round-trip.
@@ -810,51 +803,13 @@ let studentProfileSnapshot = null;
 //
 
 function studentProfileMessage(message, type = "success", hideAfter = 5000) {
-    const container = $("studentProfileMessage");
-
-    if (!container) {
-        if (message && type === "error") {
-            console.error(message);
-        }
-
-        return;
-    }
-
-    window.clearTimeout(studentProfileMessageTimer);
-    studentProfileMessageTimer = null;
-
-    if (!message) {
-        container.classList.add("hidden");
-        container.textContent = "";
-        return;
-    }
-
-    container.textContent = String(message);
-    container.className = "mb-4 rounded-xl px-4 py-3 text-sm";
-
-    if (type === "error") {
-        container.classList.add(
-            "bg-red-50",
-            "text-red-700",
-            "border",
-            "border-red-200"
-        );
-    } else {
-        container.classList.add(
-            "bg-green-50",
-            "text-green-700",
-            "border",
-            "border-green-200"
-        );
-    }
-
-    container.classList.remove("hidden");
-
-    if (hideAfter > 0) {
-        studentProfileMessageTimer = window.setTimeout(() => {
-            container.classList.add("hidden");
-        }, hideAfter);
-    }
+    showTimedMessage(
+        "studentProfileMessage",
+        message,
+        type,
+        hideAfter,
+        studentProfileTimers
+    );
 }
 
 function studentProfileGetValue(id) {
@@ -1272,16 +1227,6 @@ export function updateSidebarNavForRole() {
     );
 
     $("facultyNavBtn")?.classList.add("hidden");
-}
-
-//
-// Kept as the historical export name: existing call sites
-// still reach for it, and it now resolves to the single
-// role pass above.
-//
-
-export function updateFacultyNavVisibility() {
-    updateSidebarNavForRole();
 }
 
 // =====================================================
@@ -1834,9 +1779,6 @@ updateUploadPanel();
 
 updateSearchVisibility();
 
-updateSearchUI();
-updateAllSearchSubjects();
-
     updateAdminNavVisibility();
 
     // Recompute every sidebar link from the active role so
@@ -1849,53 +1791,6 @@ updateAllSearchSubjects();
 
 
 
-
-// =====================================================
-// TELEGRAM COMMUNITY LINK
-// =====================================================
-
-const DEFAULT_TELEGRAM_LINK =
-    "https://t.me/TechCampus_Hub";
-
-// =====================================================
-// Load Telegram Link
-// =====================================================
-
-export async function loadTelegramLink() {
-    try {
-        const { apiGet, normalizeSettings } =
-            await import("./api.js");
-
-        const data = await apiGet(
-            "/api/settings",
-            false
-        );
-
-        const settings = normalizeSettings(data);
-
-        const telegramLink =
-            settings?.telegram_link ||
-            DEFAULT_TELEGRAM_LINK;
-
-        setTelegramLinkUI(
-            telegramLink
-        );
-
-        return telegramLink;
-
-    } catch (error) {
-        console.error(
-            "Telegram link load error:",
-            error
-        );
-
-        setTelegramLinkUI(
-            DEFAULT_TELEGRAM_LINK
-        );
-
-        return DEFAULT_TELEGRAM_LINK;
-    }
-}
 
 // =====================================================
 // Update Telegram Link UI
@@ -2384,10 +2279,6 @@ updateTimetableFields();
 
 
 
-populateSearchDropdowns();
-
-
-
 updateRegistrationFields();
 
 updateNoteFields();
@@ -2395,8 +2286,6 @@ updateNoteFields();
 updatePyqFields();
 
 updateTimetableFields();
-
-updateSearchUI();
 
 updateStudentFilters();
 
@@ -2904,12 +2793,6 @@ export async function handleCategoryChange(
             category;
 
     }
-
-
-
-    updateSearchUI();
-
-    updateAllSearchSubjects();
 
 
 

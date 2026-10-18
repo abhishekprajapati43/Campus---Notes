@@ -5,7 +5,7 @@
 // Cloudinary-compatible Admin Management
 // =====================================================
 
-import { $ } from "./helpers.js";
+import { $, showTimedMessage } from "./helpers.js";
 
 import {
     apiPost,
@@ -105,54 +105,19 @@ function getFile(id) {
 // Admin Message
 // =====================================================
 
+const adminMessageTimers = {};
+
 export function showAdminMessage(
     message,
     type = "success"
 ) {
-    const container = $("adminMessage");
-
-    if (!container) {
-        if (type === "error") {
-            console.error(message);
-        } else {
-            console.log(message);
-        }
-
-        return;
-    }
-
-    container.textContent =
-        String(message || "");
-
-    container.className =
-        "mb-4 rounded-xl px-4 py-3 text-sm";
-
-    if (type === "error") {
-        container.classList.add(
-            "bg-red-50",
-            "text-red-700",
-            "border",
-            "border-red-200"
-        );
-    } else {
-        container.classList.add(
-            "bg-green-50",
-            "text-green-700",
-            "border",
-            "border-green-200"
-        );
-    }
-
-    container.classList.remove("hidden");
-
-    window.clearTimeout(
-        showAdminMessage.timer
+    showTimedMessage(
+        "adminMessage",
+        message,
+        type,
+        4000,
+        adminMessageTimers
     );
-
-    showAdminMessage.timer =
-        window.setTimeout(() => {
-            container.classList.add("hidden");
-        }, 4000);
 }
 
 

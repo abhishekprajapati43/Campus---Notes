@@ -17,7 +17,7 @@ import {
     purchaseExpired,
     formatExpiryDateTime
 } from "./courses.js";
-import { $, escapeHtml } from "./helpers.js";
+import { $, escapeHtml, updateNoticeBox } from "./helpers.js";
 import {
     setUserEnabled,
     setUserRegistrationStatus,
@@ -485,52 +485,18 @@ export async function renderFacultyList(rows) {
 // =====================================================
 
 function usersMessage(text, type = "info") {
-    const box = $("adminUsersMessage");
-
-    if (!box) {
-        return;
-    }
-
-    box.textContent = text || "";
-    box.className = "text-sm min-h-5 mb-3 px-3 py-2 rounded-xl";
-
-    if (!text) {
-        return;
-    }
-
-    if (type === "error") {
-        box.classList.add("bg-red-50", "text-red-700");
-    } else if (type === "success") {
-        box.classList.add("bg-emerald-50", "text-emerald-700");
-    } else {
-        box.classList.add("bg-slate-100", "text-slate-600");
-    }
+    updateNoticeBox("adminUsersMessage", text, type, {
+        baseClasses: "text-sm min-h-5 mb-3 px-3 py-2 rounded-xl"
+    });
 }
 
 // Same styling, but for the Manage Faculty panel message line
 // (the backend's own copy — "Faculty member approved" /
 // "Faculty application rejected" — is echoed here).
 function facultyMessage(text, type = "info") {
-    const box = $("facultyAdminMessage");
-
-    if (!box) {
-        return;
-    }
-
-    box.textContent = text || "";
-    box.className = "text-sm min-h-5 mb-3 px-3 py-2 rounded-xl";
-
-    if (!text) {
-        return;
-    }
-
-    if (type === "error") {
-        box.classList.add("bg-red-50", "text-red-700");
-    } else if (type === "success") {
-        box.classList.add("bg-emerald-50", "text-emerald-700");
-    } else {
-        box.classList.add("bg-slate-100", "text-slate-600");
-    }
+    updateNoticeBox("facultyAdminMessage", text, type, {
+        baseClasses: "text-sm min-h-5 mb-3 px-3 py-2 rounded-xl"
+    });
 }
 
 // Re-fetch the shared listing once and repaint whichever panels

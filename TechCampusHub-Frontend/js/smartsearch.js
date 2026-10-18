@@ -47,10 +47,18 @@ let suggestSequence = 0;
 // =====================================================
 
 export function setupSmartSearch() {
+    // Idempotent: wire the delegated handlers once even if a
+    // future caller invokes this twice.
+    if (setupSmartSearch.wired) {
+        return;
+    }
+
     const input = $("smartSearchInput");
     if (!input) {
         return; // not the student dashboard
     }
+
+    setupSmartSearch.wired = true;
 
     renderHistoryChips();
 

@@ -29,7 +29,7 @@
 // is persisted on the content record.
 // =====================================================
 
-import { $, escapeHtml, formatDate } from "./helpers.js";
+import { $, escapeHtml, formatDate, showTimedMessage } from "./helpers.js";
 import { currentStudent, currentUserRole } from "./state.js";
 
 import {
@@ -199,51 +199,7 @@ function isFacultyUser() {
 // =====================================================
 
 function facultyMessage(elementId, message, type = "success", hideAfter = 5000) {
-    const container = $(elementId);
-
-    if (!container) {
-        if (message && type === "error") {
-            console.error(message);
-        }
-
-        return;
-    }
-
-    window.clearTimeout(messageTimers[elementId]);
-    messageTimers[elementId] = null;
-
-    if (!message) {
-        container.classList.add("hidden");
-        container.textContent = "";
-        return;
-    }
-
-    container.textContent = String(message);
-    container.className = "mb-4 rounded-xl px-4 py-3 text-sm";
-
-    if (type === "error") {
-        container.classList.add(
-            "bg-red-50",
-            "text-red-700",
-            "border",
-            "border-red-200"
-        );
-    } else {
-        container.classList.add(
-            "bg-green-50",
-            "text-green-700",
-            "border",
-            "border-green-200"
-        );
-    }
-
-    container.classList.remove("hidden");
-
-    if (hideAfter > 0) {
-        messageTimers[elementId] = window.setTimeout(() => {
-            container.classList.add("hidden");
-        }, hideAfter);
-    }
+    showTimedMessage(elementId, message, type, hideAfter, messageTimers);
 }
 
 function errorMessage(error, fallback) {
