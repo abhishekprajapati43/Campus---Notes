@@ -978,13 +978,19 @@ class FacultyAuthorizationIntegrationTest {
     /** Creates content of any category linked to a course bundle; returns its id. */
     private long createContentForCourse(String token, String path, String title, long courseId)
             throws Exception {
+        // PYQ and timetable uploads require a program label (MCA/B.Tech) -
+        // it decides which students can open the paper; other categories
+        // have no such field.
+        String programField = path.endsWith("/pyqs") || path.endsWith("/timetables")
+                ? ",\"course\":\"B.Tech\""
+                : "";
         MvcResult result = mockMvc.perform(post(path)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"title":"%s","courseId":%d,
+                                {"title":"%s","courseId":%d%s,
                                  "fileUrl":"https://res.cloudinary.com/demo/raw/upload/bundle.pdf"}
-                                """.formatted(title, courseId)))
+                                """.formatted(title, courseId, programField)))
                 .andExpect(status().isCreated())
                 .andReturn();
         return objectMapper.readTree(result.getResponse().getContentAsString())
