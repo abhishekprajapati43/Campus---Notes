@@ -45,7 +45,7 @@ public class PdfIndexService {
     private final ContentStreamService contentStreamService;
     private final PlatformTransactionManager transactionManager;
 
-    private final ExecutorService executor = Executors.newFixedThreadPool(2, task -> {
+    private ExecutorService executor = Executors.newFixedThreadPool(2, task -> {
         Thread thread = new Thread(task, "pdf-indexer");
         thread.setDaemon(true);
         return thread;
