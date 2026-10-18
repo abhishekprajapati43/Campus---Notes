@@ -20,8 +20,6 @@ public interface PdfPageIndexRepository extends JpaRepository<PdfPageIndex, Long
 
     void deleteByCategoryAndContentId(String category, Long contentId);
 
-    boolean existsByCategoryAndContentId(String category, Long contentId);
-
     /**
      * "category:contentId" of every already-indexed document (backfill).
      * PYQ and timetable rows indexed before the program column existed are

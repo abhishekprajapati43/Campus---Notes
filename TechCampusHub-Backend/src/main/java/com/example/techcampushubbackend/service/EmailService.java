@@ -76,8 +76,10 @@ public class EmailService {
             sender.send(message);
             log.info("Sent email '{}' to {}", subject, to);
         } catch (Exception ex) {
-            log.warn("SMTP send failed ({}). Email to '{}' - '{}':\n{}",
-                    ex.getMessage(), to, subject, body);
+            // The body carries one-time verification / reset links -
+            // never write it to the logs when real SMTP delivery fails.
+            log.warn("SMTP send failed ({}). Email to '{}' - '{}' was not delivered; message body withheld from logs.",
+                    ex.getMessage(), to, subject);
         }
     }
 }

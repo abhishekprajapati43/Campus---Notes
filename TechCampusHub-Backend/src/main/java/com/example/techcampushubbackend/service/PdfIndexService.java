@@ -56,11 +56,6 @@ public class PdfIndexService {
         executor.shutdownNow();
     }
 
-    /** True once the document's pages have been indexed at least once. */
-    public boolean isIndexed(String category, Long contentId) {
-        return repository.existsByCategoryAndContentId(category, contentId);
-    }
-
     /** Queues a re-index; never throws into the caller's transaction. */
     public void reindexAsync(String category, Long contentId, String fileUrl,
             String title, String subject, Long courseId, String courseLabel,
