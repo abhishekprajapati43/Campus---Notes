@@ -445,7 +445,7 @@ function actionButtons(
 
     return `
 
-        <div class="mt-5 flex flex-wrap gap-2">
+        <div class="mt-5 flex flex-wrap justify-end gap-2">
 
             ${buttons.join("")}
 
@@ -468,253 +468,144 @@ function actionButtons(
 
 
 function card({
-
     icon = "fa-file-pdf",
-
     iconClass = "bg-red-50 text-red-600",
-
     title = "Untitled",
-
     subtitle = "",
-
     meta = "",
-
     description = "",
-
     fileUrl = "",
-
     item = null,
-
     category = "",
-
     locked = false
-
 }) {
-
     return `
-
         <article
-
             class="resource-card group rounded-2xl
-
                    border border-gray-200 bg-white
-
                    p-5 shadow-sm transition
-
                    hover:-translate-y-0.5
-
                    hover:shadow-md"
-
         >
+            <div class="flex items-start gap-4">
 
-
-
-            <div class="flex items-start justify-between
-
-                        gap-4">
-
-
-
-                <div class="flex min-w-0 items-start
-
-                            gap-4">
-
-
-
-                    <div class="flex h-12 w-12 shrink-0
-
-                                items-center justify-center
-
-                                rounded-xl ${iconClass}">
-
-
-
-                        <i class="fa-solid ${icon}"></i>
-
-                    </div>
-
-
-
-                    <div class="min-w-0">
-
-
-
-                        <h3 class="truncate text-base
-
-                                   font-semibold text-gray-900"
-
-                            title="${escapeHtml(title)}">
-
-
-
-                            ${escapeHtml(
-
-                                title || "Untitled"
-
-                            )}
-
-                        </h3>
-
-
-
-                        ${
-
-                            subtitle
-
-                                ? `
-
-                                    <p class="mt-1 text-sm
-
-                                              font-medium
-
-                                              text-gray-600">
-
-
-
-                                        ${escapeHtml(
-
-                                            subtitle
-
-                                        )}
-
-                                    </p>
-
-                                  `
-
-                                : ""
-
-                        }
-
-                    </div>
-
+                <div class="flex h-12 w-12 shrink-0
+                            items-center justify-center
+                            rounded-xl ${iconClass}">
+                    <i class="fa-solid ${icon}"></i>
                 </div>
 
+                <div class="min-w-0 flex-1">
 
+                    <div class="flex items-start
+                                justify-between gap-3">
 
-                <div class="flex items-center gap-2 shrink-0">
+                        <div class="min-w-0">
+
+                            <h3 class="truncate text-base
+                                       font-semibold text-gray-900"
+                                title="${escapeHtml(title)}">
+
+                                ${escapeHtml(
+                                    title || "Untitled"
+                                )}
+                            </h3>
+
+                            ${
+                                subtitle
+                                    ? `
+                                        <p class="mt-1 text-sm
+                                                  font-medium
+                                                  text-gray-600">
+
+                                            ${escapeHtml(
+                                                subtitle
+                                            )}
+                                        </p>
+                                      `
+                                    : ""
+                            }
+                        </div>
+
+                        <div class="flex items-center gap-2 shrink-0">
+                            ${favoriteButtonHtml(category, item ? item.id : "", title)}
+                        </div>
+                    </div>
 
                     ${
-
-                        fileUrl
-
+                        meta || fileUrl
                             ? `
+                                <div class="mt-4 flex flex-wrap
+                                            gap-2 text-xs">
 
-                                <span
-
-                                    class="shrink-0 rounded-full
-
-                                           bg-red-50 px-2.5 py-1
-
-                                           text-xs font-medium
-
-                                           text-red-600"
-
-                                >
-
-                                    PDF
-
-                                </span>
-
+                                    ${
+                                        fileUrl
+                                            ? `
+                                                <span
+                                                    class="shrink-0 rounded-full
+                                                           bg-red-50 px-2.5 py-1
+                                                           text-xs font-medium
+                                                           text-red-600"
+                                                >
+                                                    PDF
+                                                </span>
+                                              `
+                                            : ""
+                                    }
+                                    ${meta}
+                                </div>
                               `
-
                             : ""
-
                     }
 
-                    ${favoriteButtonHtml(category, item ? item.id : "", title)}
+                    ${
+                        description
+                            ? `
+                                <p class="mt-4 line-clamp-2
+                                          text-sm text-gray-500">
 
+                                    ${escapeHtml(
+                                        description
+                                    )}
+                                </p>
+                              `
+                            : ""
+                    }
+                    ${
+                        locked
+                            ? `
+                                <div class="mt-5 flex flex-wrap items-center
+                                            justify-end gap-2">
+                                    <span class="inline-flex items-center gap-2 rounded-lg
+                                           bg-amber-100 px-3 py-2 text-sm
+                                           font-medium text-amber-700">
+                                        <i class="fa-solid fa-lock"></i>
+                                        Premium note
+                                    </span>
+                                    <a href="./courses.html"
+                                       class="inline-flex items-center gap-2 rounded-lg
+                                              bg-blue-600 px-3 py-2 text-sm
+                                              font-medium text-white transition
+                                              hover:bg-blue-700">
+                                        <i class="fa-solid fa-cart-shopping"></i>
+                                        Unlock course
+                                    </a>
+                                </div>
+                              `
+                            : actionButtons(
+
+                                fileUrl,
+
+                                item,
+
+                                category
+
+                            )
+                    }
                 </div>
-
             </div>
-
-
-
-
-
-            ${
-
-                meta
-
-                    ? `
-
-                        <div class="mt-4 flex flex-wrap
-
-                                    gap-2 text-xs">
-
-
-
-                            ${meta}
-
-                        </div>
-
-                      `
-
-                    : ""
-
-            }
-
-
-
-
-
-            ${
-
-                description
-
-                    ? `
-
-                        <p class="mt-4 line-clamp-2
-
-                                  text-sm text-gray-500">
-
-
-
-                            ${escapeHtml(
-
-                                description
-
-                            )}
-
-                        </p>
-
-                      `
-
-                    : ""
-
-            }            ${
-                locked
-                    ? `
-                        <div class="mt-5 flex flex-wrap items-center gap-2">
-                            <span class="inline-flex items-center gap-2 rounded-lg
-                                   bg-amber-100 px-3 py-2 text-sm
-                                   font-medium text-amber-700">
-                                <i class="fa-solid fa-lock"></i>
-                                Premium note
-                            </span>
-                            <a href="./courses.html"
-                               class="inline-flex items-center gap-2 rounded-lg
-                                      bg-blue-600 px-3 py-2 text-sm
-                                      font-medium text-white transition
-                                      hover:bg-blue-700">
-                                <i class="fa-solid fa-cart-shopping"></i>
-                                Unlock course
-                            </a>
-                        </div>
-                      `
-                    : actionButtons(
-
-                        fileUrl,
-
-                        item,
-
-                        category
-
-                    )
-            }
         </article>
-
     `;
-
 }
 
 
