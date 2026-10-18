@@ -5,10 +5,13 @@ import com.example.techcampushubbackend.dto.ContentDtos.TimetableResponse;
 import com.example.techcampushubbackend.entity.Role;
 import com.example.techcampushubbackend.entity.Timetable;
 import com.example.techcampushubbackend.entity.User;
+import com.example.techcampushubbackend.exception.ApiException;
 import com.example.techcampushubbackend.exception.ResourceNotFoundException;
 import com.example.techcampushubbackend.repository.TimetableRepository;
 import com.example.techcampushubbackend.utils.CurrentUserService;
+import com.example.techcampushubbackend.utils.ProgramFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,8 +35,13 @@ public class TimetableService {
     @Transactional(readOnly = true)
     public List<TimetableResponse> listVisible() {
         User user = currentUserService.requireUser();
+        boolean staff = user.getRole() == Role.ADMIN || user.getRole() == Role.FACULTY;
         return timetableRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(t -> canAccess(t, user))
+                // Students only ever see timetables of their own program
+                // (MCA vs B.Tech); general rows stay visible to all.
+                .filter(t -> staff
+                        || ProgramFilter.matches(t.getCourse(), user.getCourse()))
                 .map(t -> toVisibleResponse(t, user))
                 .toList();
     }
@@ -77,7 +85,7 @@ public class TimetableService {
     public TimetableResponse getVisible(Long id) {
         User user = currentUserService.requireUser();
         Timetable timetable = require(id);
-        if (!canAccess(timetable, user)) {
+        if (!canAccess(timetable, user) || !canSeeProgram(timetable, user)) {
             throw new ResourceNotFoundException("Timetable", id);
         }
         return toVisibleResponse(timetable, user);
@@ -95,6 +103,13 @@ public class TimetableService {
     }
 
     private TimetableResponse doCreate(TimetableRequest request, Long ownerId) {
+        // The program decides which students can see the timetable (MCA
+        // vs B.Tech), so an upload without one is rejected - the
+        // admin/faculty form makes the program dropdown mandatory.
+        if (request.course() == null || request.course().isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Program (course) is required for a timetable upload");
+        }
         Timetable timetable = Timetable.builder()
                 .title(resolveTitle(request.title(), examLabel(request), request.course()))
                 .course(request.course())
@@ -163,7 +178,8 @@ public class TimetableService {
         pdfIndexService.reindexAsync(PdfIndexService.CAT_TIMETABLE, timetable.getId(),
                 timetable.getFileUrl(), timetable.getTitle(), timetable.getExamType(),
                 timetable.getCourseBundle() == null ? null : timetable.getCourseBundle().getId(),
-                timetable.getCourseBundle() == null ? null : timetable.getCourseBundle().getTitle());
+                timetable.getCourseBundle() == null ? null : timetable.getCourseBundle().getTitle(),
+                timetable.getCourse());
     }
 
     /**
@@ -186,6 +202,18 @@ public class TimetableService {
             return true;
         }
         return purchaseService.hasActiveAccess(user.getId(), timetable.getCourseBundle().getId());
+    }
+
+    /**
+     * Program scoping for students: an MCA timetable must never be
+     * readable (or even discoverable by id) by a B.Tech student. Staff
+     * manage all programs and bypass this check.
+     */
+    private boolean canSeeProgram(Timetable timetable, User user) {
+        if (user.getRole() == Role.ADMIN || user.getRole() == Role.FACULTY) {
+            return true;
+        }
+        return ProgramFilter.matches(timetable.getCourse(), user.getCourse());
     }
 
     public static TimetableResponse toResponse(Timetable t) {
@@ -231,7 +259,7 @@ public class TimetableService {
     public String requireVisibleFileUrl(Long id) {
         User user = currentUserService.requireUser();
         Timetable timetable = require(id);
-        if (!canAccess(timetable, user)) {
+        if (!canAccess(timetable, user) || !canSeeProgram(timetable, user)) {
             throw new ResourceNotFoundException("Timetable", id);
         }
         if (timetable.getFileUrl() == null || timetable.getFileUrl().isBlank()) {

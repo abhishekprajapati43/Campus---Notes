@@ -152,7 +152,8 @@ public class TnpNoteService {
         pdfIndexService.reindexAsync(PdfIndexService.CAT_TNP, note.getId(),
                 note.getFileUrl(), note.getTitle(), note.getTopic(),
                 note.getCourseBundle() == null ? null : note.getCourseBundle().getId(),
-                note.getCourseBundle() == null ? null : note.getCourseBundle().getTitle());
+                note.getCourseBundle() == null ? null : note.getCourseBundle().getTitle(),
+                null);
     }
 
     /**

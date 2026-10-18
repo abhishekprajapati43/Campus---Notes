@@ -3,6 +3,7 @@ package com.example.techcampushubbackend.service;
 import com.example.techcampushubbackend.entity.PdfPageIndex;
 import com.example.techcampushubbackend.repository.PdfPageIndexRepository;
 import com.example.techcampushubbackend.utils.PdfTextExtractor;
+import com.example.techcampushubbackend.utils.ProgramFilter;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -62,9 +63,10 @@ public class PdfIndexService {
 
     /** Queues a re-index; never throws into the caller's transaction. */
     public void reindexAsync(String category, Long contentId, String fileUrl,
-            String title, String subject, Long courseId, String courseLabel) {
+            String title, String subject, Long courseId, String courseLabel,
+            String program) {
         submit(() -> indexNow(category, contentId, fileUrl, title, subject,
-                courseId, courseLabel));
+                courseId, courseLabel, program));
     }
 
     /** Queues the index cleanup after a document was deleted. */
@@ -79,7 +81,8 @@ public class PdfIndexService {
      * Runs inside its own transaction (safe from any thread).
      */
     public void indexNow(String category, Long contentId, String fileUrl,
-            String title, String subject, Long courseId, String courseLabel) {
+            String title, String subject, Long courseId, String courseLabel,
+            String program) {
         runInTransaction(() -> repository.deleteByCategoryAndContentId(category, contentId));
 
         if (fileUrl == null || fileUrl.isBlank()) {
@@ -116,6 +119,7 @@ public class PdfIndexService {
                     .pdfTitle(truncate(title, 300))
                     .courseId(courseId)
                     .courseLabel(truncate(courseLabel, 160))
+                    .program(ProgramFilter.normalize(program))
                     .subject(truncate(subject, 200))
                     .pageNumber(index + 1)
                     .content(text)

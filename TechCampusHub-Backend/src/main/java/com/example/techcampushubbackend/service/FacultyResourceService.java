@@ -107,7 +107,8 @@ public class FacultyResourceService {
         pdfIndexService.reindexAsync(PdfIndexService.CAT_RESOURCES, resource.getId(),
                 resource.getFileUrl(), resource.getTitle(), null,
                 resource.getCourseBundle() == null ? null : resource.getCourseBundle().getId(),
-                resource.getCourseBundle() == null ? null : resource.getCourseBundle().getTitle());
+                resource.getCourseBundle() == null ? null : resource.getCourseBundle().getTitle(),
+                null);
     }
 
     private FacultyResource require(Long id) {

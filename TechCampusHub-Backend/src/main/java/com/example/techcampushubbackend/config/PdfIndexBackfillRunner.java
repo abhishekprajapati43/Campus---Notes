@@ -86,7 +86,7 @@ public class PdfIndexBackfillRunner implements ApplicationRunner {
             if (needsIndex(PdfIndexService.CAT_NOTES, row.getId(), row.getFileUrl(), indexed)) {
                 total += tryIndex(PdfIndexService.CAT_NOTES, row.getId(),
                         row.getFileUrl(), row.getTitle(), row.getSubject(),
-                        courseIdOf(row.getCourseBundle()), courseTitles);
+                        courseIdOf(row.getCourseBundle()), courseTitles, row.getCourse());
             }
         }
 
@@ -94,7 +94,7 @@ public class PdfIndexBackfillRunner implements ApplicationRunner {
             if (needsIndex(PdfIndexService.CAT_PYQ, row.getId(), row.getFileUrl(), indexed)) {
                 total += tryIndex(PdfIndexService.CAT_PYQ, row.getId(),
                         row.getFileUrl(), row.getTitle(), row.getSubject(),
-                        courseIdOf(row.getCourseBundle()), courseTitles);
+                        courseIdOf(row.getCourseBundle()), courseTitles, row.getCourse());
             }
         }
 
@@ -102,7 +102,7 @@ public class PdfIndexBackfillRunner implements ApplicationRunner {
             if (needsIndex(PdfIndexService.CAT_TNP, row.getId(), row.getFileUrl(), indexed)) {
                 total += tryIndex(PdfIndexService.CAT_TNP, row.getId(),
                         row.getFileUrl(), row.getTitle(), row.getTopic(),
-                        courseIdOf(row.getCourseBundle()), courseTitles);
+                        courseIdOf(row.getCourseBundle()), courseTitles, null);
             }
         }
 
@@ -110,7 +110,7 @@ public class PdfIndexBackfillRunner implements ApplicationRunner {
             if (needsIndex(PdfIndexService.CAT_TIMETABLE, row.getId(), row.getFileUrl(), indexed)) {
                 total += tryIndex(PdfIndexService.CAT_TIMETABLE, row.getId(),
                         row.getFileUrl(), row.getTitle(), row.getExamType(),
-                        courseIdOf(row.getCourseBundle()), courseTitles);
+                        courseIdOf(row.getCourseBundle()), courseTitles, row.getCourse());
             }
         }
 
@@ -118,7 +118,7 @@ public class PdfIndexBackfillRunner implements ApplicationRunner {
             if (needsIndex(PdfIndexService.CAT_RESOURCES, row.getId(), row.getFileUrl(), indexed)) {
                 total += tryIndex(PdfIndexService.CAT_RESOURCES, row.getId(),
                         row.getFileUrl(), row.getTitle(), null,
-                        courseIdOf(row.getCourseBundle()), courseTitles);
+                        courseIdOf(row.getCourseBundle()), courseTitles, null);
             }
         }
 
@@ -130,10 +130,11 @@ public class PdfIndexBackfillRunner implements ApplicationRunner {
      * URL or an unreadable file is logged and skipped.
      */
     private int tryIndex(String category, Long id, String fileUrl, String title,
-            String subject, Long courseId, Map<Long, String> courseTitles) {
+            String subject, Long courseId, Map<Long, String> courseTitles,
+            String program) {
         try {
             pdfIndexService.indexNow(category, id, fileUrl, title, subject,
-                    courseId, courseTitles.get(courseId));
+                    courseId, courseTitles.get(courseId), program);
             return 1;
         } catch (Exception e) {
             log.warn("PDF backfill skipped {} {} ({}): {}",

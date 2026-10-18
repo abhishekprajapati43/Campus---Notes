@@ -9,6 +9,7 @@ import com.example.techcampushubbackend.repository.PyqRepository;
 import com.example.techcampushubbackend.repository.TimetableRepository;
 import com.example.techcampushubbackend.repository.TnpNoteRepository;
 import com.example.techcampushubbackend.utils.CurrentUserService;
+import com.example.techcampushubbackend.utils.ProgramFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +28,8 @@ import java.util.List;
  *
  * <p>The counting rule is the same access model the rest of the app enforces
  * when opening a document, so the number on a card always matches what the
- * student can actually reach in that section.
+ * student can actually reach in that section. PYQ and timetable counts are
+ * additionally scoped to the student's program (MCA vs B.Tech).
  */
 @Service
 @RequiredArgsConstructor
@@ -60,8 +62,33 @@ public class DashboardService {
         return new DashboardSummary(
                 noteRepository.countAccessible(courseIds),
                 tnpNoteRepository.countAccessible(courseIds),
-                pyqRepository.countAccessible(courseIds),
-                timetableRepository.countAccessible(courseIds));
+                // PYQ/timetable are additionally scoped to the student's
+                // program (MCA vs B.Tech), matching what their pages list.
+                countPyqs(user, courseIds),
+                countTimetables(user, courseIds));
+    }
+
+    /**
+     * PYQs this student can reach: free/own-bundle papers of their program.
+     * Counted in Java because the program comparison normalises labels
+     * ("B.Tech" vs "BTech"); the tables are small and the PYQ page loads
+     * them all anyway, so the card number always matches the page.
+     */
+    private long countPyqs(User user, List<Long> courseIds) {
+        return pyqRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(pyq -> pyq.getCourseBundle() == null
+                        || courseIds.contains(pyq.getCourseBundle().getId()))
+                .filter(pyq -> ProgramFilter.matches(pyq.getCourse(), user.getCourse()))
+                .count();
+    }
+
+    /** Same availability rule as {@link #countPyqs}, for timetables. */
+    private long countTimetables(User user, List<Long> courseIds) {
+        return timetableRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(t -> t.getCourseBundle() == null
+                        || courseIds.contains(t.getCourseBundle().getId()))
+                .filter(t -> ProgramFilter.matches(t.getCourse(), user.getCourse()))
+                .count();
     }
 
     /**

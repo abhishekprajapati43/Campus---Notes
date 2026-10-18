@@ -202,7 +202,8 @@ public class NoteService {
         pdfIndexService.reindexAsync(PdfIndexService.CAT_NOTES, note.getId(),
                 note.getFileUrl(), note.getTitle(), note.getSubject(),
                 note.getCourseBundle() == null ? null : note.getCourseBundle().getId(),
-                note.getCourseBundle() == null ? null : note.getCourseBundle().getTitle());
+                note.getCourseBundle() == null ? null : note.getCourseBundle().getTitle(),
+                note.getCourse());
     }
 
     private Note require(Long id) {

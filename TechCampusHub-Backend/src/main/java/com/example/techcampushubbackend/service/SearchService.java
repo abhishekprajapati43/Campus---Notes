@@ -6,6 +6,7 @@ import com.example.techcampushubbackend.entity.User;
 import com.example.techcampushubbackend.repository.PdfPageIndexRepository;
 import com.example.techcampushubbackend.repository.PurchaseRepository;
 import com.example.techcampushubbackend.utils.CurrentUserService;
+import com.example.techcampushubbackend.utils.ProgramFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,9 @@ import java.util.Set;
  * <p>Access is enforced inside the same SQL query: students only receive
  * free pages ({@code course_id IS NULL}) plus pages of course bundles
  * they hold an approved, unexpired purchase of; staff read everything.
+ * PYQ and timetable pages are additionally scoped to the caller's own
+ * program (MCA vs B.Tech) - another program's papers never surface in
+ * hits or suggestions.
  */
 @Service
 @RequiredArgsConstructor
@@ -62,7 +66,8 @@ public class SearchService {
             rows = pdfPageIndexRepository.searchAll(tsQuery, capped);
         } else {
             List<Long> accessible = accessibleCourseIds(user.getId());
-            rows = pdfPageIndexRepository.searchAccessible(tsQuery, accessible, capped);
+            rows = pdfPageIndexRepository.searchAccessible(tsQuery, accessible,
+                    programKeyOf(user), capped);
         }
 
         String keyword = query == null ? "" : query.trim();
@@ -97,8 +102,11 @@ public class SearchService {
             titles = pdfPageIndexRepository.suggestTitles(pattern);
         } else {
             List<Long> accessible = accessibleCourseIds(user.getId());
-            subjects = pdfPageIndexRepository.suggestSubjectsAccessible(pattern, accessible);
-            titles = pdfPageIndexRepository.suggestTitlesAccessible(pattern, accessible);
+            String programKey = programKeyOf(user);
+            subjects = pdfPageIndexRepository.suggestSubjectsAccessible(
+                    pattern, accessible, programKey);
+            titles = pdfPageIndexRepository.suggestTitlesAccessible(
+                    pattern, accessible, programKey);
         }
 
         Set<String> merged = new LinkedHashSet<>(subjects);
@@ -119,6 +127,16 @@ public class SearchService {
             parameters.add(-1L); // keeps the SQL IN-list valid
         }
         return parameters;
+    }
+
+    /**
+     * Normalised program key of the caller (e.g. "btech"), used to scope
+     * PYQ/timetable pages to the student's own program. Null when the
+     * profile records no program - only general (null-program) pages then
+     * match, so another program's papers can never leak.
+     */
+    private static String programKeyOf(User user) {
+        return ProgramFilter.normalize(user.getCourse());
     }
 
     private static SearchHit toHit(Object[] row, List<String> tokens, String keyword) {

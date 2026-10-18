@@ -5,10 +5,13 @@ import com.example.techcampushubbackend.dto.ContentDtos.PyqResponse;
 import com.example.techcampushubbackend.entity.Pyq;
 import com.example.techcampushubbackend.entity.Role;
 import com.example.techcampushubbackend.entity.User;
+import com.example.techcampushubbackend.exception.ApiException;
 import com.example.techcampushubbackend.exception.ResourceNotFoundException;
 import com.example.techcampushubbackend.repository.PyqRepository;
 import com.example.techcampushubbackend.utils.CurrentUserService;
+import com.example.techcampushubbackend.utils.ProgramFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,8 +35,13 @@ public class PyqService {
     @Transactional(readOnly = true)
     public List<PyqResponse> listVisible() {
         User user = currentUserService.requireUser();
+        boolean staff = user.getRole() == Role.ADMIN || user.getRole() == Role.FACULTY;
         return pyqRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(pyq -> canAccess(pyq, user))
+                // Students only ever see papers of their own program
+                // (MCA vs B.Tech); general rows stay visible to all.
+                .filter(pyq -> staff
+                        || ProgramFilter.matches(pyq.getCourse(), user.getCourse()))
                 .map(pyq -> toVisibleResponse(pyq, user))
                 .toList();
     }
@@ -77,7 +85,7 @@ public class PyqService {
     public PyqResponse getVisible(Long id) {
         User user = currentUserService.requireUser();
         Pyq pyq = require(id);
-        if (!canAccess(pyq, user)) {
+        if (!canAccess(pyq, user) || !canSeeProgram(pyq, user)) {
             throw new ResourceNotFoundException("PYQ", id);
         }
         return toVisibleResponse(pyq, user);
@@ -95,6 +103,13 @@ public class PyqService {
     }
 
     private PyqResponse doCreate(PyqRequest request, Long ownerId) {
+        // The program decides which students can open the paper (MCA vs
+        // B.Tech), so an upload without one would be invisible-by-accident
+        // or leak everywhere - the admin/faculty form makes it mandatory.
+        if (request.course() == null || request.course().isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Program (course) is required for a PYQ upload");
+        }
         Pyq pyq = Pyq.builder()
                 .title(resolveTitle(request.title(), request.subject(), request.course()))
                 .subject(request.subject())
@@ -160,7 +175,8 @@ public class PyqService {
         pdfIndexService.reindexAsync(PdfIndexService.CAT_PYQ, pyq.getId(),
                 pyq.getFileUrl(), pyq.getTitle(), pyq.getSubject(),
                 pyq.getCourseBundle() == null ? null : pyq.getCourseBundle().getId(),
-                pyq.getCourseBundle() == null ? null : pyq.getCourseBundle().getTitle());
+                pyq.getCourseBundle() == null ? null : pyq.getCourseBundle().getTitle(),
+                pyq.getCourse());
     }
 
     /**
@@ -183,6 +199,18 @@ public class PyqService {
             return true;
         }
         return purchaseService.hasActiveAccess(user.getId(), pyq.getCourseBundle().getId());
+    }
+
+    /**
+     * Program scoping for students: an MCA paper must never be readable
+     * (or even discoverable by id) by a B.Tech student. Staff manage all
+     * programs and bypass this check.
+     */
+    private boolean canSeeProgram(Pyq pyq, User user) {
+        if (user.getRole() == Role.ADMIN || user.getRole() == Role.FACULTY) {
+            return true;
+        }
+        return ProgramFilter.matches(pyq.getCourse(), user.getCourse());
     }
 
     public static PyqResponse toResponse(Pyq pyq) {
@@ -227,7 +255,7 @@ public class PyqService {
     public String requireVisibleFileUrl(Long id) {
         User user = currentUserService.requireUser();
         Pyq pyq = require(id);
-        if (!canAccess(pyq, user)) {
+        if (!canAccess(pyq, user) || !canSeeProgram(pyq, user)) {
             throw new ResourceNotFoundException("PYQ", id);
         }
         if (pyq.getFileUrl() == null || pyq.getFileUrl().isBlank()) {

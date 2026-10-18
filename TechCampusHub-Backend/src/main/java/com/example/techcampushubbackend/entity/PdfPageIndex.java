@@ -65,6 +65,15 @@ public class PdfPageIndex {
     @Column(name = "course_label", length = 160)
     private String courseLabel;
 
+    /**
+     * Normalised program key (e.g. "mca", "btech") of the source row, kept
+     * for PYQ and timetable documents so student search can exclude other
+     * programs' papers inside the same SQL. Null = general content (or a
+     * category without a program, like notes), visible to every student.
+     */
+    @Column(name = "program", length = 30)
+    private String program;
+
     /** Subject (or topic/exam type) of the source document. */
     @Column(length = 200)
     private String subject;
