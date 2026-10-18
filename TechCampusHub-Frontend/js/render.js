@@ -266,7 +266,7 @@ function actionButtons(
 
                 class="inline-flex items-center gap-2
 
-                       rounded-lg bg-gray-100 px-3 py-2
+                       rounded-lg bg-gray-100 px-2.5 py-1.5
 
                        text-sm font-medium text-gray-700
 
@@ -304,7 +304,7 @@ function actionButtons(
 
                 class="inline-flex items-center gap-2
 
-                       rounded-lg bg-gray-100 px-3 py-2
+                       rounded-lg bg-gray-100 px-2.5 py-1.5
 
                        text-sm font-medium text-gray-700
 
@@ -341,7 +341,7 @@ function actionButtons(
 
                 class="inline-flex items-center gap-2
 
-                       rounded-lg bg-gray-100 px-3 py-2
+                       rounded-lg bg-gray-100 px-2.5 py-1.5
 
                        text-sm font-medium text-gray-700
 
@@ -383,7 +383,7 @@ function actionButtons(
 
                        inline-flex items-center gap-2
 
-                       rounded-lg bg-blue-50 px-3 py-2
+                       rounded-lg bg-blue-50 px-2.5 py-1.5
 
                        text-sm font-medium text-blue-700
 
@@ -411,7 +411,7 @@ function actionButtons(
 
                        inline-flex items-center gap-2
 
-                       rounded-lg bg-red-50 px-3 py-2
+                       rounded-lg bg-red-50 px-2.5 py-1.5
 
                        text-sm font-medium text-red-700
 
@@ -445,7 +445,7 @@ function actionButtons(
 
     return `
 
-        <div class="mt-5 flex flex-wrap justify-end gap-2">
+        <div class="ml-auto flex flex-wrap gap-2">
 
             ${buttons.join("")}
 
@@ -483,15 +483,15 @@ function card({
         <article
             class="resource-card group rounded-2xl
                    border border-gray-200 bg-white
-                   p-5 shadow-sm transition
+                   p-2.5 shadow-sm transition
                    hover:-translate-y-0.5
                    hover:shadow-md"
         >
-            <div class="flex items-start gap-4">
+            <div class="flex items-start gap-2.5">
 
-                <div class="flex h-12 w-12 shrink-0
+                <div class="flex h-9 w-9 shrink-0
                             items-center justify-center
-                            rounded-xl ${iconClass}">
+                            rounded-lg ${iconClass}">
                     <i class="fa-solid ${icon}"></i>
                 </div>
 
@@ -502,7 +502,7 @@ function card({
 
                         <div class="min-w-0">
 
-                            <h3 class="truncate text-base
+                            <h3 class="truncate text-sm
                                        font-semibold text-gray-900"
                                 title="${escapeHtml(title)}">
 
@@ -510,21 +510,6 @@ function card({
                                     title || "Untitled"
                                 )}
                             </h3>
-
-                            ${
-                                subtitle
-                                    ? `
-                                        <p class="mt-1 text-sm
-                                                  font-medium
-                                                  text-gray-600">
-
-                                            ${escapeHtml(
-                                                subtitle
-                                            )}
-                                        </p>
-                                      `
-                                    : ""
-                            }
                         </div>
 
                         <div class="flex items-center gap-2 shrink-0">
@@ -533,36 +518,10 @@ function card({
                     </div>
 
                     ${
-                        meta || fileUrl
-                            ? `
-                                <div class="mt-4 flex flex-wrap
-                                            gap-2 text-xs">
-
-                                    ${
-                                        fileUrl
-                                            ? `
-                                                <span
-                                                    class="shrink-0 rounded-full
-                                                           bg-red-50 px-2.5 py-1
-                                                           text-xs font-medium
-                                                           text-red-600"
-                                                >
-                                                    PDF
-                                                </span>
-                                              `
-                                            : ""
-                                    }
-                                    ${meta}
-                                </div>
-                              `
-                            : ""
-                    }
-
-                    ${
                         description
                             ? `
-                                <p class="mt-4 line-clamp-2
-                                          text-sm text-gray-500">
+                                <p class="mt-1.5 line-clamp-2
+                                          text-xs text-gray-500">
 
                                     ${escapeHtml(
                                         description
@@ -571,37 +530,71 @@ function card({
                               `
                             : ""
                     }
-                    ${
-                        locked
-                            ? `
-                                <div class="mt-5 flex flex-wrap items-center
-                                            justify-end gap-2">
-                                    <span class="inline-flex items-center gap-2 rounded-lg
-                                           bg-amber-100 px-3 py-2 text-sm
-                                           font-medium text-amber-700">
-                                        <i class="fa-solid fa-lock"></i>
-                                        Premium note
+
+                    <div class="mt-1 flex flex-wrap items-center
+                                gap-x-1 gap-y-1 text-xs">
+
+                        ${
+                            subtitle
+                                ? `
+                                    <p class="font-medium
+                                              text-gray-600">
+
+                                        ${escapeHtml(
+                                            subtitle
+                                        )}
+                                    </p>
+                                  `
+                                : ""
+                        }
+
+                        ${
+                            fileUrl
+                                ? `
+                                    <span
+                                        class="shrink-0 rounded-full
+                                               bg-red-50 px-2 py-0.5
+                                               text-xs font-medium
+                                               text-red-600"
+                                    >
+                                        PDF
                                     </span>
-                                    <a href="./courses.html"
-                                       class="inline-flex items-center gap-2 rounded-lg
-                                              bg-blue-600 px-3 py-2 text-sm
-                                              font-medium text-white transition
-                                              hover:bg-blue-700">
-                                        <i class="fa-solid fa-cart-shopping"></i>
-                                        Unlock course
-                                    </a>
-                                </div>
-                              `
-                            : actionButtons(
+                                  `
+                                : ""
+                        }
+                        ${meta}
+                        ${
+                            locked
+                                ? `
+                                    <div class="ml-auto flex flex-wrap items-center
+                                                gap-2">
+                                        <span class="inline-flex items-center gap-2 rounded-lg
+                                               bg-amber-100 px-2.5 py-1.5 text-sm
+                                               font-medium text-amber-700">
+                                            <i class="fa-solid fa-lock"></i>
+                                            Premium note
+                                        </span>
+                                        <a href="./courses.html"
+                                           class="inline-flex items-center gap-2 rounded-lg
+                                                  bg-blue-600 px-2.5 py-1.5 text-sm
+                                                  font-medium text-white transition
+                                                  hover:bg-blue-700">
+                                            <i class="fa-solid fa-cart-shopping"></i>
+                                            Unlock course
+                                        </a>
+                                    </div>
+                                  `
+                                : actionButtons(
 
-                                fileUrl,
+                                    fileUrl,
 
-                                item,
+                                    item,
 
-                                category
+                                    category
 
-                            )
-                    }
+                                )
+                        }
+                    </div>
                 </div>
             </div>
         </article>
@@ -652,7 +645,7 @@ function metaBadge(
 
             class="inline-flex items-center gap-1
 
-                   rounded-full px-2.5 py-1
+                   rounded-full px-2 py-0.5
 
                    ${className}"
 
@@ -720,7 +713,7 @@ function uploaderBadge(note) {
 
                     class="inline-flex items-center gap-1
 
-                           rounded-full px-2.5 py-1
+                           rounded-full px-2 py-0.5
 
                            bg-violet-100 text-violet-700"
 
@@ -740,7 +733,7 @@ function uploaderBadge(note) {
 
                         class="inline-flex items-center gap-1
 
-                               rounded-full px-2.5 py-1
+                               rounded-full px-2 py-0.5
 
                                bg-slate-100 text-slate-600"
 
@@ -760,7 +753,7 @@ function uploaderBadge(note) {
 
             class="inline-flex items-center gap-1
 
-                   rounded-full px-2.5 py-1
+                   rounded-full px-2 py-0.5
 
                    bg-gray-100 text-gray-600"
 
