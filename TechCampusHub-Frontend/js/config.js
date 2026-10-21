@@ -12,6 +12,19 @@ export const API_BASE_URL =
         window.__API_BASE_URL__) ||
     "http://localhost:8080";
 
+//
+// Single source of truth for every course/program the
+// portal offers (MCA, B.Tech, BCA). Every course dropdown,
+// branch list, year list and semester list in the app is
+// generated from this map (see helpers.js populateCourses /
+// populateBranches / populateYears / populateSemesters),
+// so a new program only has to be added HERE.
+//
+// The backend stores the label as free text and scopes
+// content with a normalised comparison (ProgramFilter),
+// so the value below is both the dropdown label and the
+// value saved on the student's profile and on uploads.
+//
 export const courseStructure = {
 
     MCA: {
@@ -61,6 +74,19 @@ export const courseStructure = {
             {
                 value: "CIVIL",
                 label: "Civil Engineering"
+            }
+        ]
+    },
+
+
+    BCA: {
+        duration: 3,
+        semesters: 6,
+
+        branches: [
+            {
+                value: "CA",
+                label: "Computer Applications (CA)"
             }
         ]
     }

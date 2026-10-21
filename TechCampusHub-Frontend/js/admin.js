@@ -6,6 +6,7 @@
 // =====================================================
 
 import { $, showTimedMessage } from "./helpers.js";
+import { courseStructure } from "./config.js";
 
 import {
     apiPost,
@@ -1570,9 +1571,19 @@ function clearEditFileInput() {
 
 // =====================================================
 // TIMETABLE SEMESTER OPTIONS
-// MCA = 4 Semesters
-// B.Tech = 8 Semesters
+// Driven by courseStructure in config.js, e.g.
+// MCA = 4, B.Tech = 8, BCA = 6 semesters. Labels are
+// matched like the backend's ProgramFilter, so legacy
+// values such as "BTech" still resolve correctly.
 // =====================================================
+
+// Same comparison the backend uses: lowercase and strip
+// every non-alphanumeric character ("B.Tech" -> "btech").
+function normalizeCourseLabel(value) {
+    return String(value || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+}
 
 function updateTimetableSemesterOptions(
     course,
@@ -1594,18 +1605,14 @@ function updateTimetableSemesterOptions(
         </option>
     `;
 
-    let totalSemesters = 0;
+    const structure = Object.entries(courseStructure)
+        .find(
+            ([key]) =>
+                normalizeCourseLabel(key) ===
+                normalizeCourseLabel(course)
+        )?.[1];
 
-    if (course === "MCA") {
-        totalSemesters = 4;
-    }
-
-    else if (
-        course === "B.Tech" ||
-        course === "BTech"
-    ) {
-        totalSemesters = 8;
-    }
+    const totalSemesters = structure?.semesters || 0;
 
     for (
         let semester = 1;

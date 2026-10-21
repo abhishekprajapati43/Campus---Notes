@@ -9,6 +9,7 @@ import com.example.techcampushubbackend.exception.ResourceNotFoundException;
 import com.example.techcampushubbackend.repository.NoteRepository;
 import com.example.techcampushubbackend.repository.UserRepository;
 import com.example.techcampushubbackend.utils.CurrentUserService;
+import com.example.techcampushubbackend.utils.ProgramFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -47,8 +48,13 @@ public class NoteService {
     @Transactional(readOnly = true)
     public List<NoteResponse> listVisible() {
         User user = currentUserService.requireUser();
+        boolean staff = user.getRole() == Role.ADMIN || user.getRole() == Role.FACULTY;
         return noteRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(note -> canAccess(note, user))
+                // Students only ever see notes of their own program
+                // (MCA vs B.Tech vs BCA); general rows stay visible to all.
+                .filter(note -> staff
+                        || ProgramFilter.matches(note.getCourse(), user.getCourse()))
                 .map(note -> toVisibleResponse(note, user))
                 .toList();
     }
@@ -98,7 +104,7 @@ public class NoteService {
     public NoteResponse getVisible(Long id) {
         User user = currentUserService.requireUser();
         Note note = require(id);
-        if (!canAccess(note, user)) {
+        if (!canAccess(note, user) || !canSeeProgram(note, user)) {
             throw new ResourceNotFoundException("Note", id);
         }
         return toVisibleResponse(note, user);
@@ -222,6 +228,18 @@ public class NoteService {
         return purchaseService.hasActiveAccess(user.getId(), note.getCourseBundle().getId());
     }
 
+    /**
+     * Program scoping for students: an MCA note must never be readable
+     * (or even discoverable by id) by a B.Tech student. Staff manage all
+     * programs and bypass this check.
+     */
+    private boolean canSeeProgram(Note note, User user) {
+        if (user.getRole() == Role.ADMIN || user.getRole() == Role.FACULTY) {
+            return true;
+        }
+        return ProgramFilter.matches(note.getCourse(), user.getCourse());
+    }
+
     /** Base response without uploader info - keeps the student payload unchanged. */
     public static NoteResponse toResponse(Note note) {
         return new NoteResponse(
@@ -273,7 +291,7 @@ public class NoteService {
     public String requireVisibleFileUrl(Long id) {
         User user = currentUserService.requireUser();
         Note note = require(id);
-        if (!canAccess(note, user)) {
+        if (!canAccess(note, user) || !canSeeProgram(note, user)) {
             throw new ResourceNotFoundException("Note", id);
         }
         if (note.getFileUrl() == null || note.getFileUrl().isBlank()) {

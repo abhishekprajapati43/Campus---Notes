@@ -689,10 +689,7 @@ export function updateStudentProfileUI(
             formatRegistrationDate(student.created_at)
         );
 
-        studentProfileSetValue(
-            "studentProfileCourse",
-            course
-        );
+        setStudentProfileCourse(course);
 
         studentProfileSetValue(
             "studentProfileSemester",
@@ -887,9 +884,34 @@ function prefillStudentProfileForm(student) {
         "studentProfileRegistered",
         formatRegistrationDate(student.created_at)
     );
-    studentProfileSetValue("studentProfileCourse", student.course || "");
+    setStudentProfileCourse(student.course || "");
     studentProfileSetValue("studentProfileSemester", semester);
     studentProfileSetValue("studentProfileEnrollment", enrollment);
+}
+
+//
+// The course field is a dropdown built from courseStructure.
+// Older profiles can carry a free-text course that is not in
+// the shared list - keep it selectable instead of blanking
+// the field (the value round-trips unchanged on save).
+//
+function setStudentProfileCourse(course) {
+    const select = $("studentProfileCourse");
+
+    if (select && course) {
+        const exists = Array.from(select.options).some(
+            option => option.value === course
+        );
+
+        if (!exists) {
+            const option = document.createElement("option");
+            option.value = course;
+            option.textContent = course;
+            select.appendChild(option);
+        }
+    }
+
+    studentProfileSetValue("studentProfileCourse", course);
 }
 
 function snapshotStudentProfileFields() {
@@ -1023,6 +1045,17 @@ export function initStudentProfileEditing() {
     }
 
     studentProfileWired = true;
+
+    // Course dropdown comes from the shared courseStructure
+    // (MCA / B.Tech / BCA) so it always matches registration
+    // and the admin/faculty forms - no hardcoded list here.
+    // initializeApp() may have already filled the field from the
+    // loaded student; pass the current value in so rebuilding the
+    // options never blanks the selection.
+    populateCourses(
+        $("studentProfileCourse"),
+        currentStudent?.course || getStoredUser()?.course || ""
+    );
 
     $("studentProfileEditBtn")?.addEventListener(
         "click",

@@ -160,9 +160,10 @@
                        mb-1">
                                         Course
                                     </p>
-                                    <input id="studentProfileCourse" type="text"
-                                           class="profile-field"
-                                           maxlength="60" placeholder="-" disabled>
+                                    <!-- Populated from courseStructure
+                                         (MCA / B.Tech / BCA) in ui.js so the
+                                         list always matches registration. -->
+                                    <select id="studentProfileCourse" class="profile-field" disabled></select>
                                 </div>
                                 <!-- Semester (students only) -->
                                 <div data-profile-role="student" class="border rounded-xl p-4">

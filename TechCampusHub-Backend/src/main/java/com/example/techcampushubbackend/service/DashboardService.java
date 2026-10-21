@@ -28,8 +28,9 @@ import java.util.List;
  *
  * <p>The counting rule is the same access model the rest of the app enforces
  * when opening a document, so the number on a card always matches what the
- * student can actually reach in that section. PYQ and timetable counts are
- * additionally scoped to the student's program (MCA vs B.Tech).
+ * student can actually reach in that section. Notes, PYQ and timetable
+ * counts are additionally scoped to the student's program (MCA vs B.Tech vs
+ * BCA); TNP stays shared across every program.
  */
 @Service
 @RequiredArgsConstructor
@@ -60,12 +61,30 @@ public class DashboardService {
         List<Long> courseIds = accessibleCourseIds(user.getId());
 
         return new DashboardSummary(
-                noteRepository.countAccessible(courseIds),
+                // Notes are scoped to the student's program just like
+                // PYQs/timetables, so the card count always matches
+                // what the Notes page lists.
+                countNotes(user, courseIds),
                 tnpNoteRepository.countAccessible(courseIds),
                 // PYQ/timetable are additionally scoped to the student's
-                // program (MCA vs B.Tech), matching what their pages list.
+                // program (MCA vs B.Tech vs BCA), matching what their
+                // pages list.
                 countPyqs(user, courseIds),
                 countTimetables(user, courseIds));
+    }
+
+    /**
+     * Notes this student can reach: free/own-bundle notes of their program.
+     * Counted in Java because the program comparison normalises labels
+     * ("B.Tech" vs "BTech"); the tables are small and the notes page loads
+     * them all anyway, so the card number always matches the page.
+     */
+    private long countNotes(User user, List<Long> courseIds) {
+        return noteRepository.findAllByOrderByCreatedAtDesc().stream()
+                .filter(note -> note.getCourseBundle() == null
+                        || courseIds.contains(note.getCourseBundle().getId()))
+                .filter(note -> ProgramFilter.matches(note.getCourse(), user.getCourse()))
+                .count();
     }
 
     /**

@@ -2,15 +2,24 @@
 // TechCampus_Hub
 // favorites.js
 //
-// Favourite notes/TNP resources: heart toggle on the
+// Favourite learning resources: heart toggle on the
 // resource cards, sidebar badge, and the dedicated
 // favourites page.
 //
-// Storage: backend /api/favorites (itemType NOTE/TNP_NOTE).
+// Supported content types: notes, TNP resources, PYQs
+// and exam timetables (itemType NOTE / TNP_NOTE / PYQ /
+// TIMETABLE on the backend).
+//
+// Storage: backend /api/favorites. Each row stores
+// userId + itemType + itemId + createdAt, so favourites
+// survive refreshes and re-logins. Opening a favourite
+// goes through the SAME secure in-app PDF viewer used by
+// the dashboard cards (data-pdf-open) - the document
+// bytes are pulled through the authenticated backend
+// relay, which also enforces bundle gating.
 // =====================================================
 
 import { $, escapeHtml, formatDate, getIdentity } from "./helpers.js";
-import { currentStudent } from "./state.js";
 
 import {
     apiGet,
@@ -24,8 +33,32 @@ import {
 // Module state
 // =====================================================
 
-// Categories a student may favourite.
-const FAV_CATEGORIES = ["notes", "tnp"];
+// Categories a student may favourite, with the display
+// meta used on the favourites page.
+const FAV_CATEGORIES = ["notes", "tnp", "pyq", "timetable"];
+
+const FAV_CATEGORY_META = {
+    notes: {
+        label: "Note",
+        icon: "fa-book-open",
+        iconClass: "bg-blue-50 text-blue-600"
+    },
+    tnp: {
+        label: "TNP",
+        icon: "fa-briefcase",
+        iconClass: "bg-purple-50 text-purple-600"
+    },
+    pyq: {
+        label: "PYQ",
+        icon: "fa-file-lines",
+        iconClass: "bg-green-50 text-green-600"
+    },
+    timetable: {
+        label: "Timetable",
+        icon: "fa-calendar-days",
+        iconClass: "bg-orange-50 text-orange-600"
+    }
+};
 
 let favoritesCache = [];
 let favoritesLoaded = false;
@@ -40,12 +73,11 @@ export async function loadFavorites(force = false) {
         return favoritesCache;
     }
 
-    favoritesLoaded = true;
-    favoritesCache = [];
-
     const identity = await getIdentity();
 
     if (!identity.id) {
+        favoritesLoaded = true;
+        favoritesCache = [];
         return favoritesCache;
     }
 
@@ -53,7 +85,13 @@ export async function loadFavorites(force = false) {
         const rows = await apiGet("/api/favorites");
 
         favoritesCache = (Array.isArray(rows) ? rows : [])
-            .map(normalizeFavorite);
+            .map(normalizeFavorite)
+            .filter(Boolean);
+
+        // Only a successful snapshot flips the "loaded"
+        // flag, so a transient failure is retried instead
+        // of being cached as "this student has nothing".
+        favoritesLoaded = true;
     } catch (error) {
         console.error("Favorites loading error:", error);
     }
@@ -72,19 +110,23 @@ export function isFavorite(category, itemId) {
 }
 
 export async function toggleFavorite({ category, itemId, itemTitle }) {
-    const normalizedCategory = FAV_CATEGORIES.includes(category)
-        ? category
-        : "notes";
-
     const identity = await getIdentity();
 
     if (!identity.id) {
         throw new Error("Please log in to save favourites.");
     }
 
-    const itemType = FAVORITE_CATEGORY_TO_TYPE[normalizedCategory] || "NOTE";
+    // Never fall back to a default type: writing NOTE for
+    // an unknown category would store the favourite under
+    // the wrong itemType and the item could never be found
+    // or removed again.
+    if (!FAV_CATEGORIES.includes(category) || !itemId) {
+        throw new Error("This item cannot be saved to favourites.");
+    }
 
-    const already = isFavorite(normalizedCategory, itemId);
+    const itemType = FAVORITE_CATEGORY_TO_TYPE[category];
+
+    const already = isFavorite(category, itemId);
 
     if (already) {
         await apiDelete(
@@ -94,7 +136,7 @@ export async function toggleFavorite({ category, itemId, itemTitle }) {
         favoritesCache = favoritesCache.filter(
             row =>
                 !(
-                    row.category === normalizedCategory &&
+                    row.category === category &&
                     String(row.item_id) === String(itemId)
                 )
         );
@@ -109,7 +151,7 @@ export async function toggleFavorite({ category, itemId, itemTitle }) {
 
         favoritesCache.unshift(
             normalizeFavorite(data) || {
-                category: normalizedCategory,
+                category,
                 item_id: String(itemId),
                 item_title: String(itemTitle || "Untitled")
             }
@@ -202,8 +244,9 @@ export async function renderFavoritesPage() {
 
     await loadFavorites(true);
 
+    // Every favouritable content type shows up here.
     const rows = favoritesCache.filter(
-        row => row.category === "notes" || row.category === "tnp"
+        row => FAV_CATEGORIES.includes(row.category)
     );
 
     if (empty) {
@@ -217,13 +260,11 @@ export async function renderFavoritesPage() {
         return;
     }
 
-    const label = {
-        notes: `<span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">Note</span>`,
-        tnp: `<span class="rounded-full bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-700">TNP</span>`
-    };
-
     const html = rows.map(row => {
-        const category = row.category === "tnp" ? "tnp" : "notes";
+        const meta = FAV_CATEGORY_META[row.category]
+            || FAV_CATEGORY_META.notes;
+
+        const title = row.item_title || "Untitled";
 
         return `
             <article data-favorite-card
@@ -232,38 +273,41 @@ export async function renderFavoritesPage() {
                 <div class="flex items-start justify-between gap-3">
                     <div class="flex min-w-0 items-start gap-3">
                         <div class="flex h-11 w-11 shrink-0 items-center justify-center
-                                    rounded-xl ${category === "tnp"
-                                        ? "bg-purple-50 text-purple-600"
-                                        : "bg-blue-50 text-blue-600"}">
-                            <i class="fa-solid ${category === "tnp"
-                                ? "fa-briefcase"
-                                : "fa-book-open"}"></i>
+                                    rounded-xl ${meta.iconClass}">
+                            <i class="fa-solid ${meta.icon}"></i>
                         </div>
                         <div class="min-w-0">
                             <h3 class="truncate text-base font-semibold text-gray-900"
-                                title="${escapeHtml(row.item_title || "Untitled")}">
-                                ${escapeHtml(row.item_title || "Untitled")}
+                                title="${escapeHtml(title)}">
+                                ${escapeHtml(title)}
                             </h3>
                             <p class="mt-1 text-xs text-slate-400">
                                 Saved ${escapeHtml(formatDate(row.created_at))}
                             </p>
                         </div>
                     </div>
-                    ${label[category] || ""}
+                    <span class="shrink-0 rounded-full bg-slate-100
+                                 px-2.5 py-1 text-xs font-bold text-slate-700">
+                        ${escapeHtml(meta.label)}
+                    </span>
                 </div>
-                <div class="mt-4 flex items-center gap-2">
-                    <a href="./dashboard.html?category=${category}"
-                       class="inline-flex items-center gap-2 rounded-lg bg-blue-600
-                              px-3 py-2 text-sm font-medium text-white transition
-                              hover:bg-blue-700">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                <div class="mt-4 flex flex-wrap items-center gap-2">
+                    <button type="button"
+                        data-pdf-open
+                        data-pdf-category="${escapeHtml(row.category)}"
+                        data-pdf-id="${escapeHtml(String(row.item_id))}"
+                        data-pdf-title="${escapeHtml(title)}"
+                        class="inline-flex items-center gap-2 rounded-lg
+                               bg-blue-600 px-3 py-2 text-sm font-medium
+                               text-white transition hover:bg-blue-700">
+                        <i class="fa-regular fa-eye"></i>
                         Open
-                    </a>
+                    </button>
                     <button type="button"
                         class="remove-favorite-btn inline-flex items-center gap-2
                                rounded-lg bg-red-50 px-3 py-2 text-sm font-medium
                                text-red-600 transition hover:bg-red-100"
-                        data-favorite-category="${escapeHtml(category)}"
+                        data-favorite-category="${escapeHtml(row.category)}"
                         data-favorite-id="${escapeHtml(String(row.item_id))}">
                         <i class="fa-solid fa-heart-crack"></i>
                         Remove

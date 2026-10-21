@@ -78,6 +78,20 @@ const FALLBACK_COURSES = [
         ]
     },
     {
+        id: "local-bca-notes",
+        slug: "bca-notes-bundle",
+        title: "BCA Complete Notes Bundle",
+        description: "Every semester's subject notes for BCA — organized by semester and subject, PDF downloads.",
+        price_inr: 499,
+        mrp_inr: 1499,
+        highlights: [
+            "All BCA semesters",
+            "Subject-wise PDF notes",
+            "Lifetime access after approval",
+            "New notes added regularly"
+        ]
+    },
+    {
         id: "local-pyq-pack",
         slug: "pyq-mastery-pack",
         title: "Previous Year Papers (PYQ) Pack",
