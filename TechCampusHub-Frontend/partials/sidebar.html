@@ -15,25 +15,26 @@
                top-0
                bottom-0
                w-64
-               text-white
                z-[70]
                hidden
                md:flex
                flex-col">
                 <!-- BRAND -->
-                <div class="h-24
+                <div class="h-20
                    px-5
                    flex
                    items-center
                    gap-3
                    border-b
-                   border-white/10">
-                    <a href="./index.html" aria-label="Go to home page" class="flex items-center gap-3 min-w-0 text-white">
-                    <div class="w-12
-                       h-12
+                   border-slate-200/80">
+                    <a href="./index.html" aria-label="Go to home page" class="flex items-center gap-3 min-w-0">
+                    <div class="w-11
+                       h-11
                        bg-white
                        rounded-xl
                        p-1
+                       ring-1
+                       ring-slate-200
                        flex
                        items-center
                        justify-center
@@ -44,34 +45,44 @@
                     </div>
                     <div class="brand-text">
                         <div class="font-extrabold
-                           text-lg">
+                           text-[15px]
+                           tracking-tight
+                           text-slate-900">
                             TechCampus_Hub
                         </div>
                         <div class="text-xs
-                           text-blue-200">
+                           text-slate-500">
                             College Learning Portal
                         </div>
                     </div>
                     </a>
                     <button id="closeSidebarBtn" type="button" aria-label="Close" class="ml-auto
                        md:hidden
-                       text-white/70
-                       hover:text-white" type="button">
+                       w-9
+                       h-9
+                       rounded-lg
+                       flex
+                       items-center
+                       justify-center
+                       text-slate-400
+                       hover:text-slate-700
+                       hover:bg-slate-100" type="button">
                         <i class="fa-solid
                            fa-xmark"></i>
                     </button>
                 </div>
                 <!-- NAVIGATION -->
-                <nav class="p-4 space-y-2 flex-1 min-h-0 overflow-y-auto hide-scroll">
+                <nav class="p-3 space-y-1 flex-1 min-h-0 overflow-y-auto hide-scroll">
+                        <span class="nav-section-label">Menu</span>
                         <!-- Dashboard -->
-                        <a id="dashboardHomeBtn" href="./dashboard.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                        <a id="dashboardHomeBtn" href="./dashboard.html" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                             <i class="fa-solid fa-house w-5"></i>
                             <span class="nav-label font-semibold">
                                 Dashboard
                             </span>
                         </a>
                         <!-- Notifications -->
-                        <a id="notificationsBtn" href="./notifications.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                        <a id="notificationsBtn" href="./notifications.html" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                             <i class="fa-regular fa-bell w-5"></i>
                             <span class="nav-label font-semibold">
                                 Notifications
@@ -83,7 +94,7 @@
                             </span>
                         </a>
                         <!-- Favorites -->
-                        <a id="favoritesBtn" href="./favorites.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                        <a id="favoritesBtn" href="./favorites.html" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                             <i class="fa-regular fa-heart w-5"></i>
                             <span class="nav-label font-semibold">
                                 Favorites
@@ -95,28 +106,28 @@
                             </span>
                         </a>
                         <!-- Courses -->
-                        <a id="coursesBtn" href="./courses.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                        <a id="coursesBtn" href="./courses.html" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                             <i class="fa-solid fa-graduation-cap w-5"></i>
                             <span class="nav-label font-semibold">
                                 Courses
                             </span>
                         </a>
                         <!-- Payment History -->
-                        <a id="paymentHistoryBtn" href="./payment-history.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                        <a id="paymentHistoryBtn" href="./payment-history.html" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                             <i class="fa-solid fa-receipt w-5"></i>
                             <span class="nav-label font-semibold">
                                 Payment History
                             </span>
                         </a>
                         <!-- Certificates -->
-                        <a id="certificatesBtn" href="./certificates.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                        <a id="certificatesBtn" href="./certificates.html" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                             <i class="fa-solid fa-certificate w-5"></i>
                             <span class="nav-label font-semibold">
                                 Certificates
                             </span>
                         </a>
                         <!-- Feedback -->
-                        <a id="feedbackBtn" href="./feedback.html" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                        <a id="feedbackBtn" href="./feedback.html" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                             <i class="fa-solid fa-star w-5"></i>
                             <span class="nav-label font-semibold">
                                 Feedback
@@ -128,7 +139,7 @@
                             href="https://t.me/TechCampus_Hub"
                             target="_blank"
                             rel="noopener noreferrer"
-                            class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl"
+                            class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl"
                         >
                             <i class="fa-brands fa-telegram w-5"></i>
                             <span class="nav-label font-semibold">
@@ -136,46 +147,47 @@
                             </span>
                         </a>
                         <!-- Divider -->
-                        <div class="my-3 border-t border-white/10"></div>
+                        <div class="my-3 border-t border-slate-200"></div>
                         <!-- Faculty workspace quick links (faculty only) -->
-                        <div id="facultyNavGroup" class="hidden space-y-2">
-                            <a id="facultyDashboardNavBtn" href="./faculty.html#dashboard" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                        <div id="facultyNavGroup" class="hidden space-y-1">
+                            <span class="nav-section-label">Workspace</span>
+                            <a id="facultyDashboardNavBtn" href="./faculty.html#dashboard" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                                 <i class="fa-solid fa-chart-line w-5"></i>
                                 <span class="nav-label font-semibold">
                                     Dashboard
                                 </span>
                             </a>
-                            <a id="facultyCourseNavBtn" href="./faculty.html#courses" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <a id="facultyCourseNavBtn" href="./faculty.html#courses" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                                 <i class="fa-solid fa-layer-group w-5"></i>
                                 <span class="nav-label font-semibold">
                                     My Courses
                                 </span>
                             </a>
-                            <a id="facultyUploadNavBtn" href="./faculty.html#content" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <a id="facultyUploadNavBtn" href="./faculty.html#content" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                                 <i class="fa-solid fa-cloud-arrow-up w-5"></i>
                                 <span class="nav-label font-semibold">
                                     Add Content
                                 </span>
                             </a>
-                            <a id="facultyNotificationsNavBtn" href="./faculty.html#notifications" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <a id="facultyNotificationsNavBtn" href="./faculty.html#notifications" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                                 <i class="fa-regular fa-bell w-5"></i>
                                 <span class="nav-label font-semibold">
                                     Notifications
                                 </span>
                             </a>
-                            <a id="facultyCertificatesNavBtn" href="./faculty.html#certificates" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <a id="facultyCertificatesNavBtn" href="./faculty.html#certificates" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                                 <i class="fa-solid fa-certificate w-5"></i>
                                 <span class="nav-label font-semibold">
                                     Certificates
                                 </span>
                             </a>
-                            <a id="facultyFeedbackNavBtn" href="./faculty.html#feedback" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <a id="facultyFeedbackNavBtn" href="./faculty.html#feedback" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                                 <i class="fa-solid fa-star w-5"></i>
                                 <span class="nav-label font-semibold">
                                     Feedback
                                 </span>
                             </a>
-                            <a id="facultyUsersNavBtn" href="./faculty.html#users" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                            <a id="facultyUsersNavBtn" href="./faculty.html#users" class="nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                                 <i class="fa-solid fa-users w-5"></i>
                                 <span class="nav-label font-semibold">
                                     Users
@@ -183,7 +195,7 @@
                             </a>
                         </div>
                         <!-- Admin Panel (admins only) -->
-                        <a id="adminNavBtn" href="./admin.html" class="nav-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                        <a id="adminNavBtn" href="./admin.html" class="nav-item hidden w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                             <i class="fa-solid fa-user-shield w-5"></i>
                             <span class="nav-label font-semibold">
                                 Admin Panel
@@ -191,32 +203,32 @@
                         </a>
                         <!-- Admin Panel quick links (admins only): open the
                              matching admin.html module via its hash -->
-                        <a id="adminUsersNavBtn" href="./admin.html#users" class="nav-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                        <a id="adminUsersNavBtn" href="./admin.html#users" class="nav-item hidden w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                             <i class="fa-solid fa-users w-5"></i>
                             <span class="nav-label font-semibold">
                                 Users
                             </span>
                         </a>
-                        <a id="adminFacultyNavBtn" href="./admin.html#faculty" class="nav-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                        <a id="adminFacultyNavBtn" href="./admin.html#faculty" class="nav-item hidden w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                             <i class="fa-solid fa-user-check w-5"></i>
                             <span id="facultyTabLabel" class="nav-label font-semibold">
                                 Manage Faculty
                             </span>
                         </a>
-                        <a id="adminPaymentsNavBtn" href="./admin.html#payments" class="nav-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                        <a id="adminPaymentsNavBtn" href="./admin.html#payments" class="nav-item hidden w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                             <i class="fa-solid fa-indian-rupee-sign w-5"></i>
                             <span class="nav-label font-semibold">
                                 Payments
                             </span>
                         </a>
-                        <a id="adminSettingsNavBtn" href="./admin.html#settings" class="nav-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                        <a id="adminSettingsNavBtn" href="./admin.html#settings" class="nav-item hidden w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                             <i class="fa-solid fa-gear w-5"></i>
                             <span class="nav-label font-semibold">
                                 Settings
                             </span>
                         </a>
                         <!-- Faculty Workspace (faculty/admin only) -->
-                        <a id="facultyNavBtn" href="./faculty.html" class="nav-item hidden w-full flex items-center gap-3 px-4 py-3 rounded-xl">
+                        <a id="facultyNavBtn" href="./faculty.html" class="nav-item hidden w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl">
                             <i class="fa-solid fa-chalkboard-user w-5"></i>
                             <span class="nav-label font-semibold">
                                 Faculty
@@ -225,16 +237,16 @@
                         <!-- Logout -->
                     </nav>
                     <!-- LOGOUT -->
-                    <div class="p-4
+                    <div class="p-3
                    border-t
-                   border-white/10">
+                   border-slate-200">
                         <button id="logoutBtn" class="nav-item
                        w-full
                        flex
                        items-center
-                       gap-4
-                       px-4
-                       py-3
+                       gap-3
+                       px-3.5
+                       py-2.5
                        rounded-xl
                        text-left" type="button">
                             <i class="fa-solid

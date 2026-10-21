@@ -1,328 +1,832 @@
-        * {
-            box-sizing: border-box;
-        }
+/* =============================================================
+   TechCampus_Hub — Premium Design System (light mode)
+   -------------------------------------------------------------
+   Modern SaaS styling inspired by Linear, Notion, GitHub,
+   Vercel, Stripe and Fluent Design.
 
-        html {
-            scroll-behavior: smooth;
-        }
+   IMPORTANT: This file only restyles the UI. Every class name,
+   id, route and behaviour used by the JavaScript layer is
+   preserved exactly as before.
+   ============================================================= */
 
-        body {
-            margin: 0;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-            font-family:
-                Inter,
-                ui-sans-serif,
-                system-ui,
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                sans-serif;
+/* =============================================================
+   1. DESIGN TOKENS
+   ============================================================= */
 
-            background: #f5f8fc;
-            color: #102a56;
-        }
+:root {
+    /* Surfaces */
+    --bg: #f4f6fa;
+    --surface: #ffffff;
+    --surface-2: #f8fafc;
+    --surface-3: #f1f5f9;
 
-        button,
-        input,
-        select {
-            font: inherit;
-        }
+    /* Borders */
+    --border: #e6eaf1;
+    --border-strong: #d8dfeb;
 
-        button {
-            cursor: pointer;
-        }
+    /* Text */
+    --text: #0f1c33;
+    --text-2: #475569;
+    --muted: #7a879b;
 
-        .sidebar {
-            background:
-                linear-gradient(180deg,
-                    #2e61b3 0%,
-                    #2f5fb1 100%);
-        }
+    /* Accent */
+    --accent: #2563eb;
+    --accent-strong: #1d4ed8;
+    --accent-soft: #eef4ff;
+    --ring: rgba(37, 99, 235, .14);
 
-        .nav-item {
-            text-decoration: none;
+    /* Elevation */
+    --shadow-xs: 0 1px 2px rgba(15, 28, 51, .05);
+    --shadow-sm: 0 1px 2px rgba(15, 28, 51, .04), 0 2px 6px rgba(15, 28, 51, .05);
+    --shadow-md: 0 1px 2px rgba(15, 28, 51, .04), 0 8px 24px rgba(15, 28, 51, .07);
+    --shadow-lg: 0 8px 24px rgba(15, 28, 51, .08), 0 24px 56px rgba(15, 28, 51, .12);
 
-            transition:
-                background .2s ease,
-                color .2s ease,
-                transform .2s ease;
-        }
+    /* Radii */
+    --radius-card: 16px;
+    --radius-ctl: 10px;
 
-        .nav-item:hover,
-        .nav-item.active {
-            background: #2563eb;
-            color: white;
-            transform: translateX(2px);
-        }
+    /* Sidebar (light, Fluent-inspired) */
+    --sidebar-bg: #fbfcfe;
+    --sidebar-text: #5b6b80;
+    --sidebar-hover: #eef2f8;
+}
 
-        .card {
-            background: white;
-            border: 1px solid #e4ebf4;
-            border-radius: 18px;
+/* =============================================================
+   2. BASE
+   ============================================================= */
 
-            box-shadow:
-                0 8px 28px rgba(15, 39, 74, .06);
-        }
+* {
+    box-sizing: border-box;
+}
 
-        .resource-card {
-            transition:
-                transform .2s ease,
-                box-shadow .2s ease;
-        }
+html {
+    scroll-behavior: smooth;
+}
 
-        .resource-card:hover {
-            transform: translateY(-3px);
+body {
+    margin: 0;
 
-            box-shadow:
-                0 14px 34px rgba(15, 39, 74, .10);
-        }
+    font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
 
-        .input {
-            width: 100%;
+    background: var(--bg);
+    color: var(--text);
 
-            border: 1px solid #dbe4ef;
-            border-radius: 12px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
 
-            padding: 12px 14px;
+::selection {
+    background: rgba(37, 99, 235, .18);
+    color: #0b1b33;
+}
 
-            outline: none;
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
 
-            background: white;
-            color: #18345f;
-        }
+button {
+    cursor: pointer;
+}
 
-        .input:focus {
-            border-color: #2563eb;
+/* Micro-interaction for every button-like control */
+button,
+a[href] {
+    transition:
+        background-color .18s ease,
+        border-color .18s ease,
+        color .18s ease,
+        box-shadow .18s ease,
+        opacity .18s ease;
+}
 
-            box-shadow:
-                0 0 0 3px rgba(37, 99, 235, .10);
-        }
+button:active {
+    transform: scale(.985);
+}
 
-        .input:disabled {
-            background: #f1f5f9;
-            color: #64748b;
-            cursor: not-allowed;
-        }
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    letter-spacing: -.014em;
+    color: var(--text);
+}
 
-        /* Inline profile fields: the profile cards hold the
-           inputs themselves. Disabled they read like plain
-           bold text; enabled (edit mode) they gain the
-           familiar input chrome in the exact same spot. */
-        .profile-field {
-            width: 100%;
+/* Slim, refined scrollbars */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
 
-            font-weight: 700;
-            font-size: 17px;
-            color: #18345f;
+::-webkit-scrollbar-track {
+    background: transparent;
+}
 
-            background: transparent;
-            border: 1px solid transparent;
-            border-radius: 10px;
+::-webkit-scrollbar-thumb {
+    background: #cdd6e3;
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
 
-            padding: 2px 4px;
+::-webkit-scrollbar-thumb:hover {
+    background: #b3bfd0;
+    background-clip: content-box;
+    border: 3px solid transparent;
+}
 
-            outline: none;
-        }
+/* Accessible, modern focus ring */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
 
-        .profile-field::placeholder {
-            color: #94a3b8;
-            font-weight: 500;
-            font-size: 16px;
-        }
+/* =============================================================
+   3. APP CHROME — SIDEBAR
+   ============================================================= */
 
-        .profile-field:disabled {
-            cursor: default;
-        }
+.sidebar {
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    box-shadow: 8px 0 24px rgba(15, 28, 51, .03);
+}
 
-        .profile-field:enabled {
-            background: white;
-            border-color: #dbe4ef;
-            padding: 10px 12px;
-        }
+.sidebar .nav-item {
+    position: relative;
+    color: var(--sidebar-text);
+    border-radius: 11px;
 
-        .profile-field:focus {
-            border-color: #2563eb;
+    transition:
+        background .18s ease,
+        color .18s ease,
+        box-shadow .18s ease;
+}
 
-            box-shadow:
-                0 0 0 3px rgba(37, 99, 235, .10);
-        }
+.sidebar .nav-item i {
+    color: inherit;
+    font-size: 15px;
+}
 
-        .auth-bg {
-            background:
-                radial-gradient(circle at 10% 10%,
-                    rgba(37, 99, 235, .18),
-                    transparent 34%),
-                radial-gradient(circle at 90% 85%,
-                    rgba(220, 38, 38, .10),
-                    transparent 30%),
-                #f4f7fb;
-        }
+.sidebar .nav-item:hover {
+    background: var(--sidebar-hover);
+    color: var(--text);
+    transform: none;
+}
 
-        .auth-card {
-            box-shadow:
-                0 24px 70px rgba(15, 39, 74, .14);
-        }
+.sidebar .nav-item.active {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, .10);
+}
 
-        /* TechCampus_Hub text logo */
-        .text-logo-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-            flex-shrink: 0;
-        }
+/* Fluent-style active indicator bar */
+.sidebar .nav-item.active::before {
+    content: "";
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--accent);
+}
 
-        .text-logo-icon-small {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            flex-shrink: 0;
-        }
+/* Logout keeps its own danger tone */
+#logoutBtn:hover {
+    background: #fef2f2 !important;
+    color: #dc2626 !important;
+}
 
-        /* Brand logo image inside the logo chips */
-        .text-logo-icon img,
-        .text-logo-icon-small img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            display: block;
-        }
+/* Sidebar counters */
+#notificationBadge,
+#favoritesBadge {
+    background: #f43f5e;
+    box-shadow: 0 0 0 2px #fff;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .01em;
+}
 
-        .hide-scroll::-webkit-scrollbar {
-            display: none;
-        }
+/* Section label inside the sidebar nav */
+.sidebar .nav-section-label {
+    display: block;
+    padding: 14px 14px 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #9aa7ba;
+}
 
-        .mobile-nav {
-            display: none;
-        }
+/* =============================================================
+   4. APP CHROME — HEADER
+   ============================================================= */
 
-        .mobile-open {
-            display: flex !important;
-        }
+.app-header {
+    background: rgba(255, 255, 255, .82);
+    backdrop-filter: saturate(180%) blur(14px);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 1px 0 rgba(15, 28, 51, .02);
+}
 
-        #sidebarOverlay {
-            display: none;
-        }
+.main-area {
+    background: var(--bg);
+}
 
-        /*
-         * Edit modal field wrapper.
-         * admin.js uses this class to hide/show
-         * complete fields according to category.
-         */
-        .edit-field-group {
-            min-width: 0;
-        }
+/* =============================================================
+   5. CARDS
+   ============================================================= */
 
-        /*
-         * Admin panel tabs (admin.html)
-         * Crisp active state: white pill, soft shadow, blue-700 text.
-         */
-        .admin-tab-btn.active {
-            background: #fff;
-            color: #1d4ed8;
-            font-weight: 700;
-            box-shadow: 0 6px 16px rgba(15, 39, 74, .12);
-        }
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
 
-        .admin-tab-btn.active:hover {
-            background: #fff;
-            color: #1d4ed8;
-        }
+    box-shadow: var(--shadow-sm);
 
-        @media (max-width: 900px) {
+    transition:
+        box-shadow .22s ease,
+        border-color .22s ease;
+}
 
-            .sidebar {
-                width: 76px;
-            }
+/* Gentle entrance for main content cards */
+@keyframes tch-fade {
+    from {
+        opacity: 0;
+    }
 
-            .nav-label,
-            .brand-text {
-                display: none;
-            }
+    to {
+        opacity: 1;
+    }
+}
 
-            .main-area {
-                margin-left: 76px !important;
-            }
-        }
+main .card {
+    animation: tch-fade .35s ease both;
+}
 
-        @media (max-width: 700px) {
+.resource-card {
+    transition:
+        transform .22s ease,
+        box-shadow .22s ease,
+        border-color .22s ease;
+}
 
-            .sidebar {
-                display: none;
-                width: 270px;
-                z-index: 80;
-            }
+.resource-card:hover {
+    transform: translateY(-3px);
 
-            .sidebar.mobile-open {
-                display: flex !important;
-            }
+    border-color: #d4e0f7;
+    box-shadow: var(--shadow-md);
+}
 
-            .main-area {
-                margin-left: 0 !important;
-            }
+/* Selected quick-access tile on the dashboard */
+[data-dashboard-category].active {
+    border-color: rgba(37, 99, 235, .45);
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, .10),
+        var(--shadow-sm);
+}
 
-            .mobile-nav {
-                display: flex !important;
-            }
+/* Welcome row: below the widest layouts the AI chatbot
+   card moves onto its own line instead of overflowing */
+@media (max-width: 1360px) {
+    #openGeminiBtn {
+        flex-basis: 100%;
+    }
+}
 
-            #sidebarOverlay:not(.hidden) {
-                display: block;
-            }
-        }
+/* =============================================================
+   6. FORM CONTROLS
+   ============================================================= */
 
-        /* =====================================================
-   ADMIN LOGIN MODAL
-===================================================== */
+.input {
+    width: 100%;
 
-        .admin-modal {
-            backdrop-filter: blur(5px);
-        }
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-ctl);
 
-        /* =====================================================
+    padding: 11px 14px;
+
+    outline: none;
+
+    background: var(--surface);
+    color: var(--text);
+
+    box-shadow: var(--shadow-xs);
+
+    transition:
+        border-color .16s ease,
+        box-shadow .16s ease,
+        background-color .16s ease;
+}
+
+.input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--ring);
+}
+
+.input::placeholder {
+    color: #9aa7ba;
+}
+
+.input:disabled {
+    background: var(--surface-3);
+    color: #94a3b8;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Native checkboxes / radios get the brand accent */
+input[type="checkbox"],
+input[type="radio"] {
+    accent-color: var(--accent);
+}
+
+select.input,
+select {
+    appearance: none;
+    background-image:
+        url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a879b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 38px;
+}
+
+/* Inline profile fields: the profile cards hold the
+   inputs themselves. Disabled they read like plain
+   bold text; enabled (edit mode) they gain the
+   familiar input chrome in the exact same spot. */
+.profile-field {
+    width: 100%;
+
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--text);
+
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-ctl);
+
+    padding: 2px 4px;
+
+    outline: none;
+
+    transition:
+        border-color .16s ease,
+        box-shadow .16s ease,
+        background-color .16s ease;
+}
+
+.profile-field::placeholder {
+    color: #9aa7ba;
+    font-weight: 500;
+    font-size: 16px;
+}
+
+.profile-field:disabled {
+    cursor: default;
+}
+
+.profile-field:enabled {
+    background: var(--surface);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-xs);
+    padding: 10px 12px;
+}
+
+.profile-field:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--ring);
+}
+
+/* =============================================================
+   7. BUTTONS
+   ============================================================= */
+
+/* Primary (blue) actions — static markup and JS-rendered */
+button[class*="bg-blue-600"],
+a[class*="bg-blue-600"],
+button[class*="bg-blue-700"],
+a[class*="bg-blue-700"] {
+    background-image: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+    border: 1px solid rgba(29, 78, 216, .2);
+    box-shadow:
+        0 1px 2px rgba(37, 99, 235, .22),
+        0 4px 14px rgba(37, 99, 235, .16);
+    color: #fff;
+}
+
+button[class*="bg-blue-600"]:hover,
+a[class*="bg-blue-600"]:hover,
+button[class*="bg-blue-700"]:hover,
+a[class*="bg-blue-700"]:hover {
+    background-image: linear-gradient(180deg, #3478ec 0%, #1d56d6 100%);
+    box-shadow:
+        0 1px 2px rgba(37, 99, 235, .26),
+        0 6px 18px rgba(37, 99, 235, .22);
+}
+
+/* Success (green) actions */
+button[class*="bg-emerald-600"],
+a[class*="bg-emerald-600"],
+button[class*="bg-green-600"],
+a[class*="bg-green-600"] {
+    box-shadow:
+        0 1px 2px rgba(5, 150, 105, .2),
+        0 4px 12px rgba(5, 150, 105, .14);
+}
+
+/* Danger (red) actions */
+button[class*="bg-red-600"],
+a[class*="bg-red-600"],
+button[class*="bg-rose-600"],
+a[class*="bg-rose-600"] {
+    box-shadow:
+        0 1px 2px rgba(225, 29, 72, .2),
+        0 4px 12px rgba(225, 29, 72, .14);
+}
+
+/* Secondary / outline actions */
+button[class*="border-slate-200"]:not([class*="bg-blue"]):not([class*="bg-red"]):not([class*="bg-emerald"]),
+a[class*="border-slate-200"]:not([class*="bg-blue"]):not([class*="bg-red"]):not([class*="bg-emerald"]) {
+    background: var(--surface);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-xs);
+    color: var(--text-2);
+}
+
+button[class*="border-slate-200"]:not([class*="bg-blue"]):not([class*="bg-red"]):not([class*="bg-emerald"]):hover,
+a[class*="border-slate-200"]:not([class*="bg-blue"]):not([class*="bg-red"]):not([class*="bg-emerald"]):hover {
+    background: var(--surface-2);
+    border-color: #c6d0e0;
+}
+
+/* =============================================================
+   8. TABLES
+   ============================================================= */
+
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+thead th {
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+thead th:first-child {
+    border-top-left-radius: 12px;
+}
+
+thead th:last-child {
+    border-top-right-radius: 12px;
+}
+
+tbody td {
+    border-bottom: 1px solid #eef1f7;
+    color: var(--text-2);
+    vertical-align: middle;
+}
+
+tbody tr {
+    transition: background-color .15s ease;
+}
+
+tbody tr:hover {
+    background: #f8fafd;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+@media (max-width: 640px) {
+    table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+    }
+}
+
+/* =============================================================
+   9. MODALS & OVERLAYS
+   ============================================================= */
+
+.backdrop,
+.fixed.inset-0[class*="bg-slate-950"] {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.inset-0 > div[class*="bg-white"] {
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+}
+
+/* =============================================================
+   10. AUTH PAGES (login / signup)
+   ============================================================= */
+
+.auth-bg {
+    background:
+        radial-gradient(60rem 60rem at 8% -10%, rgba(37, 99, 235, .10), transparent 60%),
+        radial-gradient(50rem 50rem at 105% 110%, rgba(99, 102, 241, .08), transparent 60%),
+        var(--bg);
+}
+
+.auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+}
+
+/* =============================================================
+   11. BRANDING CHIPS
+   ============================================================= */
+
+/* TechCampus_Hub text logo */
+.text-logo-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.text-logo-icon-small {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-xs);
+}
+
+/* Brand logo image inside the logo chips */
+.text-logo-icon img,
+.text-logo-icon-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+/* =============================================================
+   12. MISC UTILITIES (existing hooks)
+   ============================================================= */
+
+.hide-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.mobile-nav {
+    display: none;
+}
+
+.mobile-open {
+    display: flex !important;
+}
+
+#sidebarOverlay {
+    display: none;
+}
+
+#sidebarOverlay:not(.hidden) {
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+/*
+ * Edit modal field wrapper.
+ * admin.js uses this class to hide/show
+ * complete fields according to category.
+ */
+.edit-field-group {
+    min-width: 0;
+}
+
+/*
+ * Admin panel tabs (admin.html)
+ * Solid accent pill, soft glow, crisp white text.
+ */
+.admin-tab-btn {
+    transition:
+        background .18s ease,
+        color .18s ease,
+        box-shadow .18s ease;
+}
+
+.admin-tab-btn.active {
+    background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+    color: #fff;
+    font-weight: 700;
+    box-shadow:
+        0 1px 2px rgba(37, 99, 235, .22),
+        0 6px 16px rgba(37, 99, 235, .20);
+}
+
+.admin-tab-btn.active:hover {
+    background: linear-gradient(180deg, #3478ec 0%, #1d56d6 100%);
+    color: #fff;
+}
+
+/* =============================================================
+   13. RESPONSIVE — SIDEBAR COLLAPSE / MOBILE
+   ============================================================= */
+
+@keyframes tch-slide-in {
+    from {
+        transform: translateX(-102%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+@media (max-width: 900px) {
+
+    .sidebar {
+        width: 76px;
+    }
+
+    .sidebar .nav-label,
+    .sidebar .brand-text {
+        display: none;
+    }
+
+    .sidebar .nav-item {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .sidebar .nav-item.active::before {
+        display: none;
+    }
+
+    .sidebar .nav-section-label {
+        display: none;
+    }
+
+    /* Counters become dots in the collapsed rail */
+    .sidebar #notificationBadge,
+    .sidebar #favoritesBadge {
+        position: absolute;
+        top: 6px;
+        right: 10px;
+        min-width: 8px;
+        width: 8px;
+        height: 8px;
+        padding: 0;
+        font-size: 0;
+    }
+
+    .main-area {
+        margin-left: 76px !important;
+    }
+}
+
+@media (max-width: 700px) {
+
+    .sidebar {
+        display: none;
+        width: 270px;
+        z-index: 80;
+    }
+
+    .sidebar.mobile-open {
+        display: flex !important;
+        animation: tch-slide-in .24s ease both;
+    }
+
+    .sidebar .nav-label,
+    .sidebar .brand-text {
+        display: block;
+    }
+
+    .sidebar .nav-item {
+        justify-content: flex-start;
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .sidebar .nav-section-label {
+        display: block;
+    }
+
+    .sidebar #notificationBadge,
+    .sidebar #favoritesBadge {
+        position: static;
+        min-width: 22px;
+        width: auto;
+        height: 22px;
+        padding: 0 4px;
+        font-size: 12px;
+    }
+
+    .main-area {
+        margin-left: 0 !important;
+    }
+
+    .mobile-nav {
+        display: flex !important;
+    }
+
+    #sidebarOverlay:not(.hidden) {
+        display: block;
+    }
+}
+
+/* =============================================================
+   14. REDUCED MOTION
+   ============================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .resource-card:hover {
+        transform: none;
+    }
+}
+
+/* =====================================================
    HOW IT WORKS — STEP CONNECTORS (index.html)
 ===================================================== */
 
-        .how-step {
-            position: relative;
-        }
+.how-step {
+    position: relative;
+}
 
-        /*
-         * Dashed link + chevron between the four step cards.
-         * Markup lives inside steps 1–3 only; it renders solely
-         * at lg and up, where all four steps share one row and
-         * the 24px gap (gap-6) sits next to each card.
-         */
-        .how-step-connector {
-            display: none;
-        }
+/*
+ * Dashed link + chevron between the four step cards.
+ * Markup lives inside steps 1–3 only; it renders solely
+ * at lg and up, where all four steps share one row and
+ * the 24px gap (gap-6) sits next to each card.
+ */
+.how-step-connector {
+    display: none;
+}
 
-        @media (min-width: 1024px) {
+@media (min-width: 1024px) {
 
-            .how-step-connector {
-                position: absolute;
-                top: 34px;      /* p-6 (24px) + half of the w-10 icon circle */
-                left: 100%;
-                width: 24px;    /* matches the grid gap between the cards */
-                height: 20px;
-                display: flex;
-                align-items: center;
-                justify-content: flex-end;
-                gap: 3px;
-                pointer-events: none;
-            }
+    .how-step-connector {
+        position: absolute;
+        top: 34px;      /* p-6 (24px) + half of the w-10 icon circle */
+        left: 100%;
+        width: 24px;    /* matches the grid gap between the cards */
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 3px;
+        pointer-events: none;
+    }
 
-            .how-step-connector::before {
-                content: "";
-                flex: 1;
-                border-top: 2px dashed #bfdbfe;
-            }
-        }
+    .how-step-connector::before {
+        content: "";
+        flex: 1;
+        border-top: 2px dashed #bfdbfe;
+    }
+}
