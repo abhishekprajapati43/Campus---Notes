@@ -62,7 +62,7 @@ The admin account is created automatically on first start (see `ADMIN_*` variabl
 ### Run the tests
 
 ```bash
-./mvnw test        # 29 integration tests, in-memory H2 (PostgreSQL mode), no external services
+./mvnw test        # 87 tests (unit + integration); integration runs on in-memory H2 (PostgreSQL mode), no external services
 ```
 
 ### Build a jar

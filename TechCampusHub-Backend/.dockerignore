@@ -1,0 +1,13 @@
+# Keep the Docker build context clean and reproducible.
+target/
+.mvn/wrapper/maven-wrapper.jar
+.git
+.gitignore
+.idea/
+.vscode/
+*.iml
+*.log
+boot.out.log
+boot.err.log
+Dockerfile
+.dockerignore

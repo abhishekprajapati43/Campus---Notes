@@ -9,6 +9,8 @@ built in. **In production, override at least `JWT_SECRET`, the `DB_*` values,
 | `SERVER_PORT` | `8080` | HTTP port |
 | **Database** | | |
 | `DB_URL` | `jdbc:postgresql://localhost:5432/techcampushub_db` | JDBC URL |
+| `PG_CONNECTION_URL` | *(empty)* | libpq connection string (Render's `connectionString`); auto-converted to JDBC URL + user/password at startup. Ignored when `DB_URL` is set. |
+| `DATABASE_URL` | *(empty)* | Same, generic PaaS variant (Railway); tried after `PG_CONNECTION_URL`. |
 | `DB_USERNAME` | `postgres` | DB user |
 | `DB_PASSWORD` | `postgres` | DB password |
 | `DB_POOL_SIZE` | `10` | HikariCP max connections |

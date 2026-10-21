@@ -8,22 +8,25 @@
 // js/config.js picks up window.__API_BASE_URL__ when it evaluates.
 //
 // Resolution order:
-//   1. ?api=<url> query param          (one-off override)
-//   2. localStorage "campusnotes:apiBase"  (sticky override)
-//   3. PROD_API below                  (production default)
-//   4. http://localhost:8080           (local dev fallback)
+//   1. ?api=<url> query param            (one-off override)
+//   2. localStorage "campusnotes:apiBase" (sticky override)
+//   3. localhost / 127.0.0.1 / file://   → http://localhost:8080
+//   4. PROD_API below                    (production default)
 //
-// >>> DEPLOYMENT: paste your Railway backend origin here <<<
-// >>> (https, no trailing slash) then redeploy the site:  <<<
+// >>> DEPLOYMENT (Render): PROD_API points at the Render web     <<<
+// >>> service "techcampushub-backend". If Render gives that      <<<
+// >>> service a different URL (name already taken, e.g.          <<<
+// >>> techcampushub-backend-xxxx.onrender.com), paste the URL    <<<
+// >>> here (https, no trailing slash) AND update render.yaml's   <<<
+// >>> APP_BASE_URL / CORS_ALLOWED_ORIGINS, then push.            <<<
 //
-//     const PROD_API = "https://your-service.up.railway.app";
-//
-// Local Live Server keeps working automatically while PROD_API
-// is empty. To force local API while PROD_API is set, open the
-// site once with:  ?api=http://localhost:8080
+// Local Live Server keeps hitting your local backend on :8080
+// automatically. To force a different API while on localhost,
+// open the site once with:  ?api=https://techcampushub-backend.onrender.com
 //
 (function () {
-    const PROD_API = ""; // <-- production backend URL goes here
+    const PROD_API = "https://techcampushub-backend.onrender.com";
+    const LOCAL_API = "http://localhost:8080";
 
     let api = "";
     try {
@@ -31,5 +34,13 @@
             || window.localStorage.getItem("campusnotes:apiBase");
     } catch (e) { /* storage blocked — ignore */ }
 
-    window.__API_BASE_URL__ = api || PROD_API || "http://localhost:8080";
+    const host = window.location.hostname;
+    const isLocalHost = host === "localhost"
+        || host === "127.0.0.1"
+        || host === "[::1]"
+        || host === ""; // file://
+
+    window.__API_BASE_URL__ = api
+        || (isLocalHost ? LOCAL_API : PROD_API)
+        || LOCAL_API;
 })();

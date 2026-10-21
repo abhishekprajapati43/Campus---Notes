@@ -1,0 +1,27 @@
+# Normalize text files; keep platform-critical scripts on exact endings.
+* text=auto
+
+# Must be LF even on Windows (Render clones on Linux; sh chokes on CRLF).
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+.gitignore text eol=lf
+mvnw text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Must be CRLF on Windows.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+mvnw.cmd text eol=crlf
+
+# Binary assets — never touch.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
