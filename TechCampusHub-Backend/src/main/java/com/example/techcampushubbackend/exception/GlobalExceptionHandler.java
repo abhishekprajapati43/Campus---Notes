@@ -3,6 +3,7 @@ package com.example.techcampushubbackend.exception;
 import com.example.techcampushubbackend.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -117,6 +118,19 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleMethodNotSupported(
             HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
         return respond(HttpStatus.METHOD_NOT_ALLOWED, "Method not allowed", request, null);
+    }
+
+    /**
+     * Unique-constraint races (double-tapped favourite, concurrent register,
+     * duplicate course review) arrive as DataIntegrityViolationException.
+     * Returning 409 keeps the client from treating a benign duplicate as a
+     * server fault; the services already treat these operations as idempotent.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(
+            DataIntegrityViolationException ex, HttpServletRequest request) {
+        return respond(HttpStatus.CONFLICT,
+                "This item was already saved. Refresh and try again.", request, null);
     }
 
     /** Anything unexpected: log with stack trace, return a generic 500. */

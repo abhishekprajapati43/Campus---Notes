@@ -22,6 +22,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -102,7 +103,24 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(appProperties.getCors().getAllowedOrigins());
+        // "null" (quoted literal) covers pages opened directly from disk
+        // (file://), which the frontend's env.js supports for local dev.
+        // Real origins still come from config, so production stays exact-match.
+        List<String> origins = new ArrayList<>(appProperties.getCors().getAllowedOrigins());
+        if (!origins.contains("null")) {
+            origins.add("null");
+        }
+        configuration.setAllowedOrigins(origins);
+        // Allow ANY localhost / 127.0.0.1 port during local development.
+        // VS Code Live Server picks a free port (5500, 5501, ...) and other
+        // dev servers (Vite/webpack) use their own, so exact-match origins
+        // silently broke login with "Could not reach the server". Production
+        // origins above stay exact-match; these patterns only widen localhost.
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "http://[::1]:*"
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "X-Requested-With"));
         configuration.setExposedHeaders(List.of("Location"));

@@ -481,6 +481,9 @@ export async function openPdfViewer({ category, id, title } = {}) {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
     } catch {
+        // Drop any stale smart-search target so it cannot leak into the
+        // next document the user opens.
+        state.pendingTarget = null;
         showError(
             "The document could not be loaded. Check your connection and try again."
         );
@@ -488,6 +491,7 @@ export async function openPdfViewer({ category, id, title } = {}) {
     }
 
     if (!response.ok) {
+        state.pendingTarget = null;
         if (response.status === 401) {
             showError("Your session has expired. Please log in again.");
         } else if (response.status === 403 || response.status === 404) {
@@ -521,6 +525,7 @@ export async function openPdfViewer({ category, id, title } = {}) {
             await applyTarget(target);
         }
     } catch (error) {
+        state.pendingTarget = null;
         showError(
             error?.message && /engine/i.test(error.message)
                 ? error.message

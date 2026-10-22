@@ -51,7 +51,8 @@ public class TnpNoteController {
                     + "check as reading the note - the storage URL is never exposed.")
     @GetMapping("/tnp-notes/{id}/download")
     public void download(@PathVariable Long id, HttpServletResponse response) {
-        contentStreamService.stream(tnpNoteService.requireVisibleFileUrl(id), response);
+        contentStreamService.stream(tnpNoteService.requireVisibleFileUrl(id), response,
+                "attachment");
     }
 
     @Operation(summary = "List all TNP notes (admin)")

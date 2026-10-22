@@ -51,7 +51,8 @@ public class TimetableController {
                     + "check as reading the timetable - the storage URL is never exposed.")
     @GetMapping("/timetables/{id}/download")
     public void download(@PathVariable Long id, HttpServletResponse response) {
-        contentStreamService.stream(timetableService.requireVisibleFileUrl(id), response);
+        contentStreamService.stream(timetableService.requireVisibleFileUrl(id), response,
+                "attachment");
     }
 
     @Operation(summary = "List all timetables (admin)")

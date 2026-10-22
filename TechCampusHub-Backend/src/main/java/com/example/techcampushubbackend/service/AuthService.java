@@ -203,15 +203,18 @@ public class AuthService {
 
     @Transactional
     public void resendVerification(String email) {
-        User user = userRepository.findByEmail(email.trim().toLowerCase())
-                .orElseThrow(() -> new ResourceNotFoundException("User", email));
-        if (user.isEmailVerified()) {
-            return; // silently succeed - do not leak account state
-        }
-        user.setVerificationToken(TokenUtils.randomToken());
-        userRepository.save(user);
-        emailService.sendVerificationEmail(user.getEmail(), user.getName(),
-                user.getVerificationToken());
+        // Non-enumerating: the controller always answers "if the account
+        // exists...", so an unknown address must not throw 404 and leak
+        // which e-mails are registered. Mirrors forgotPassword() below.
+        userRepository.findByEmail(email.trim().toLowerCase()).ifPresent(user -> {
+            if (user.isEmailVerified()) {
+                return; // silently succeed - do not leak account state
+            }
+            user.setVerificationToken(TokenUtils.randomToken());
+            userRepository.save(user);
+            emailService.sendVerificationEmail(user.getEmail(), user.getName(),
+                    user.getVerificationToken());
+        });
     }
 
     /**
@@ -393,6 +396,7 @@ public class AuthService {
         feedbackRepository.deleteByUserId(userId);
         certificateRepository.deleteByUserId(userId);
         notificationRepository.deleteByTargetUserId(userId);
+
 
         userRepository.delete(user);
         log.info("Deleted account {} (requested by {})", user.getEmail(), requestedByUserId);

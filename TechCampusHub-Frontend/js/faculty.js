@@ -2275,15 +2275,20 @@ async function openCourseContent(courseId) {
             title.textContent = data?.course?.title || "Course Content";
         }
 
+        // Guard against an empty body (204 / no-JSON): apiFetchEnvelope
+        // can resolve with `data === undefined`, and assigning a property
+        // to undefined throws. Treat it as an empty content object.
+        const content = data || {};
+
         // Merge in this course's resources (videos /
         // assignments / other files) from the collection
         // loaded at startup; unattached ("free") resources
         // belong to no course viewer.
-        data.resources = facultyResources.filter(
+        content.resources = facultyResources.filter(
             item => String(item.courseId ?? "") === String(courseId)
         );
 
-        renderCourseContentBody(data);
+        renderCourseContentBody(content);
     } catch (error) {
         console.error("Faculty course content loading error:", error);
 

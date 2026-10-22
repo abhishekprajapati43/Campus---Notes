@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
@@ -33,7 +34,7 @@ import lombok.Setter;
 @Table(name = "pdf_page_index", uniqueConstraints = {
         @UniqueConstraint(name = "uq_pdf_page_document_page",
                 columnNames = {"category", "content_id", "page_number"})
-})
+}, indexes = { @Index(name = "idx_pdf_page_index_course_id", columnList = "course_id") })
 @Getter
 @Setter
 @Builder

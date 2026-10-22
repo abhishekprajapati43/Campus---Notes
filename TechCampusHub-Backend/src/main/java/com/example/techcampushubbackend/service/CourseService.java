@@ -55,9 +55,16 @@ public class CourseService {
                 .toList());
     }
 
+    /**
+     * Public detail lookup: only active courses are visible. Inactive
+     * (draft/hidden) courses are treated as not found so their details are
+     * never exposed on the unauthenticated catalog route.
+     */
     @Transactional(readOnly = true)
     public CourseResponse get(Long id) {
-        return toResponse(require(id), ratingFor(id));
+        Course course = courseRepository.findByIdAndActiveTrue(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course", id));
+        return toResponse(course, ratingFor(id));
     }
 
     /**

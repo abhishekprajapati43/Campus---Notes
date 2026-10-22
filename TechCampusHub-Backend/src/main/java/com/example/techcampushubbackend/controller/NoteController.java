@@ -55,7 +55,8 @@ public class NoteController {
                     + "check as reading the note - the storage URL is never exposed.")
     @GetMapping("/notes/{id}/download")
     public void download(@PathVariable Long id, HttpServletResponse response) {
-        contentStreamService.stream(noteService.requireVisibleFileUrl(id), response);
+        contentStreamService.stream(noteService.requireVisibleFileUrl(id), response,
+                "attachment");
     }
 
     // ------------------------------------------------------------------ admin

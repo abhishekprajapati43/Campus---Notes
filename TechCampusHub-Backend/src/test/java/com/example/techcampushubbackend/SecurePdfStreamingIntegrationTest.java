@@ -141,11 +141,14 @@ class SecurePdfStreamingIntegrationTest {
 
     @Test
     void downloadRelaysInsteadOfRedirecting() throws Exception {
+        // The legacy /download route is a true download: it relays bytes
+        // (no 302 to storage) and marks them as an attachment so the browser
+        // saves the file with a name instead of rendering it inline.
         mockMvc.perform(get("/api/notes/{id}/download", freeNoteId)
                         .header("Authorization", "Bearer " + studentToken))
                 .andExpect(status().isOk())
                 .andExpect(header().doesNotExist("Location"))
-                .andExpect(header().string("Content-Disposition", "inline"));
+                .andExpect(header().string("Content-Disposition", "attachment"));
     }
 
     // ------------------------------------------------------- URL exposure

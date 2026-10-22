@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.ArrayList;
@@ -56,18 +58,48 @@ public class PdfIndexService {
         executor.shutdownNow();
     }
 
-    /** Queues a re-index; never throws into the caller's transaction. */
+    /**
+     * Queues a re-index; never throws into the caller's transaction.
+     *
+     * <p>When called inside an open transaction the work is deferred until
+     * after that transaction commits, so the async thread never re-reads a
+     * row the caller has not committed yet. Outside a transaction (e.g. the
+     * startup backfill) it runs immediately.</p>
+     */
     public void reindexAsync(String category, Long contentId, String fileUrl,
             String title, String subject, Long courseId, String courseLabel,
             String program) {
-        submit(() -> indexNow(category, contentId, fileUrl, title, subject,
+        afterCommit(() -> indexNow(category, contentId, fileUrl, title, subject,
                 courseId, courseLabel, program));
     }
 
-    /** Queues the index cleanup after a document was deleted. */
+    /**
+     * Queues the index cleanup after a document was deleted.
+     *
+     * <p>Defers until after the caller's transaction commits, mirroring
+     * {@link #reindexAsync}.</p>
+     */
     public void removeIndexAsync(String category, Long contentId) {
-        submit(() -> runInTransaction(() ->
+        afterCommit(() -> runInTransaction(() ->
                 repository.deleteByCategoryAndContentId(category, contentId)));
+    }
+
+    /**
+     * Runs {@code task} once the surrounding transaction has committed. If no
+     * transaction is active the task runs at once.
+     */
+    private void afterCommit(Runnable task) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            submit(task);
+                        }
+                    });
+        } else {
+            submit(task);
+        }
     }
 
     /**

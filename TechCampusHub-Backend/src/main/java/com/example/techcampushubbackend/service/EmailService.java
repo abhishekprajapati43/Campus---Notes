@@ -44,20 +44,26 @@ public class EmailService {
     }
 
     public void sendPasswordResetEmail(String to, String name, String token) {
-        String link = properties.getBaseUrl() + "/api/auth/reset-password?token=" + token;
+        // The reset endpoint is a POST that takes {token, newPassword}; there is
+        // no frontend page that collects the token, so a bare GET link would be
+        // unusable (it would only return 405). Emitting a copy-pasteable curl
+        // keeps the flow completable from the e-mail alone, with no route changes.
+        String resetCommand = "curl -X POST " + properties.getBaseUrl()
+                + "/api/auth/reset-password -H \"Content-Type: application/json\" "
+                + "-d '{\"token\":\"" + token + "\",\"newPassword\":\"YOUR_NEW_PASSWORD\"}'";
         String subject = "Reset your TechCampus Hub password";
         String body = """
                 Hi %s,
 
-                We received a request to reset your password. Open the link below
-                within 30 minutes to choose a new one:
+                We received a request to reset your password. Run the command below
+                within 30 minutes, replacing YOUR_NEW_PASSWORD with your new password:
 
                 %s
 
                 If you did not request this, you can safely ignore this message.
 
                 - TechCampus Hub
-                """.formatted(name, link);
+                """.formatted(name, resetCommand);
         send(to, subject, body);
     }
 

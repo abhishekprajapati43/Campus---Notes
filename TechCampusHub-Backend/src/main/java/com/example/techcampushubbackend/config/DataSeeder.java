@@ -29,13 +29,19 @@ public class DataSeeder {
     @Transactional
     public CommandLineRunner seedAdmin(UserRepository users, PasswordEncoder passwordEncoder) {
         return args -> {
-            String email = appProperties.getAdmin().getEmail();
+            // Normalize the same way every write path does: a mixed-case
+            // ADMIN_EMAIL would otherwise never match the lower-cased row,
+            // so every restart re-inserted and hit the unique email
+            // constraint, crashing startup.
+            String email = String.valueOf(appProperties.getAdmin().getEmail())
+                    .trim()
+                    .toLowerCase();
             if (users.existsByEmail(email)) {
                 return;
             }
             User admin = User.builder()
                     .name(appProperties.getAdmin().getName())
-                    .email(email.toLowerCase())
+                    .email(email)
                     .password(passwordEncoder.encode(appProperties.getAdmin().getPassword()))
                     .role(Role.ADMIN)
                     .emailVerified(true)

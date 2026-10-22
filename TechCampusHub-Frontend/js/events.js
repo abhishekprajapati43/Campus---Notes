@@ -1929,10 +1929,9 @@ async function handleTelegramLinkUpdate() {
             message.textContent = "";
         }
 
-        const savedLink =
-            await updateTelegramLink(
-                newLink
-            );
+        await updateTelegramLink(
+            newLink
+        );
 
         if (message) {
             message.textContent =

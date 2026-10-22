@@ -55,6 +55,16 @@ public class ContentStreamService {
      * so clients still receive the standard JSON error body.
      */
     public void stream(String sourceUrl, HttpServletResponse response) {
+        stream(sourceUrl, response, "inline");
+    }
+
+    /**
+     * Same relay, but lets the caller choose the Content-Disposition. The in-app
+     * viewer uses {@code inline}; the dedicated download endpoints use
+     * {@code attachment} so the browser saves the file with a real name instead
+     * of rendering it in place.
+     */
+    public void stream(String sourceUrl, HttpServletResponse response, String disposition) {
         if (sourceUrl == null || sourceUrl.isBlank()) {
             throw new ApiException(HttpStatus.NOT_FOUND, "No file is available for this item");
         }
@@ -67,9 +77,11 @@ public class ContentStreamService {
         HttpResponse<InputStream> upstream = fetch(sourceUrl);
         int status = upstream.statusCode();
         if (status == 404 || status == 401 || status == 403) {
+            closeQuietly(upstream.body());
             throw new ApiException(HttpStatus.NOT_FOUND, "Document not found in storage");
         }
         if (status != 200) {
+            closeQuietly(upstream.body());
             log.warn("Content stream upstream answered with status {}", status);
             throw new ApiException(HttpStatus.BAD_GATEWAY,
                     "Document could not be loaded right now");
@@ -77,7 +89,7 @@ public class ContentStreamService {
 
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType("application/pdf");
-        response.setHeader("Content-Disposition", "inline");
+        response.setHeader("Content-Disposition", disposition);
         // Never let a browser or shared cache hold relayed document bytes.
         response.setHeader("Cache-Control", "private, no-store, max-age=0");
         response.setHeader("Pragma", "no-cache");
@@ -183,5 +195,21 @@ public class ContentStreamService {
         return host.equals("localhost")
                 || host.startsWith("127.")
                 || host.equals("[::1]");
+    }
+
+    /**
+     * Releases an upstream body stream we will not read. Leaving it open
+     * keeps its HTTP connection out of the pool, so repeated missing or
+     * expired documents would leak sockets until the pool stalls.
+     */
+    private static void closeQuietly(InputStream stream) {
+        if (stream == null) {
+            return;
+        }
+        try {
+            stream.close();
+        } catch (IOException e) {
+            log.debug("Discarded upstream stream close error: {}", e.getMessage());
+        }
     }
 }

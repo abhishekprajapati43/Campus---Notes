@@ -73,12 +73,21 @@ async function postRegistration(body) {
         }
     );
 
-    const user = normalizeUser(envelope?.data?.user);
+    // The register endpoint answers with the bare user DTO in `data`
+    // (no `user` wrapper) and never issues a JWT, so no session is
+    // opened and nobody is auto-logged-in.
+    const user = normalizeUser(envelope?.data);
+    const token = envelope?.data?.token || null;
 
-    setAuthToken(envelope?.data?.token || null);
+    setAuthToken(token);
     setStoredUser(user);
 
-    emitAuthState("SIGNED_IN", buildSession(user));
+    // Only a real token warrants a signed-in broadcast. Registration
+    // must not fire SIGNED_IN or the listener would boot the
+    // authenticated app while the user is still unauthenticated.
+    if (token) {
+        emitAuthState("SIGNED_IN", buildSession(user));
+    }
 
     return {
         data: {
@@ -198,7 +207,11 @@ export async function signIn(email, password) {
         setAuthToken(data?.token || null);
         setStoredUser(user);
 
-        emitAuthState("SIGNED_IN", buildSession(user));
+        // No SIGNED_IN broadcast here on purpose. The login caller
+        // (handleAuthSubmit) must verify the selected role against the
+        // account's real role BEFORE the app boots, otherwise the
+        // role-based redirect can fire even when the role check fails.
+        // That caller performs the single, post-check boot.
 
         return {
             data: {
@@ -326,13 +339,31 @@ export async function signOut() {
 // =====================================================
 
 export function onAuthStateChange(callback) {
-    if (typeof callback === "function") {
-        listeners.push(callback);
+    if (typeof callback !== "function") {
+        return {
+            data: {
+                subscription: { unsubscribe() {} }
+            },
+            error: null
+        };
     }
+
+    listeners.push(callback);
 
     return {
         data: {
-            subscription: { unsubscribe() {} }
+            subscription: {
+                // Actually detach so repeated subscribe/unsubscribe
+                // cycles cannot accumulate duplicate handlers (each
+                // duplicate would re-boot the authenticated app).
+                unsubscribe() {
+                    const index = listeners.indexOf(callback);
+
+                    if (index >= 0) {
+                        listeners.splice(index, 1);
+                    }
+                }
+            }
         },
         error: null
     };

@@ -51,7 +51,8 @@ public class PyqController {
                     + "check as reading the paper - the storage URL is never exposed.")
     @GetMapping("/pyqs/{id}/download")
     public void download(@PathVariable Long id, HttpServletResponse response) {
-        contentStreamService.stream(pyqService.requireVisibleFileUrl(id), response);
+        contentStreamService.stream(pyqService.requireVisibleFileUrl(id), response,
+                "attachment");
     }
 
     @Operation(summary = "List all PYQs (admin)")

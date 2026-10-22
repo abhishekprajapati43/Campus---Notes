@@ -8,6 +8,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -21,7 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "purchases")
+@Table(name = "purchases", indexes = { @Index(name = "idx_purchases_user_id", columnList = "user_id"), @Index(name = "idx_purchases_course_id", columnList = "course_id"), @Index(name = "idx_purchases_status", columnList = "status") })
 @Getter
 @Setter
 @Builder

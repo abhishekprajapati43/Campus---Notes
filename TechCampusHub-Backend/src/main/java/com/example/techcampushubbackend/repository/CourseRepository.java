@@ -14,6 +14,9 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     List<Course> findAllByOrderBySortOrderAscTitleAsc();
 
+    /** Active-only lookup for the public detail route (hides drafts). */
+    Optional<Course> findByIdAndActiveTrue(Long id);
+
     Optional<Course> findBySlugIgnoreCase(String slug);
 
     /** Courses launched by one faculty member (dashboard counts). */

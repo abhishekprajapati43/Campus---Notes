@@ -15,7 +15,9 @@ import java.util.List;
 @Repository
 public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
 
-    List<Purchase> findByUserIdOrderByCreatedAtDesc(Long userId);
+    @Query("select p from Purchase p join fetch p.user join fetch p.course "
+            + "where p.user.id = :userId order by p.createdAt desc")
+    List<Purchase> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId);
 
     /**
      * Distinct course ids the student holds a pending or approved purchase of.
@@ -28,8 +30,15 @@ public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
     List<Long> findCourseIdsByUserAndStatusIn(@Param("userId") Long userId,
             @Param("statuses") Collection<PurchaseStatus> statuses);
 
+    // The list endpoints map every row through PurchaseService.toResponse,
+    // which reads both user and course. Plain `join` leaves them lazy and
+    // triggers one extra SELECT per row (N+1); `join fetch` loads both
+    // associations in the same query.
+
     List<Purchase> findByStatusOrderByCreatedAtDesc(PurchaseStatus status);
 
+    @Query("select p from Purchase p join fetch p.user join fetch p.course "
+            + "order by p.createdAt desc")
     List<Purchase> findAllByOrderByCreatedAtDesc();
 
     boolean existsByUserIdAndCourseIdAndStatus(Long userId, Long courseId, PurchaseStatus status);
@@ -47,8 +56,8 @@ public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
      * Powers the faculty dashboard "Recent Purchases" card and the scoped
      * Users table - faculty can never see purchases of other people's courses.
      */
-    @Query("select p from Purchase p join p.course c where c.createdBy = :facultyId "
-            + "order by p.createdAt desc")
+    @Query("select p from Purchase p join fetch p.user join fetch p.course c "
+            + "where c.createdBy = :facultyId order by p.createdAt desc")
     List<Purchase> findFacultyPurchases(@Param("facultyId") Long facultyId);
 
     /** Distinct students holding any purchase of a faculty member's courses. */
