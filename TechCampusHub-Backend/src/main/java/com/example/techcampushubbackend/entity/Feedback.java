@@ -10,6 +10,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,7 +18,16 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "feedback", indexes = { @Index(name = "idx_feedback_user_id", columnList = "user_id"), @Index(name = "idx_feedback_course_id", columnList = "course_id") })
+@Table(name = "feedback",
+        indexes = { @Index(name = "idx_feedback_user_id", columnList = "user_id"), @Index(name = "idx_feedback_course_id", columnList = "course_id") },
+        uniqueConstraints = {
+                // One course review per purchaser - RatingService also checks
+                // this before writing, but only the database can stop two
+                // concurrent submissions from both passing that check.
+                // Rows with a NULL course_id (website feedback) stay exempt:
+                // SQL unique indexes treat NULLs as distinct.
+                @UniqueConstraint(name = "uk_feedback_user_course", columnNames = { "user_id", "course_id" })
+        })
 @Getter
 @Setter
 @Builder

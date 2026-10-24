@@ -17,6 +17,7 @@ import { initFaculty, initHeaderProfileMenu, initChangePasswordModal } from "./f
 import { setupPdfViewer } from "./pdfviewer.js";
 import { setupSmartSearch } from "./smartsearch.js";
 import { setupDashboardCounts } from "./dashboardcounts.js";
+import { initThemeToggle } from "./theme.js";
 
 const PAGE =
     document.body?.dataset?.page || "auth";
@@ -58,6 +59,12 @@ document.addEventListener(
 
             // Setup all application events first.
             setupEvents();
+
+            // Theme toggle lives in the shared header partial (protected
+            // pages) and in the static markup of the auth page, so wire it
+            // for both; no-op when the button is absent (e.g. home, which
+            // boots it from home.js).
+            initThemeToggle();
 
             // Then initialize authentication,
             // profile and dashboard.

@@ -28,8 +28,16 @@ public class AppProperties {
     @Getter
     @Setter
     public static class Jwt {
+        /**
+         * Historical development default. It is public knowledge (checked into
+         * the repository), so {@code JwtService} refuses to sign with it and
+         * falls back to a random per-process key instead.
+         */
+        public static final String DEFAULT_SECRET =
+                "dev-only-secret-change-me-0123456789abcdefghijklmnopqrstuvwxyz";
+
         /** HS256 secret - must be at least 32 characters in production. */
-        private String secret = "dev-only-secret-change-me-0123456789abcdefghijklmnopqrstuvwxyz";
+        private String secret = DEFAULT_SECRET;
         private long expirationMs = 86_400_000L;
     }
 
@@ -43,9 +51,16 @@ public class AppProperties {
     @Getter
     @Setter
     public static class Admin {
+        /**
+         * Published bootstrap password. Used once, on the very first start,
+         * only to create the admin account - it must be overridden with
+         * ADMIN_PASSWORD as soon as the instance is reachable by others.
+         */
+        public static final String DEFAULT_PASSWORD = "Admin@1234";
+
         /** Bootstrap admin account created at startup if it does not exist. */
         private String email = "admin@techcampushub.com";
-        private String password = "Admin@1234";
+        private String password = DEFAULT_PASSWORD;
         private String name = "Administrator";
     }
 

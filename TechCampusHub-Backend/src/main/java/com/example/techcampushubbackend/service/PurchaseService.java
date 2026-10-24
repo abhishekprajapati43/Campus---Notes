@@ -13,6 +13,7 @@ import com.example.techcampushubbackend.exception.BadRequestException;
 import com.example.techcampushubbackend.exception.ResourceNotFoundException;
 import com.example.techcampushubbackend.repository.CourseRepository;
 import com.example.techcampushubbackend.repository.PurchaseRepository;
+import com.example.techcampushubbackend.repository.UserRepository;
 import com.example.techcampushubbackend.utils.CurrentUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -43,11 +44,20 @@ public class PurchaseService {
 
     private final PurchaseRepository purchaseRepository;
     private final CourseRepository courseRepository;
+    private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
 
     @Transactional
     public PurchaseResponse request(PurchaseCreateRequest request) {
-        User user = currentUserService.requireUser();
+        User caller = currentUserService.requireUser();
+        // Lock the student's row for the rest of this transaction: everything
+        // below (duplicate guard, 1+1 discount eligibility, insert) is a
+        // read-modify-write on this student's ledger. Two parallel requests
+        // would otherwise both see "no pending purchase" / "exactly one owned
+        // course" and both act on it - creating duplicate PENDING rows or
+        // handing out the discount twice.
+        User user = userRepository.findByIdForUpdate(caller.getId()).orElse(caller);
+
         Course course = courseRepository.findById(request.courseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Course", request.courseId()));
         if (!course.isActive()) {

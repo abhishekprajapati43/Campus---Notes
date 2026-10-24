@@ -9,6 +9,26 @@
         <link rel="icon" type="image/png" href="./assets/logo.png">
         <link rel="apple-touch-icon" href="./assets/logo.png">
         <!-- =====================================================
+         THEME (dark mode) - runs before first paint, so a dark-mode
+         visitor never sees a flash of light colours
+    ====================================================== -->
+        <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem("tch-theme");
+                var dark = saved
+                    ? saved === "dark"
+                    : window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+                if (dark) {
+                    document.documentElement.classList.add("dark");
+                }
+            } catch (error) {
+                // Private mode: fall back to the light theme.
+            }
+        })();
+        </script>
+        <!-- =====================================================
          TAILWIND CSS
     ====================================================== -->
         <script src="https://cdn.tailwindcss.com"></script>
@@ -21,6 +41,7 @@
     ====================================================== -->
         <script>
         tailwind.config = {
+            darkMode: "class",
             theme: {
                 extend: {
                     colors: {

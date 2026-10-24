@@ -50,9 +50,23 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- RIGHT HEADER PROFILE (students + faculty; hidden for
-                             administrators so admin pages stay unchanged) -->
-                        <div id="headerProfileMenu" class="hidden relative">
+                        <!-- RIGHT: theme toggle + profile menu (students +
+                             faculty; profile stays hidden for administrators
+                             so admin pages keep their own layout) -->
+                        <div class="flex items-center gap-3">
+                            <button id="themeToggleBtn" type="button" class="theme-toggle
+                                   w-10 h-10
+                                   rounded-xl
+                                   bg-slate-100
+                                   hover:bg-slate-200
+                                   flex items-center
+                                   justify-center
+                                   text-slate-600"
+                                    aria-label="Switch to dark mode">
+                                <i class="fa-solid fa-moon theme-icon-moon"></i>
+                                <i class="fa-solid fa-sun theme-icon-sun"></i>
+                            </button>
+                            <div id="headerProfileMenu" class="hidden relative">
                             <button id="headerProfileBtn" type="button"
                                     aria-haspopup="true" aria-expanded="false"
                                     class="flex items-center gap-3 rounded-full border border-slate-200
@@ -94,6 +108,7 @@
                                                text-red-600 hover:bg-red-50 transition">
                                     <i class="fa-solid fa-right-from-bracket w-4"></i> Logout
                                 </button>
+                            </div>
                             </div>
                         </div>
                     </header>

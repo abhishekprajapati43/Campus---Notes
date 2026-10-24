@@ -8,12 +8,14 @@ import com.example.techcampushubbackend.entity.Feedback;
 import com.example.techcampushubbackend.entity.PurchaseStatus;
 import com.example.techcampushubbackend.entity.User;
 import com.example.techcampushubbackend.exception.ApiException;
+import com.example.techcampushubbackend.exception.ConflictException;
 import com.example.techcampushubbackend.exception.ResourceNotFoundException;
 import com.example.techcampushubbackend.repository.CourseRepository;
 import com.example.techcampushubbackend.repository.FeedbackRepository;
 import com.example.techcampushubbackend.utils.CurrentUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -87,7 +89,18 @@ public class RatingService {
         review.setTargetType("course");
         review.setTargetLabel(course.getTitle());
 
-        Feedback saved = feedbackRepository.save(review);
+        Feedback saved;
+        try {
+            saved = feedbackRepository.save(review);
+        } catch (DataIntegrityViolationException ex) {
+            // Two submissions raced past the lookup above; the
+            // uk_feedback_user_course constraint is the tie-breaker. The losing
+            // request aborts this transaction, so turn it into an explicit,
+            // human-readable conflict instead of a generic 409.
+            log.warn("Duplicate course review rejected: course={} user={}", courseId, user.getId());
+            throw new ConflictException(
+                    "You already reviewed this course. Refresh the page to edit your existing review.");
+        }
         log.info("Course review saved: course={} user={} rating={}",
                 courseId, user.getId(), request.rating());
         return toReviewResponse(saved);

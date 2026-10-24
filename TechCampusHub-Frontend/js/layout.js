@@ -7,6 +7,8 @@
 // active navigation item for the current page.
 // =====================================================
 
+import { initThemeToggle } from "./theme.js";
+
 const NAV_ID_BY_PAGE = {
     dashboard: "dashboardHomeBtn",
     notifications: "notificationsBtn",
@@ -52,6 +54,10 @@ export async function renderLayout(page) {
         `${sidebarHtml}\n${modalsHtml}`;
 
     headerSlot.innerHTML = headerHtml;
+
+    // The header partial carries the theme toggle: wire it now that
+    // the button exists in the DOM.
+    initThemeToggle();
 
     applyHeaderBranding(page);
 

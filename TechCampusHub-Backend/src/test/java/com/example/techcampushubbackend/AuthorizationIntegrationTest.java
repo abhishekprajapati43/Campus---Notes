@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -77,6 +78,57 @@ class AuthorizationIntegrationTest {
                 .andReturn();
         JsonNode node = objectMapper.readTree(result.getResponse().getContentAsString());
         return node.path("data").path("token").asString();
+    }
+
+    // ------------------------------------------------------ account suspension
+
+    /**
+     * A JWT stays technically valid for {@code app.jwt.expiration-ms} (24 h), so
+     * an admin "Remove User" would be worthless if the filter trusted the token:
+     * the account row must be re-checked on every request. Also proves the
+     * check is reversible - re-enabling restores access with the same token.
+     */
+    @Test
+    void suspensionRevokesAnAlreadyIssuedTokenImmediately() throws Exception {
+        MvcResult registered = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Suspend Demo","email":"suspend.demo@example.com","password":"Student@123"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long userId = objectMapper.readTree(registered.getResponse().getContentAsString())
+                .path("data").path("id").asLong();
+        String token = login("suspend.demo@example.com", "Student@123");
+
+        // Sanity: the freshly issued token works.
+        mockMvc.perform(get("/api/favorites")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        // The admin suspends the account.
+        mockMvc.perform(patch("/api/admin/users/" + userId + "/enabled")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"enabled\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.enabled").value(false));
+
+        // The same, still-unexpired token is refused immediately.
+        mockMvc.perform(get("/api/favorites")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Your account has been suspended"));
+
+        // Re-enabling brings the same token back to life.
+        mockMvc.perform(patch("/api/admin/users/" + userId + "/enabled")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"enabled\":true}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/favorites")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
     }
 
     // ------------------------------------------------------------ public/401

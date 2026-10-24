@@ -10,6 +10,7 @@ import { getSession } from "./auth.js";
 import { loadCourses, formatPrice, ratingBadgeHtml } from "./courses.js";
 import { getOverallRating } from "./api.js";
 import { escapeHtml } from "./helpers.js";
+import { initThemeToggle } from "./theme.js";
 
 /**
  * Platform-wide average rating shown above the homepage catalog,
@@ -204,6 +205,9 @@ async function updateNavForSession() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Theme toggle in the storefront header (static markup).
+    initThemeToggle();
+
     updateNavForSession();
     renderOverallRating();
     renderCourseCatalog();

@@ -84,6 +84,11 @@ CREATE TABLE IF NOT EXISTS purchases (
 CREATE INDEX IF NOT EXISTS idx_purchases_user   ON purchases (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_purchases_status ON purchases (status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_purchases_active ON purchases (user_id, course_id, status, valid_until);
+-- At most one awaiting-review purchase per student and course. Partial so the
+-- rejected/approved history stays usable (a student can request again later).
+-- Created at startup by src/main/resources/schema.sql.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_purchases_user_course_pending
+    ON purchases (user_id, course_id) WHERE status = 'PENDING';
 
 -- ---------------------------------------------------------------------
 -- 4. notes
@@ -223,3 +228,6 @@ CREATE TABLE IF NOT EXISTS feedback (
     updated_at TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_feedback_course ON feedback (course_id);
+-- One course review per purchaser (enforced by the entity annotation and by
+-- src/main/resources/schema.sql; NULL course_id = website feedback, unaffected).
+CREATE UNIQUE INDEX IF NOT EXISTS uk_feedback_user_course ON feedback (user_id, course_id);

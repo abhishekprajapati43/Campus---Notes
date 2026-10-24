@@ -18,7 +18,7 @@ built in. **In production, override at least `JWT_SECRET`, the `DB_*` values,
 | `DB_SHOW_SQL` | `false` | Log SQL statements |
 | `DB_FORMAT_SQL` | `false` | Pretty-print logged SQL |
 | **JWT** | | |
-| `JWT_SECRET` | dev-only value ⚠️ | HS256 secret, **min 32 chars, must be random in production** |
+| `JWT_SECRET` | dev-only value ⚠️ | HS256 secret, **min 32 chars, must be random in production**. When unset/blank/unchanged from the repository default, the app logs a warning and signs with a random per-process key instead (restarts log everyone out) - never with the public default. |
 | `JWT_EXPIRATION_MS` | `86400000` (24 h) | Access-token lifetime |
 | **Application** | | |
 | `APP_BASE_URL` | `http://localhost:8080` | Public base URL used in verification/reset links |
@@ -26,7 +26,7 @@ built in. **In production, override at least `JWT_SECRET`, the `DB_*` values,
 | `REQUIRE_EMAIL_VERIFICATION` | `false` | When `true`, login fails with `403` until verified |
 | **Bootstrap admin** | | |
 | `ADMIN_EMAIL` | `admin@techcampushub.com` | First admin, created at startup if absent |
-| `ADMIN_PASSWORD` | `Admin@1234` | ⚠️ Change in production |
+| `ADMIN_PASSWORD` | `Admin@1234` | ⚠️ Change in production - startup logs a warning while the default is configured |
 | `ADMIN_NAME` | `Administrator` | Display name |
 | **Mail** | | |
 | `MAIL_HOST` | *(empty)* | SMTP host; empty = e-mails are logged to console |

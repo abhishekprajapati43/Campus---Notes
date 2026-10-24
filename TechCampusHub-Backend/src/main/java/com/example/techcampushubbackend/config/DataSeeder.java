@@ -29,6 +29,7 @@ public class DataSeeder {
     @Transactional
     public CommandLineRunner seedAdmin(UserRepository users, PasswordEncoder passwordEncoder) {
         return args -> {
+            warnOnDefaultAdminPassword();
             // Normalize the same way every write path does: a mixed-case
             // ADMIN_EMAIL would otherwise never match the lower-cased row,
             // so every restart re-inserted and hit the unique email
@@ -50,6 +51,20 @@ public class DataSeeder {
             users.save(admin);
             log.info("Seeded admin account '{}'", email);
         };
+    }
+
+    /**
+     * The bootstrap password ships in the repository, so anyone who has read
+     * the source knows it. Startup cannot verify the hash of an already
+     * existing account, but it can shout while the default is still configured.
+     */
+    private void warnOnDefaultAdminPassword() {
+        String password = appProperties.getAdmin().getPassword();
+        if (AppProperties.Admin.DEFAULT_PASSWORD.equals(password)) {
+            log.warn("app.admin.password is still the repository default - anyone who knows it can "
+                    + "log in as '{}' until ADMIN_PASSWORD is overridden in the environment.",
+                    appProperties.getAdmin().getEmail());
+        }
     }
 
     /**

@@ -830,3 +830,407 @@ tbody tr:last-child td {
         border-top: 2px dashed #bfdbfe;
     }
 }
+
+/* =============================================================
+   15. DARK MODE — DESIGN TOKENS
+   -------------------------------------------------------------
+   Every component above reads its colours from the tokens, so
+   re-declaring them under html.dark restyles the whole design
+   system (cards, inputs, tables, sidebar, modals, auth pages).
+   The class is applied by an inline script in <head> before
+   first paint, so there is never a light flash.
+   ============================================================= */
+
+html.dark {
+    /* Surfaces */
+    --bg: #0b1120;
+    --surface: #111a2c;
+    --surface-2: #162035;
+    --surface-3: #1b2740;
+
+    /* Borders */
+    --border: #22304a;
+    --border-strong: #2e3e5a;
+
+    /* Text */
+    --text: #e7eefb;
+    --text-2: #b6c3d7;
+    --muted: #8b9ab1;
+
+    /* Accent — slightly brighter: dark surfaces absorb light */
+    --accent: #5b8cff;
+    --accent-strong: #7aa4ff;
+    --accent-soft: rgba(91, 140, 255, .16);
+    --ring: rgba(91, 140, 255, .28);
+
+    /* Elevation */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, .40);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .34), 0 2px 6px rgba(0, 0, 0, .30);
+    --shadow-md: 0 1px 2px rgba(0, 0, 0, .34), 0 8px 24px rgba(0, 0, 0, .44);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, .50), 0 24px 56px rgba(0, 0, 0, .56);
+
+    /* Sidebar */
+    --sidebar-bg: #0d1626;
+    --sidebar-text: #9aa8bd;
+    --sidebar-hover: #17223a;
+
+    /* Native form controls (scrollbars, select popups) follow suit */
+    color-scheme: dark;
+}
+
+/* =============================================================
+   16. DARK MODE — LIGHT-ONLY RULES ABOVE
+   ============================================================= */
+
+html.dark ::selection {
+    background: rgba(91, 140, 255, .30);
+    color: #eaf1ff;
+}
+
+html.dark ::placeholder {
+    color: #6f7f96;
+}
+
+/* Sidebar */
+html.dark #logoutBtn:hover {
+    background: rgba(248, 113, 113, .14) !important;
+    color: #f87171 !important;
+}
+
+html.dark #notificationBadge,
+html.dark #favoritesBadge {
+    box-shadow: 0 0 0 2px var(--sidebar-bg);
+}
+
+html.dark .sidebar .nav-section-label {
+    color: #7c8ba3;
+}
+
+html.dark .sidebar .nav-item.active {
+    box-shadow: inset 0 0 0 1px rgba(91, 140, 255, .28);
+}
+
+/* Header: translucent dark glass instead of white glass */
+html.dark .app-header {
+    background: rgba(17, 26, 44, .80);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, .30);
+}
+
+/* Cards / tables */
+html.dark .resource-card:hover {
+    border-color: #33487a;
+}
+
+html.dark tbody td {
+    border-bottom-color: var(--border);
+}
+
+html.dark tbody tr:hover {
+    background: var(--surface-2);
+}
+
+/* Form controls */
+html.dark .input:disabled {
+    color: #64748b;
+}
+
+html.dark select.input,
+html.dark select {
+    background-image:
+        url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b9ab1' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* Secondary buttons keep their outline chrome */
+html.dark button[class*="border-slate-200"]:not([class*="bg-blue"]):not([class*="bg-red"]):not([class*="bg-emerald"]):hover,
+html.dark a[class*="border-slate-200"]:not([class*="bg-blue"]):not([class*="bg-red"]):not([class*="bg-emerald"]):hover {
+    border-color: #3b4d6e;
+}
+
+/* Branding chips: the logo sits on its own tile */
+html.dark .text-logo-icon,
+html.dark .text-logo-icon-small {
+    background: var(--surface);
+}
+
+/* Step connectors on the home page */
+html.dark .how-step-connector::before {
+    border-top-color: #2d4a8a;
+}
+
+/* =============================================================
+   17. DARK MODE — TAILWIND UTILITY OVERRIDES
+   -------------------------------------------------------------
+   The markup (13 pages + JS templates) styles itself with
+   Tailwind utilities such as bg-white / text-slate-500, which
+   are colour literals and cannot respond to design tokens.
+   These overrides remap just the utilities the app actually
+   uses. html.dark raises specificity above the utility layer,
+   so no !important is needed and the light theme is untouched.
+   ============================================================= */
+
+/* ---------- Surfaces ---------- */
+
+html.dark .bg-white {
+    background-color: var(--surface);
+}
+
+html.dark .bg-white\/70 {
+    background-color: rgba(17, 26, 44, .72);
+}
+
+html.dark .bg-white\/80,
+html.dark .bg-white\/90 {
+    background-color: rgba(17, 26, 44, .86);
+}
+
+html.dark .bg-white\/10 {
+    background-color: rgba(255, 255, 255, .08);
+}
+
+html.dark .hover\:bg-white:hover {
+    background-color: var(--surface-2);
+}
+
+html.dark .hover\:bg-white\/70:hover {
+    background-color: rgba(17, 26, 44, .80);
+}
+
+html.dark .hover\:bg-white\/10:hover {
+    background-color: rgba(255, 255, 255, .14);
+}
+
+html.dark .bg-slate-50,
+html.dark .hover\:bg-slate-50:hover {
+    background-color: var(--surface-2);
+}
+
+html.dark .bg-slate-100,
+html.dark .bg-slate-100\/80,
+html.dark .bg-slate-100\/90,
+html.dark .hover\:bg-slate-100:hover {
+    background-color: var(--surface-3);
+}
+
+html.dark .bg-slate-200,
+html.dark .hover\:bg-slate-200:hover {
+    background-color: #26334c;
+}
+
+/* Modal / drawer scrims stay darker than the page */
+html.dark .bg-slate-950\/50,
+html.dark .bg-slate-950\/60 {
+    background-color: rgba(2, 6, 16, .70);
+}
+
+/* ---------- Borders & rings ---------- */
+
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-200\/80,
+html.dark .border-slate-300,
+html.dark .hover\:border-slate-300:hover,
+html.dark .divide-slate-100>*+*,
+html.dark .border-gray-200,
+html.dark .border-gray-300 {
+    border-color: var(--border);
+}
+
+html.dark .ring-white {
+    --tw-ring-color: var(--surface-3);
+}
+
+html.dark .ring-slate-200 {
+    --tw-ring-color: var(--border);
+}
+
+/* ---------- Text ---------- */
+
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .hover\:text-slate-900:hover,
+html.dark .text-gray-900,
+html.dark .text-gray-800 {
+    color: var(--text);
+}
+
+html.dark .text-slate-700,
+html.dark .hover\:text-slate-700:hover,
+html.dark .text-gray-700,
+html.dark .text-gray-600 {
+    color: #dbe5f3;
+}
+
+html.dark .text-slate-600 {
+    color: var(--text-2);
+}
+
+html.dark .text-slate-500,
+html.dark .text-gray-500,
+html.dark .text-gray-400 {
+    color: var(--muted);
+}
+
+html.dark .text-slate-400 {
+    color: #71829b;
+}
+
+html.dark .text-slate-300 {
+    color: #5c6c85;
+}
+
+/* ---------- Accent (blue) ---------- */
+
+html.dark .bg-blue-50,
+html.dark .bg-blue-50\/40,
+html.dark .bg-blue-100,
+html.dark .bg-blue-600\/10,
+html.dark .hover\:bg-blue-50:hover,
+html.dark .hover\:bg-blue-50\/40:hover,
+html.dark .hover\:bg-blue-100:hover,
+html.dark .bg-gray-100,
+html.dark .bg-gray-200,
+html.dark .hover\:bg-gray-200:hover {
+    background-color: rgba(91, 140, 255, .16);
+}
+
+html.dark .text-blue-600,
+html.dark .text-blue-700,
+html.dark .text-blue-800,
+html.dark .hover\:text-blue-600:hover,
+html.dark .hover\:text-blue-800:hover {
+    color: #8fb0ff;
+}
+
+html.dark .border-blue-300,
+html.dark .border-blue-400,
+html.dark .hover\:border-blue-300:hover,
+html.dark .hover\:border-blue-400:hover {
+    border-color: rgba(91, 140, 255, .45);
+}
+
+html.dark .border-blue-600 {
+    border-color: var(--accent);
+}
+
+/* ---------- Status tints ---------- */
+
+html.dark .bg-red-50,
+html.dark .bg-red-100,
+html.dark .hover\:bg-red-50:hover,
+html.dark .hover\:bg-red-100:hover,
+html.dark .bg-rose-50,
+html.dark .bg-rose-50\/50 {
+    background-color: rgba(248, 113, 113, .15);
+}
+
+html.dark .text-red-500,
+html.dark .text-red-600,
+html.dark .text-red-700,
+html.dark .hover\:text-red-500:hover {
+    color: #fb7185;
+}
+
+html.dark .border-red-200,
+html.dark .border-rose-200 {
+    border-color: rgba(248, 113, 113, .35);
+}
+
+html.dark .bg-amber-50,
+html.dark .bg-amber-100,
+html.dark .bg-amber-200\/80,
+html.dark .hover\:bg-amber-100:hover {
+    background-color: rgba(251, 191, 36, .15);
+}
+
+html.dark .text-amber-600,
+html.dark .text-amber-700 {
+    color: #fcd34d;
+}
+
+html.dark .border-amber-200 {
+    border-color: rgba(251, 191, 36, .35);
+}
+
+html.dark .bg-emerald-50,
+html.dark .bg-emerald-100,
+html.dark .bg-green-50,
+html.dark .hover\:bg-emerald-100:hover {
+    background-color: rgba(52, 211, 153, .15);
+}
+
+html.dark .text-emerald-600,
+html.dark .text-emerald-700,
+html.dark .text-green-600,
+html.dark .text-green-700 {
+    color: #34d399;
+}
+
+html.dark .border-green-200 {
+    border-color: rgba(52, 211, 153, .35);
+}
+
+html.dark .bg-orange-50 {
+    background-color: rgba(251, 146, 60, .15);
+}
+
+html.dark .text-orange-600,
+html.dark .text-orange-700 {
+    color: #fb923c;
+}
+
+html.dark .border-orange-200 {
+    border-color: rgba(251, 146, 60, .35);
+}
+
+html.dark .bg-violet-50,
+html.dark .bg-violet-100,
+html.dark .bg-purple-50,
+html.dark .bg-indigo-50,
+html.dark .bg-teal-50 {
+    background-color: rgba(167, 139, 250, .16);
+}
+
+html.dark .text-violet-600,
+html.dark .text-violet-700,
+html.dark .text-purple-600,
+html.dark .text-purple-700,
+html.dark .text-indigo-700,
+html.dark .text-teal-600 {
+    color: #b39dff;
+}
+
+/* ---------- Shadows ---------- */
+
+html.dark .shadow,
+html.dark .shadow-sm,
+html.dark .shadow-soft {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .40), 0 2px 6px rgba(0, 0, 0, .28);
+}
+
+html.dark .shadow-md {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .40), 0 8px 24px rgba(0, 0, 0, .44);
+}
+
+html.dark .shadow-lg,
+html.dark .shadow-xl {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .50), 0 24px 56px rgba(0, 0, 0, .56);
+}
+
+/* =============================================================
+   18. THEME TOGGLE
+   -------------------------------------------------------------
+   The button carries both icons; CSS alone swaps them, so the
+   toggle stays correct even before JS wires the click handler.
+   ============================================================= */
+
+.theme-toggle .theme-icon-sun {
+    display: none;
+}
+
+html.dark .theme-toggle .theme-icon-moon {
+    display: none;
+}
+
+html.dark .theme-toggle .theme-icon-sun {
+    display: inline-block;
+}

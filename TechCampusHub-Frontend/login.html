@@ -9,6 +9,26 @@
         <link rel="icon" type="image/png" href="./assets/logo.png">
         <link rel="apple-touch-icon" href="./assets/logo.png">
         <!-- =====================================================
+         THEME (dark mode) - runs before first paint, so a dark-mode
+         visitor never sees a flash of light colours
+    ====================================================== -->
+        <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem("tch-theme");
+                var dark = saved
+                    ? saved === "dark"
+                    : window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+                if (dark) {
+                    document.documentElement.classList.add("dark");
+                }
+            } catch (error) {
+                // Private mode: fall back to the light theme.
+            }
+        })();
+        </script>
+        <!-- =====================================================
          TAILWIND CSS
     ====================================================== -->
         <script src="https://cdn.tailwindcss.com"></script>
@@ -21,6 +41,7 @@
     ====================================================== -->
         <script>
         tailwind.config = {
+            darkMode: "class",
             theme: {
                 extend: {
                     colors: {
@@ -46,6 +67,20 @@
      AUTH SECTION
 ========================================================= -->
         <section id="authSection" class="auth-bg min-h-screen flex items-center justify-center p-4 md:p-8">
+            <!-- Theme toggle: top-right, clear of the card on every viewport -->
+            <button id="themeToggleBtn" type="button" class="theme-toggle
+                   fixed top-4 right-4 z-10
+                   w-10 h-10
+                   rounded-xl
+                   bg-slate-100
+                   hover:bg-slate-200
+                   flex items-center
+                   justify-center
+                   text-slate-600"
+                    aria-label="Switch to dark mode">
+                <i class="fa-solid fa-moon theme-icon-moon"></i>
+                <i class="fa-solid fa-sun theme-icon-sun"></i>
+            </button>
             <div class="w-full max-w-5xl
                grid lg:grid-cols-2
                gap-8 items-stretch">
